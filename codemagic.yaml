@@ -32,19 +32,12 @@ workflows:
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
-    publishing:
-      app_store_connect:
-        auth: integration
 
   android-build:
     name: Android Build
     max_build_duration: 60
     instance_type: mac_mini_m2
     environment:
-      android_signing:
-        - cityhelper_keystore
-      groups:
-        - google_play
       vars:
         PACKAGE_NAME: "com.cityhelper.app"
       node: 20
@@ -58,14 +51,8 @@ workflows:
       - name: Sync Capacitor
         script: |
           npx cap sync android
-      - name: Build Android
+      - name: Build Android APK
         script: |
-          cd android && ./gradlew assembleRelease
+          cd android && ./gradlew assembleDebug
     artifacts:
       - android/app/build/outputs/**/*.apk
-      - android/app/build/outputs/**/*.aab
-    publishing:
-      google_play:
-        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
-        track: internal
-
