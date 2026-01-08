@@ -26,12 +26,6 @@ workflows:
       - name: Sync Capacitor
         script: |
           npx cap sync ios
-      - name: Generate provisioning profile
-        script: |
-          keychain initialize
-          app-store-connect fetch-signing-files "$(xcode-project detect-bundle-id)" \
-            --type IOS_APP_STORE \
-            --create-profile || true
       - name: Build iOS
         script: |
           xcode-project build-ipa \
