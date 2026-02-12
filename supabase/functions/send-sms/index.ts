@@ -1,6 +1,11 @@
-// Supabase Edge Function: Send SMS Verification
+// Supabase Edge Function: Send SMS Verification via Twilio
 // ONLY for phone number verification (OTP codes)
 // NOT for reminders or marketing
+//
+// Required Supabase secrets:
+//   TWILIO_ACCOUNT_SID
+//   TWILIO_AUTH_TOKEN
+//   TWILIO_PHONE_NUMBER  (your Twilio number, e.g. +1234567890)
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -62,50 +67,38 @@ serve(async (req) => {
 
     if (insertError) throw insertError
 
-    // Send SMS via AWS SNS
-    const AWS_ACCESS_KEY_ID = Deno.env.get('AWS_ACCESS_KEY_ID')
-    const AWS_SECRET_ACCESS_KEY = Deno.env.get('AWS_SECRET_ACCESS_KEY')
-    const AWS_REGION = Deno.env.get('AWS_REGION') || 'us-east-1'
+    // Send SMS via Twilio
+    const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID')
+    const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')
+    const TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER')
 
-    if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
-      throw new Error('AWS credentials not configured')
+    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
+      throw new Error('Twilio credentials not configured')
     }
 
-    // AWS SNS API call
-    const snsEndpoint = `https://sns.${AWS_REGION}.amazonaws.com/`
-    const params = new URLSearchParams({
-      Action: 'Publish',
-      Message: `Your CityHelper verification code is: ${code}`,
-      PhoneNumber: cleanPhone,
-      'MessageAttributes.AWS.SNS.SMS.SMSType.DataType': 'String',
-      'MessageAttributes.AWS.SNS.SMS.SMSType.StringValue': 'Transactional',
-      Version: '2010-03-31'
-    })
+    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`
 
-    // Sign request (AWS Signature Version 4)
-    const timestamp = new Date().toISOString().replace(/[:-]|\.\d{3}/g, '')
-    const date = timestamp.slice(0, 8)
-    
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Host': `sns.${AWS_REGION}.amazonaws.com`,
-      'X-Amz-Date': timestamp,
-    }
-
-    // For simplicity, using the aws4fetch library approach
-    // In production, use proper AWS SDK or aws4fetch
-    const response = await fetch(snsEndpoint, {
+    const response = await fetch(twilioUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': 'Basic ' + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`),
       },
-      body: params.toString()
+      body: new URLSearchParams({
+        To: cleanPhone,
+        From: TWILIO_PHONE_NUMBER,
+        Body: `Your CityHelper verification code is: ${code}`,
+      }).toString(),
     })
 
-    // Note: This simplified version won't work without proper AWS signing
-    // In production, use @aws-sdk/client-sns or aws4fetch
+    const result = await response.json()
 
-    console.log(`Verification code ${code} generated for ${cleanPhone}`)
+    if (!response.ok) {
+      console.error('Twilio error:', result)
+      throw new Error(result.message || 'Failed to send SMS')
+    }
+
+    console.log(`SMS sent to ${cleanPhone}, SID: ${result.sid}`)
 
     return new Response(
       JSON.stringify({ success: true, message: 'Verification code sent' }),
@@ -120,4 +113,3 @@ serve(async (req) => {
     )
   }
 })
-
