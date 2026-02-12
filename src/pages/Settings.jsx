@@ -28,8 +28,8 @@ export default function Settings() {
   const [phoneLoading, setPhoneLoading] = useState(false);
 
   const COUNTRIES = [
-    { id: 'ca', name: 'Canada', flag: '🇨🇦' },
-    { id: 'us', name: 'United States', flag: '🇺🇸' }
+    { id: 'ca', name: 'Canada', flag: '\u{1F1E8}\u{1F1E6}' },
+    { id: 'us', name: 'United States', flag: '\u{1F1FA}\u{1F1F8}' }
   ];
   const MAX_OTHER = 5;
   const _toggleOtherCountry = (id) => {
@@ -73,14 +73,12 @@ export default function Settings() {
     setPushLoading(true);
     setError(null);
     try {
-      const { success, reason } = await requestPushPermission(user.id);
-      if (success) {
+      const result = await requestPushPermission(user.id);
+      if (result.success) {
         setPushEnabled(true);
-        showSaved();
-      } else if (reason === 'denied') {
-        setError('Notifications were denied or blocked. Use your browser’s address bar or menu → Site settings → Notifications → set to Allow, then try again.');
+        showSaved('Notifications enabled!');
       } else {
-        setError('Couldn’t finish enabling in time. Reload the page and try again.');
+        setError(result.detail || 'Could not enable notifications. Try reloading the page.');
       }
     } catch (err) {
       setError(err?.message || 'Something went wrong.');
@@ -236,7 +234,7 @@ export default function Settings() {
             </div>
           )}
 
-          {/* Country — change anytime */}
+          {/* Country -- change anytime */}
           <section className="settings-section">
             <h2>
               <Globe size={20} />
@@ -331,7 +329,7 @@ export default function Settings() {
                     onClick={handleDisablePush}
                     disabled={pushLoading}
                   >
-                    {pushLoading ? 'Turning off…' : 'Turn Off'}
+                    {pushLoading ? 'Turning off...' : 'Turn Off'}
                   </button>
                 ) : (
                   <button
@@ -339,7 +337,7 @@ export default function Settings() {
                     onClick={handleEnablePush}
                     disabled={pushLoading}
                   >
-                    {pushLoading ? 'Enabling…' : 'Turn On'}
+                    {pushLoading ? 'Enabling...' : 'Turn On'}
                   </button>
                 )}
               </div>
@@ -472,14 +470,14 @@ export default function Settings() {
 
           {/* In-App Notifications */}
           <section className="settings-section">
-            <h2>📱 In-App Notifications</h2>
+            <h2>In-App Notifications</h2>
             <p className="section-desc">
               These appear in the notification bell when you open {APP_CONFIG.name}.
             </p>
             <div className="info-card">
-              <p>✓ Deadline reminders (30, 14, 7 days before)</p>
-              <p>✓ Document scan results</p>
-              <p>✓ Account security alerts</p>
+              <p>&#10003; Deadline reminders (30, 14, 7 days before)</p>
+              <p>&#10003; Document scan results</p>
+              <p>&#10003; Account security alerts</p>
             </div>
           </section>
 
@@ -491,7 +489,7 @@ export default function Settings() {
             </h2>
             <ul>
               <li>All your data is encrypted with your password</li>
-              <li>We can't read your documents or compliance details</li>
+              <li>We cannot read your documents or compliance details</li>
               <li>Phone number is only used for verification</li>
               <li>No spam, ever</li>
             </ul>
@@ -499,7 +497,7 @@ export default function Settings() {
 
           {/* Danger Zone */}
           <section className="settings-section danger">
-            <h2>⚠️ Danger Zone</h2>
+            <h2>Danger Zone</h2>
             <div className="setting-card danger">
               <div className="setting-header">
                 <div className="setting-icon danger">

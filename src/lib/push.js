@@ -28,16 +28,36 @@ export function preloadPushSDK() {}
  * @returns {{ success: boolean, reason?: 'denied' | 'timeout' }}
  */
 export async function requestPushPermission(userId) {
-  if (!VAPID_PUBLIC_KEY) return { success: false, reason: 'timeout' }
-  if (typeof Notification === 'undefined') return { success: false, reason: 'denied' }
+  // Step 1: Check VAPID key
+  if (!VAPID_PUBLIC_KEY) {
+    return { success: false, reason: 'denied', detail: 'VAPID key not configured. Check .env file.' }
+  }
+
+  // Step 2: Check browser support
+  if (typeof Notification === 'undefined') {
+    return { success: false, reason: 'denied', detail: 'This browser does not support notifications.' }
+  }
+  if (!('serviceWorker' in navigator)) {
+    return { success: false, reason: 'denied', detail: 'This browser does not support service workers (required for push).' }
+  }
+  if (!('PushManager' in window)) {
+    return { success: false, reason: 'denied', detail: 'This browser does not support push notifications. Try Chrome or Edge.' }
+  }
 
   try {
+    // Step 3: Request permission
     const permission = await Notification.requestPermission()
-    if (permission !== 'granted') return { success: false, reason: 'denied' }
+    if (permission !== 'granted') {
+      return { success: false, reason: 'denied', detail: `Browser permission is "${permission}". If you blocked it, go to browser Settings > Site Settings > Notifications and allow this site.` }
+    }
 
+    // Step 4: Register service worker
     const reg = await getSwRegistration()
-    if (!reg) return { success: false, reason: 'timeout' }
+    if (!reg) {
+      return { success: false, reason: 'timeout', detail: 'Service worker failed to register. Try reloading the page.' }
+    }
 
+    // Step 5: Subscribe to push
     const existing = await reg.pushManager.getSubscription()
     let subscription = existing
     if (!subscription) {
@@ -47,6 +67,7 @@ export async function requestPushPermission(userId) {
       })
     }
 
+    // Step 6: Save to database
     const subscriptionJson = subscription.toJSON()
     const { error: upsertError } = await supabase.from('user_settings').upsert(
       {
@@ -58,12 +79,14 @@ export async function requestPushPermission(userId) {
     )
     if (upsertError) {
       console.error('Push upsert failed:', upsertError)
-      return { success: false, reason: 'timeout' }
+      return { success: false, reason: 'timeout', detail: `Database save failed: ${upsertError.message}` }
     }
+
     return { success: true }
   } catch (err) {
     console.error('Push subscribe error:', err)
-    return { success: false, reason: err.name === 'NotAllowedError' ? 'denied' : 'timeout' }
+    const detail = err.message || String(err)
+    return { success: false, reason: err.name === 'NotAllowedError' ? 'denied' : 'timeout', detail }
   }
 }
 
