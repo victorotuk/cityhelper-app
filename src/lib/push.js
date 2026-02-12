@@ -48,7 +48,7 @@ export async function requestPushPermission(userId) {
     }
 
     const subscriptionJson = subscription.toJSON()
-    await supabase.from('user_settings').upsert(
+    const { error: upsertError } = await supabase.from('user_settings').upsert(
       {
         user_id: userId,
         push_subscription: subscriptionJson,
@@ -56,6 +56,10 @@ export async function requestPushPermission(userId) {
       },
       { onConflict: 'user_id' }
     )
+    if (upsertError) {
+      console.error('Push upsert failed:', upsertError)
+      return { success: false, reason: 'timeout' }
+    }
     return { success: true }
   } catch (err) {
     console.error('Push subscribe error:', err)

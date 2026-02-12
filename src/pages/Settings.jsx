@@ -308,7 +308,7 @@ export default function Settings() {
               Push Notifications
             </h2>
             <p className="section-desc">
-              Notifications are enabled by default so you never miss a deadline.
+              Get reminded about upcoming deadlines on your device.
             </p>
 
             <div className="setting-card">
@@ -320,8 +320,8 @@ export default function Settings() {
                   <h3>{pushEnabled ? 'Notifications On' : 'Notifications Off'}</h3>
                   <p>
                     {pushEnabled 
-                      ? "We'll remind you about upcoming deadlines"
-                      : "You won't receive push notifications"
+                      ? "You'll get reminders before deadlines expire"
+                      : "Turn on to get deadline reminders"
                     }
                   </p>
                 </div>
@@ -343,6 +343,12 @@ export default function Settings() {
                   </button>
                 )}
               </div>
+              {!pushEnabled && !pushLoading && (
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '8px 16px 12px', margin: 0 }}>
+                  Your browser will ask for permission. If you previously blocked notifications, 
+                  go to your browser settings &gt; Site Settings &gt; Notifications and allow this site.
+                </p>
+              )}
             </div>
           </section>
 

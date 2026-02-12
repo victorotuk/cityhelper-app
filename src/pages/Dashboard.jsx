@@ -58,28 +58,32 @@ export default function Dashboard() {
   const COUNTRY_LABELS = { ca: 'Canada', us: 'United States' };
   const COUNTRY_FLAGS = { ca: '🇨🇦', us: '🇺🇸' };
 
+  // Fetch user country settings
+  const refreshCountry = async () => {
+    if (!user) return;
+    const { data } = await supabase.from('user_settings').select('country, countries').eq('user_id', user.id).single();
+    const primary = data?.country || null;
+    const others = Array.isArray(data?.countries) ? data.countries : [];
+    const list = primary ? [primary, ...others].filter((c, i, a) => a.indexOf(c) === i) : others.filter((c, i, a) => a.indexOf(c) === i);
+    setUserCountry(primary);
+    setUserCountries(list);
+    const stored = localStorage.getItem(`cityhelper_active_country_${user.id}`);
+    const valid = list.includes(stored);
+    setActiveCountry(valid ? stored : (primary || list[0] || null));
+    if (stored && !valid) localStorage.setItem(`cityhelper_active_country_${user.id}`, primary || list[0] || '');
+  };
+
   useEffect(() => {
     if (!user) {
       navigate('/auth');
       return;
     }
     fetchItems(user.id);
-    (async () => {
-      const { data } = await supabase.from('user_settings').select('country, countries').eq('user_id', user.id).single();
-      const primary = data?.country || null;
-      const others = Array.isArray(data?.countries) ? data.countries : [];
-      const list = primary ? [primary, ...others].filter((c, i, a) => a.indexOf(c) === i) : others.filter((c, i, a) => a.indexOf(c) === i);
-      setUserCountry(primary);
-      setUserCountries(list);
-      const stored = localStorage.getItem(`cityhelper_active_country_${user.id}`);
-      const valid = list.includes(stored);
-      setActiveCountry(valid ? stored : (primary || list[0] || null));
-      if (stored && !valid) localStorage.setItem(`cityhelper_active_country_${user.id}`, primary || list[0] || '');
-    })();
+    queueMicrotask(() => refreshCountry());
     
     // Check if new user (show welcome guide)
     const hasSeenGuide = localStorage.getItem(`welcomeGuide_${user.id}`);
-    if (!hasSeenGuide) setShowWelcome(true); // eslint-disable-line react-hooks/set-state-in-effect -- read localStorage on mount
+    if (!hasSeenGuide) queueMicrotask(() => setShowWelcome(true));
     
     // Update last_active for reminder tracking
     const updateLastActive = async () => {
@@ -97,7 +101,12 @@ export default function Dashboard() {
       }
     };
     updateLastActive();
-  }, [user, navigate, fetchItems]);
+
+    // Re-fetch country when user returns from Settings (tab/window focus)
+    const handleFocus = () => refreshCountry();
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [user, navigate, fetchItems]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSignOut = async () => {
     await signOut();
@@ -134,7 +143,6 @@ export default function Dashboard() {
   };
 
   const handleOpenAddModal = () => requireCountryForTracking(() => setShowAddModal(true));
-  const handleOpenDisputeModal = () => requireCountryForTracking(() => setShowDisputeModal(true));
 
   const setActiveCountryAndSave = (code) => {
     setActiveCountry(code);
@@ -254,17 +262,25 @@ export default function Dashboard() {
       <main className="dashboard-main">
         {/* Quick Actions */}
         <div className="quick-actions">
-          <Link to="/apply" className="quick-action">
-            <FileText size={20} />
-            <span>Apply</span>
+          <button className="quick-action primary" onClick={handleOpenAddModal}>
+            <Plus size={20} />
+            <span>Track Item</span>
+          </button>
+          <Link to="/assistant" className="quick-action">
+            <Bot size={20} />
+            <span>AI Assistant</span>
+          </Link>
+          <Link to="/documents" className="quick-action">
+            <Folder size={20} />
+            <span>Documents</span>
           </Link>
           <Link to="/tax-estimator" className="quick-action">
             <Calculator size={20} />
             <span>Tax Estimator</span>
           </Link>
-          <Link to="/documents" className="quick-action">
-            <Folder size={20} />
-            <span>Documents</span>
+          <Link to="/apply" className="quick-action">
+            <FileText size={20} />
+            <span>Apply</span>
           </Link>
           <button 
             className="quick-action" 
@@ -273,36 +289,6 @@ export default function Dashboard() {
           >
             <Download size={20} />
             <span>Export Calendar</span>
-          </button>
-          <button 
-            className="quick-action" 
-            onClick={() => {
-              const summary = items.map(item => {
-                const catId = ['personal_tax', 'business_tax'].includes(item.category) ? 'tax' : item.category;
-                const cat = APP_CONFIG.categories.find(c => c.id === catId);
-                return `• ${item.name} (${cat?.name || 'General'}) - Due: ${item.due_date ? format(parseISO(item.due_date), 'MMM d, yyyy') : 'No date'}`;
-              }).join('\n');
-              navigator.clipboard.writeText(`My Compliance Summary:\n\n${summary}`);
-              alert('Summary copied! Paste it in an email or message to share.');
-            }}
-            disabled={items.length === 0}
-          >
-            <Copy size={20} />
-            <span>Copy Summary</span>
-          </button>
-          <button 
-            className="quick-action"
-            onClick={() => { setPayInitialValues({}); setShowPayModal(true); }}
-          >
-            <CreditCard size={20} />
-            <span>Pay Ticket</span>
-          </button>
-          <button 
-            className="quick-action accent"
-            onClick={handleOpenDisputeModal}
-          >
-            <AlertTriangle size={20} />
-            <span>Dispute Ticket</span>
           </button>
         </div>
 
@@ -338,11 +324,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Add button */}
-        <button className="btn btn-primary add-btn" onClick={handleOpenAddModal}>
-          <Plus size={20} /> Add Compliance Item
-        </button>
-
         {/* Items list */}
         <div className="items-list">
           {loading ? (
@@ -350,11 +331,42 @@ export default function Dashboard() {
           ) : items.length === 0 ? (
             <div className="empty-state">
               <Calendar size={48} />
-              <h3>No compliance items yet</h3>
-              <p>Add your first item to start tracking deadlines</p>
-              <button className="btn btn-primary" onClick={handleOpenAddModal}>
-                <Plus size={18} /> Add Item
-              </button>
+              <h3>Welcome — what would you like to track?</h3>
+              <p>CityHelper keeps all your important deadlines in one place. Tap a category to get started:</p>
+              <div className="category-suggestions">
+                {APP_CONFIG.categories.slice(0, 8).map(cat => {
+                  const examples = {
+                    immigration: 'Work permits, visas, PR cards',
+                    tax: 'Tax deadlines, T4 filing dates',
+                    driving: 'License renewals, registration',
+                    parking: 'Parking tickets & fines',
+                    health: 'Health card, prescriptions',
+                    retirement_estate: 'Wills, insurance policies',
+                    housing: 'Rent, internet, phone bills',
+                    office: 'Leases, insurance, utilities'
+                  };
+                  const emojis = {
+                    immigration: '✈️', tax: '💰', driving: '🚗', parking: '🅿️',
+                    health: '❤️', retirement_estate: '📜', housing: '🏡', office: '💼'
+                  };
+                  return (
+                    <button
+                      key={cat.id}
+                      className="category-suggestion"
+                      onClick={() => {
+                        requireCountryForTracking(() => {
+                          setShowAddModal(true);
+                          setSelectedCategory(cat.id);
+                        });
+                      }}
+                    >
+                      <span className="cat-sug-icon">{emojis[cat.id] || '📌'}</span>
+                      <span className="cat-sug-name">{cat.name}</span>
+                      <span className="cat-sug-examples">{examples[cat.id] || ''}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           ) : (
             <>
@@ -389,27 +401,46 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* Country required — can't track items without it */}
+      {/* Country required — inline picker so users don't leave Dashboard */}
       {showCountryRequired && (
         <div className="modal-overlay" onClick={() => setShowCountryRequired(false)}>
           <div className="modal country-required-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Country required</h2>
+              <h2>Select your country</h2>
               <button className="btn-icon" onClick={() => setShowCountryRequired(false)}><X size={20} /></button>
             </div>
             <div className="modal-body">
               <p className="modal-body-text">
-                Please select a country or countries of operation first. We need this to track items for you (e.g. driver&apos;s license, taxes, permits).
+                Which country do you need to track compliance for?
               </p>
-              <p className="modal-body-text soft" style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '8px' }}>
-                You can set or change it anytime in Settings. Most features apply to one country; cross-border cases (like estate planning) can use multiple countries.
-              </p>
-              <div className="modal-actions" style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-                <Link to="/settings" className="btn btn-primary" onClick={() => setShowCountryRequired(false)}>
-                  Go to Settings
-                </Link>
-                <button className="btn btn-ghost" onClick={() => setShowCountryRequired(false)}>Cancel</button>
+              <div className="country-picker-inline">
+                {[{ id: 'ca', name: 'Canada', flag: '🇨🇦' }, { id: 'us', name: 'United States', flag: '🇺🇸' }].map(c => (
+                  <button
+                    key={c.id}
+                    className="country-pick-btn"
+                    onClick={async () => {
+                      await supabase.from('user_settings').upsert({
+                        user_id: user.id,
+                        country: c.id,
+                        updated_at: new Date().toISOString()
+                      }, { onConflict: 'user_id' });
+                      setUserCountry(c.id);
+                      setActiveCountry(c.id);
+                      setUserCountries(prev => prev.includes(c.id) ? prev : [c.id, ...prev]);
+                      localStorage.setItem(`cityhelper_active_country_${user.id}`, c.id);
+                      setShowCountryRequired(false);
+                      // Now open the add modal since that's what they wanted
+                      setShowAddModal(true);
+                    }}
+                  >
+                    <span className="country-pick-flag">{c.flag}</span>
+                    <span className="country-pick-name">{c.name}</span>
+                  </button>
+                ))}
               </div>
+              <p className="modal-body-text soft" style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '12px' }}>
+                You can add more countries anytime in Settings.
+              </p>
             </div>
           </div>
         </div>
