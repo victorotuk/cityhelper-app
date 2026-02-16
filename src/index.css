@@ -490,6 +490,19 @@ input, select, textarea { font-family: inherit; }
 .country-option.checkbox-option { cursor: pointer; }
 .country-option.checkbox-option input { margin-right: var(--space-sm); }
 .country-option.checkbox-option:has(input:disabled) { opacity: 0.6; cursor: not-allowed; }
+.country-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-glow);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  margin-left: auto;
+}
+.country-badge.other {
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+}
 
 .auth-error {
   padding: var(--space-md);
@@ -1075,6 +1088,44 @@ input, select, textarea { font-family: inherit; }
   gap: var(--space-md);
   padding: var(--space-lg);
   border-top: 1px solid var(--border-subtle);
+}
+
+/* Group tabs (Personal / Business) */
+.group-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: var(--space-lg);
+  padding: 4px;
+  background: var(--bg-main);
+  border-radius: var(--radius-md);
+}
+.group-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+.group-tab:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+.group-tab.active {
+  color: var(--text-primary);
+  background: var(--bg-card);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.group-tab-icon {
+  font-size: 16px;
 }
 
 /* Category buttons */
@@ -4646,6 +4697,32 @@ input, select, textarea { font-family: inherit; }
   color: var(--bg-primary);
   font-weight: 600;
 }
+
+/* Empty state group tabs */
+.empty-group-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 4px;
+  background: var(--bg-main);
+  border-radius: var(--radius-md);
+  width: 100%;
+  max-width: 300px;
+}
+.empty-group-tab {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+.empty-group-tab:hover { color: var(--text-primary); background: var(--bg-hover); }
+.empty-group-tab.active { color: var(--text-primary); background: var(--bg-card); box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
 
 /* Category suggestions on empty Dashboard */
 .category-suggestions {

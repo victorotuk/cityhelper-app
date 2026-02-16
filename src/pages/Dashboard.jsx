@@ -16,7 +16,6 @@ import {
   FileText,
   Trash2,
   Calculator,
-  Bot,
   Folder,
   Menu,
   Settings,
@@ -246,9 +245,6 @@ export default function Dashboard() {
           <Link to="/tax-estimator" onClick={() => setShowMenu(false)}>
             <Calculator size={18} /> Tax Estimator
           </Link>
-          <Link to="/assistant" onClick={() => setShowMenu(false)}>
-            <Bot size={18} /> AI Assistant
-          </Link>
           <Link to="/documents" onClick={() => setShowMenu(false)}>
             <Folder size={18} /> Documents
           </Link>
@@ -266,10 +262,6 @@ export default function Dashboard() {
             <Plus size={20} />
             <span>Track Item</span>
           </button>
-          <Link to="/assistant" className="quick-action">
-            <Bot size={20} />
-            <span>AI Assistant</span>
-          </Link>
           <Link to="/documents" className="quick-action">
             <Folder size={20} />
             <span>Documents</span>
@@ -331,35 +323,61 @@ export default function Dashboard() {
           ) : items.length === 0 ? (
             <div className="empty-state">
               <Calendar size={48} />
-              <h3>Welcome — what would you like to track?</h3>
-              <p>CityHelper keeps all your important deadlines in one place. Tap a category to get started:</p>
-              <div className="category-suggestions">
-                {APP_CONFIG.categories.slice(0, 8).map(cat => {
+              <h3>Your life, completely in order</h3>
+              <p>Never miss a deadline, payment, or renewal again. What do you need to track?</p>
+              <div className="empty-group-tabs">
+                <button className="empty-group-tab active" onClick={(e) => { document.querySelectorAll('.empty-group-tab').forEach(t => t.classList.remove('active')); e.currentTarget.classList.add('active'); document.getElementById('empty-personal').style.display = ''; document.getElementById('empty-business').style.display = 'none'; }}>
+                  👤 Personal
+                </button>
+                <button className="empty-group-tab" onClick={(e) => { document.querySelectorAll('.empty-group-tab').forEach(t => t.classList.remove('active')); e.currentTarget.classList.add('active'); document.getElementById('empty-personal').style.display = 'none'; document.getElementById('empty-business').style.display = ''; }}>
+                  💼 Business
+                </button>
+              </div>
+              <div id="empty-personal" className="category-suggestions">
+                {APP_CONFIG.categories.filter(c => c.group === 'personal').map(cat => {
                   const examples = {
                     immigration: 'Work permits, visas, PR cards',
-                    tax: 'Tax deadlines, T4 filing dates',
+                    tax: 'T1 returns, RRSP, property tax',
                     driving: 'License renewals, registration',
                     parking: 'Parking tickets & fines',
-                    health: 'Health card, prescriptions',
-                    retirement_estate: 'Wills, insurance policies',
-                    housing: 'Rent, internet, phone bills',
-                    office: 'Leases, insurance, utilities'
+                    health: 'Health card, dental, prescriptions',
+                    education: 'Exams, assignments, tuition deadlines',
+                    work_schedule: 'Shifts, pay days, contract dates',
+                    housing: 'Rent, internet, phone, hydro bills',
+                    retirement_estate: 'Wills, insurance, pensions',
                   };
                   const emojis = {
                     immigration: '✈️', tax: '💰', driving: '🚗', parking: '🅿️',
-                    health: '❤️', retirement_estate: '📜', housing: '🏡', office: '💼'
+                    health: '❤️', education: '📚', work_schedule: '⏰',
+                    housing: '🏡', retirement_estate: '📜', other: '📌'
                   };
                   return (
-                    <button
-                      key={cat.id}
-                      className="category-suggestion"
-                      onClick={() => {
-                        requireCountryForTracking(() => {
-                          setShowAddModal(true);
-                          setSelectedCategory(cat.id);
-                        });
-                      }}
-                    >
+                    <button key={cat.id} className="category-suggestion" onClick={() => { requireCountryForTracking(() => { setShowAddModal(true); setSelectedCategory(cat.id); }); }}>
+                      <span className="cat-sug-icon">{emojis[cat.id] || '📌'}</span>
+                      <span className="cat-sug-name">{cat.name}</span>
+                      <span className="cat-sug-examples">{examples[cat.id] || ''}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div id="empty-business" className="category-suggestions" style={{ display: 'none' }}>
+                {APP_CONFIG.categories.filter(c => c.group === 'business').map(cat => {
+                  const examples = {
+                    business_tax: 'T2 corporate, HST/GST, payroll',
+                    employees: 'Onboarding, visas, police checks',
+                    assets: 'Equipment, warranties, software licenses',
+                    liabilities: 'Loans, invoices, lease payments',
+                    business_license: 'Municipal license, annual returns',
+                    office: 'Leases, insurance, utilities',
+                    property: 'Property tax, pet license',
+                    professional: 'Certifications, professional designations',
+                  };
+                  const emojis = {
+                    business_tax: '💵', employees: '👥', assets: '📦', liabilities: '⚠️',
+                    business_license: '📋', office: '💼', property: '🏠', professional: '🎓'
+                  };
+                  return (
+                    <button key={cat.id} className="category-suggestion" onClick={() => { requireCountryForTracking(() => { setShowAddModal(true); setSelectedCategory(cat.id); }); }}>
                       <span className="cat-sug-icon">{emojis[cat.id] || '📌'}</span>
                       <span className="cat-sug-name">{cat.name}</span>
                       <span className="cat-sug-examples">{examples[cat.id] || ''}</span>
@@ -419,11 +437,16 @@ export default function Dashboard() {
                     key={c.id}
                     className="country-pick-btn"
                     onClick={async () => {
-                      await supabase.from('user_settings').upsert({
+                      const { error: saveErr } = await supabase.from('user_settings').upsert({
                         user_id: user.id,
                         country: c.id,
                         updated_at: new Date().toISOString()
                       }, { onConflict: 'user_id' });
+                      if (saveErr) {
+                        console.error('[Dashboard] Country save failed:', saveErr);
+                        alert('Could not save country: ' + saveErr.message);
+                        return;
+                      }
                       setUserCountry(c.id);
                       setActiveCountry(c.id);
                       setUserCountries(prev => prev.includes(c.id) ? prev : [c.id, ...prev]);
@@ -606,6 +629,7 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory })
   const [notes, setNotes] = useState('');
   const [payUrl, setPayUrl] = useState('');
   const [payPhone, setPayPhone] = useState('');
+  const [activeGroup, setActiveGroup] = useState('personal');
 
   const isBillCategory = BILL_CATEGORIES.includes(selectedCategory);
 
@@ -632,8 +656,20 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory })
 {"name":"","cardNumber":"","expiryDate":"YYYY-MM-DD"}`,
       tax: `Extract from this tax document and return ONLY JSON:
 {"documentType":"T4/T5/T2/receipt","year":"","amount":"","dueDate":"YYYY-MM-DD"}`,
+      business_tax: `Extract from this business tax document and return ONLY JSON:
+{"documentType":"T2/HST/GST/payroll","businessName":"","amount":"","dueDate":"YYYY-MM-DD","period":""}`,
+      employees: `Extract from this employee/HR document and return ONLY JSON:
+{"documentType":"contract/permit/check/certification","employeeName":"","position":"","startDate":"YYYY-MM-DD","expiryDate":"YYYY-MM-DD","number":""}`,
+      assets: `Extract from this asset/equipment document and return ONLY JSON:
+{"documentType":"lease/warranty/registration/license","assetName":"","value":"","purchaseDate":"YYYY-MM-DD","expiryDate":"YYYY-MM-DD","number":""}`,
+      liabilities: `Extract from this financial obligation document and return ONLY JSON:
+{"documentType":"loan/lease/invoice/statement","creditor":"","amount":"","dueDate":"YYYY-MM-DD","accountNumber":""}`,
       business_license: `Extract from this license and return ONLY JSON:
 {"businessName":"","licenseNumber":"","expiryDate":"YYYY-MM-DD","type":""}`,
+      education: `Extract from this school/education document (timetable, syllabus, curriculum, transcript, enrollment) and return ONLY JSON:
+{"documentType":"timetable/syllabus/transcript/enrollment","courseName":"","instructor":"","dueDate":"YYYY-MM-DD","examDate":"YYYY-MM-DD","semester":"","items":[{"name":"","date":"YYYY-MM-DD"}]}`,
+      work_schedule: `Extract from this work schedule/timetable and return ONLY JSON:
+{"documentType":"schedule/timesheet/contract","employer":"","position":"","shifts":[{"day":"","startTime":"","endTime":""}],"startDate":"YYYY-MM-DD","endDate":"YYYY-MM-DD"}`,
       retirement_estate: `Extract from this estate/retirement document and return ONLY JSON:
 {"documentType":"will/trust/insurance/policy","provider":"","policyNumber":"","beneficiary":"","expiryDate":"YYYY-MM-DD","reviewDate":""}`,
     };
@@ -642,17 +678,38 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory })
 
   const handleExtracted = (data) => {
     // Auto-fill form based on extracted data
-    if (data.documentType) setName(data.documentType);
-    if (data.name && !name) setName(data.name);
-    if (data.expiryDate) setDueDate(data.expiryDate);
-    if (data.dueDate) setDueDate(data.dueDate);
+    if (data.courseName) setName(data.courseName);
+    else if (data.documentType) setName(data.documentType);
+    else if (data.name && !name) setName(data.name);
+
+    if (data.examDate) setDueDate(data.examDate);
+    else if (data.expiryDate) setDueDate(data.expiryDate);
+    else if (data.dueDate) setDueDate(data.dueDate);
+    else if (data.endDate) setDueDate(data.endDate);
     
-    // Build notes from other extracted data
+    // Build notes from all extracted data
     const notesParts = [];
     if (data.number) notesParts.push(`Number: ${data.number}`);
     if (data.cardNumber) notesParts.push(`Card #: ${data.cardNumber}`);
     if (data.licenseNumber) notesParts.push(`License #: ${data.licenseNumber}`);
     if (data.issueDate) notesParts.push(`Issued: ${data.issueDate}`);
+    if (data.instructor) notesParts.push(`Instructor: ${data.instructor}`);
+    if (data.semester) notesParts.push(`Semester: ${data.semester}`);
+    if (data.employer) notesParts.push(`Employer: ${data.employer}`);
+    if (data.position) notesParts.push(`Position: ${data.position}`);
+    if (data.businessName) notesParts.push(`Business: ${data.businessName}`);
+    if (data.creditor) notesParts.push(`Creditor: ${data.creditor}`);
+    if (data.amount) notesParts.push(`Amount: ${data.amount}`);
+    if (data.employeeName) notesParts.push(`Employee: ${data.employeeName}`);
+    // List extracted schedule items/deadlines
+    if (Array.isArray(data.items) && data.items.length) {
+      notesParts.push('--- Extracted Dates ---');
+      data.items.forEach(it => notesParts.push(`${it.name}: ${it.date}`));
+    }
+    if (Array.isArray(data.shifts) && data.shifts.length) {
+      notesParts.push('--- Schedule ---');
+      data.shifts.forEach(s => notesParts.push(`${s.day}: ${s.startTime} - ${s.endTime}`));
+    }
     if (notesParts.length) setNotes(notesParts.join('\n'));
   };
 
@@ -660,36 +717,60 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory })
   
   const getCategoryEmoji = (catId) => {
     const emojis = {
-      immigration: '✈️', tax: '💰', driving: '🚗', parking: '🅿️', health: '❤️', retirement_estate: '📜', housing: '🏡',
+      immigration: '✈️', tax: '💰', driving: '🚗', parking: '🅿️', health: '❤️',
+      education: '📚', work_schedule: '⏰', retirement_estate: '📜', housing: '🏡',
+      business_tax: '💵', employees: '👥', assets: '📦', liabilities: '⚠️',
       office: '💼', business_license: '📋', property: '🏠', 
       professional: '🎓', other: '📌'
     };
     return emojis[catId] || '📌';
   };
 
+  const personalCategories = APP_CONFIG.categories.filter(c => c.group === 'personal');
+  const businessCategories = APP_CONFIG.categories.filter(c => c.group === 'business');
+  const visibleCategories = activeGroup === 'personal' ? personalCategories : businessCategories;
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>{selectedCategory ? 'Add Item' : 'Choose Category'}</h2>
+          <h2>{selectedCategory ? 'Add Item' : 'What are you tracking?'}</h2>
           <button className="btn-icon" onClick={onClose}><X size={20} /></button>
         </div>
 
         {!selectedCategory ? (
           <div className="category-picker">
-            {APP_CONFIG.categories.map(cat => (
-              <button 
-                key={cat.id} 
-                className="category-btn"
-                onClick={() => setSelectedCategory(cat.id)}
-                style={{ borderColor: cat.color }}
+            <div className="group-tabs">
+              <button
+                className={`group-tab ${activeGroup === 'personal' ? 'active' : ''}`}
+                onClick={() => setActiveGroup('personal')}
               >
-                <span className="cat-icon" style={{ background: cat.color }}>
-                  {getCategoryEmoji(cat.id)}
-                </span>
-                <span>{cat.name}</span>
+                <span className="group-tab-icon">👤</span>
+                Personal
               </button>
-            ))}
+              <button
+                className={`group-tab ${activeGroup === 'business' ? 'active' : ''}`}
+                onClick={() => setActiveGroup('business')}
+              >
+                <span className="group-tab-icon">💼</span>
+                Business
+              </button>
+            </div>
+            <div className="category-grid">
+              {visibleCategories.map(cat => (
+                <button 
+                  key={cat.id} 
+                  className="category-btn"
+                  onClick={() => setSelectedCategory(cat.id)}
+                  style={{ borderColor: cat.color }}
+                >
+                  <span className="cat-icon" style={{ background: cat.color }}>
+                    {getCategoryEmoji(cat.id)}
+                  </span>
+                  <span>{cat.name}</span>
+                </button>
+              ))}
+            </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="add-form">

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Camera, Upload, Loader, X, Check, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { APP_CONFIG } from '../lib/config';
-import useAuthStore from '../stores/authStore';
+import { useAuthStore } from '../stores/authStore';
 
 /**
  * Reusable Scan/Upload component with AI extraction

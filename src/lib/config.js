@@ -37,20 +37,26 @@ export const APP_CONFIG = {
     }
   },
   
-  // COMPLIANCE CATEGORIES
+  // COMPLIANCE CATEGORIES — grouped into Personal vs Business
   categories: [
-    { id: "immigration", name: "Immigration & Visas", icon: "Plane", color: "#3b82f6" },
-    { id: "tax", name: "Taxes", icon: "DollarSign", color: "#10b981" },
-    { id: "driving", name: "Driving & Vehicles", icon: "Car", color: "#f59e0b" },
-    { id: "parking", name: "Traffic & Parking Violations Tracker", icon: "ParkingCircle", color: "#dc2626" },
-    { id: "health", name: "Health", icon: "Heart", color: "#ef4444" },
-    { id: "retirement_estate", name: "Retirement & Estate Planning", icon: "Landmark", color: "#0d9488" },
-    { id: "housing", name: "Housing & Rentals", icon: "Home", color: "#06b6d4" },
-    { id: "office", name: "Office & Business", icon: "Briefcase", color: "#8b5cf6" },
-    { id: "business_license", name: "Business Licenses", icon: "FileText", color: "#6366f1" },
-    { id: "property", name: "Property & Municipal", icon: "Building", color: "#14b8a6" },
-    { id: "professional", name: "Professional Licenses", icon: "GraduationCap", color: "#f97316" },
-    { id: "other", name: "Other", icon: "Pin", color: "#64748b" }
+    { id: "immigration", name: "Immigration & Visas", icon: "Plane", color: "#3b82f6", group: "personal" },
+    { id: "tax", name: "Personal Taxes", icon: "DollarSign", color: "#10b981", group: "personal" },
+    { id: "driving", name: "Driving & Vehicles", icon: "Car", color: "#f59e0b", group: "personal" },
+    { id: "parking", name: "Traffic & Parking", icon: "ParkingCircle", color: "#dc2626", group: "personal" },
+    { id: "health", name: "Health", icon: "Heart", color: "#ef4444", group: "personal" },
+    { id: "housing", name: "Housing & Rentals", icon: "Home", color: "#06b6d4", group: "personal" },
+    { id: "education", name: "Education & School", icon: "BookOpen", color: "#8b5cf6", group: "personal" },
+    { id: "work_schedule", name: "Work & Shifts", icon: "Clock", color: "#f97316", group: "personal" },
+    { id: "retirement_estate", name: "Retirement & Estate", icon: "Landmark", color: "#0d9488", group: "personal" },
+    { id: "business_tax", name: "Business Taxes", icon: "DollarSign", color: "#059669", group: "business" },
+    { id: "employees", name: "Employees & HR", icon: "Users", color: "#6366f1", group: "business" },
+    { id: "assets", name: "Assets & Equipment", icon: "Package", color: "#0ea5e9", group: "business" },
+    { id: "liabilities", name: "Liabilities & Debt", icon: "AlertTriangle", color: "#e11d48", group: "business" },
+    { id: "business_license", name: "Business Licenses", icon: "FileText", color: "#7c3aed", group: "business" },
+    { id: "office", name: "Office & Operations", icon: "Briefcase", color: "#8b5cf6", group: "business" },
+    { id: "property", name: "Property & Municipal", icon: "Building", color: "#14b8a6", group: "business" },
+    { id: "professional", name: "Professional Licenses", icon: "GraduationCap", color: "#f97316", group: "business" },
+    { id: "other", name: "Other", icon: "Pin", color: "#64748b", group: "personal" }
   ],
   
   // PARKING TICKET PORTALS BY CITY (lookup, pay, dispute)
@@ -379,12 +385,83 @@ export const APP_CONFIG = {
       { name: "Dental Plan", reminderDays: [60, 30, 14, 7] },
       { name: "Dental Insurance", reminderDays: [60, 30, 14, 7] }
     ],
+    education: [
+      { name: "Tuition Payment Deadline", reminderDays: [30, 14, 7, 3, 1] },
+      { name: "Course Registration", reminderDays: [14, 7, 3, 1] },
+      { name: "Drop/Add Deadline", reminderDays: [14, 7, 3, 1] },
+      { name: "Exam", reminderDays: [30, 14, 7, 3, 1] },
+      { name: "Midterm", reminderDays: [14, 7, 3, 1] },
+      { name: "Assignment Due", reminderDays: [14, 7, 3, 1] },
+      { name: "Project Deadline", reminderDays: [14, 7, 3, 1] },
+      { name: "Lab Report Due", reminderDays: [7, 3, 1] },
+      { name: "Scholarship Application", reminderDays: [30, 14, 7, 3] },
+      { name: "Financial Aid Deadline", reminderDays: [30, 14, 7, 3] },
+      { name: "Graduation Application", reminderDays: [60, 30, 14, 7] },
+      { name: "Transcript Request", reminderDays: [14, 7, 3] },
+      { name: "Student Visa Renewal", reminderDays: [90, 60, 30, 14] },
+      { name: "Co-op/Internship Start", reminderDays: [30, 14, 7, 3] },
+      { name: "Thesis/Dissertation Deadline", reminderDays: [60, 30, 14, 7, 3] }
+    ],
+    work_schedule: [
+      { name: "Shift Start", reminderDays: [1] },
+      { name: "Schedule Change", reminderDays: [7, 3, 1] },
+      { name: "Time-Off Request Deadline", reminderDays: [14, 7, 3] },
+      { name: "Overtime Approval", reminderDays: [3, 1] },
+      { name: "Pay Day", reminderDays: [3, 1] },
+      { name: "Performance Review", reminderDays: [14, 7, 3] },
+      { name: "Training Session", reminderDays: [7, 3, 1] },
+      { name: "Certification Expiry", reminderDays: [60, 30, 14, 7] },
+      { name: "Union Dues Payment", reminderDays: [7, 3, 1] },
+      { name: "Contract End Date", reminderDays: [90, 60, 30, 14, 7] }
+    ],
     tax: [
       { name: "T1 Personal Tax Return", dueDate: "April 30", reminderDays: [60, 30, 14, 7] },
       { name: "T1 Self-Employed", dueDate: "June 15", reminderDays: [60, 30, 14, 7] },
+      { name: "RRSP Contribution Deadline", dueDate: "March 1", reminderDays: [30, 14, 7] },
+      { name: "Property Tax Installment", reminderDays: [30, 14, 7] }
+    ],
+    business_tax: [
+      { name: "T2 Corporate Tax Return", reminderDays: [90, 60, 30, 14] },
       { name: "HST/GST Return (Quarterly)", reminderDays: [30, 14, 7] },
       { name: "HST/GST Return (Annual)", reminderDays: [60, 30, 14] },
-      { name: "T2 Corporate Tax", reminderDays: [90, 60, 30, 14] }
+      { name: "Payroll Remittance", reminderDays: [14, 7, 3] },
+      { name: "T4 / T5 Slips Filing", dueDate: "February 28", reminderDays: [30, 14, 7] }
+    ],
+    employees: [
+      { name: "New Hire Onboarding", reminderDays: [14, 7, 3, 1] },
+      { name: "Work Permit / Visa Expiry", reminderDays: [180, 90, 60, 30, 14] },
+      { name: "Police Background Check", reminderDays: [30, 14, 7] },
+      { name: "Employment Contract Renewal", reminderDays: [90, 60, 30, 14] },
+      { name: "Probation Review", reminderDays: [30, 14, 7] },
+      { name: "Benefits Enrollment Deadline", reminderDays: [30, 14, 7, 3] },
+      { name: "Payroll Run", reminderDays: [7, 3, 1] },
+      { name: "ROE Filing (Record of Employment)", reminderDays: [7, 3, 1] },
+      { name: "Workplace Safety Training", reminderDays: [30, 14, 7] },
+      { name: "Employee Certification Renewal", reminderDays: [90, 60, 30, 14] },
+      { name: "Sponsorship Application Deadline", reminderDays: [60, 30, 14, 7] },
+      { name: "Annual Performance Review", reminderDays: [30, 14, 7] },
+      { name: "T4 Slip Issuance", dueDate: "February 28", reminderDays: [30, 14, 7] }
+    ],
+    assets: [
+      { name: "Vehicle Registration Renewal", reminderDays: [60, 30, 14, 7] },
+      { name: "Equipment Warranty Expiry", reminderDays: [90, 60, 30] },
+      { name: "Equipment Lease Renewal", reminderDays: [90, 60, 30, 14] },
+      { name: "Insurance Policy Renewal", reminderDays: [60, 30, 14, 7] },
+      { name: "CCA / Depreciation Schedule", reminderDays: [30, 14, 7] },
+      { name: "Software License Renewal", reminderDays: [30, 14, 7] },
+      { name: "Domain Name Renewal", reminderDays: [60, 30, 14, 7] },
+      { name: "SSL Certificate Expiry", reminderDays: [30, 14, 7, 3] },
+      { name: "Asset Inventory Audit", reminderDays: [30, 14, 7] }
+    ],
+    liabilities: [
+      { name: "Business Loan Payment", reminderDays: [14, 7, 3, 1] },
+      { name: "Line of Credit Review", reminderDays: [30, 14, 7] },
+      { name: "Lease Obligation Payment", reminderDays: [14, 7, 3, 1] },
+      { name: "Credit Card Statement", reminderDays: [7, 3, 1] },
+      { name: "Vendor Invoice Due", reminderDays: [14, 7, 3, 1] },
+      { name: "Government Grant Reporting", reminderDays: [30, 14, 7] },
+      { name: "Lawsuit / Legal Filing Deadline", reminderDays: [30, 14, 7, 3] },
+      { name: "Insurance Claim Deadline", reminderDays: [30, 14, 7] }
     ],
     business_license: [
       { name: "Business License (Municipal)", reminderDays: [60, 30, 14] },

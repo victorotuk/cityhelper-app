@@ -7,7 +7,7 @@ import { APP_CONFIG } from '../lib/config';
 import { requestPushPermission, disablePush, preloadPushSDK } from '../lib/push';
 
 export default function Settings() {
-  const { user, logout } = useAuthStore();
+  const { user, signOut } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState(null);
@@ -16,9 +16,10 @@ export default function Settings() {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
   
-  // Country (onboarding)
+  // Country
   const [country, setCountry] = useState('');
   const [otherCountries, setOtherCountries] = useState([]);
+
   // Phone verification state
   const [phoneNumber, setPhoneNumber] = useState('');
   const [phoneVerified, setPhoneVerified] = useState(false);
@@ -31,32 +32,53 @@ export default function Settings() {
     { id: 'ca', name: 'Canada', flag: '\u{1F1E8}\u{1F1E6}' },
     { id: 'us', name: 'United States', flag: '\u{1F1FA}\u{1F1F8}' }
   ];
-  const MAX_OTHER = 5;
-  const _toggleOtherCountry = (id) => {
-    setOtherCountries(prev => {
-      if (prev.includes(id)) return prev.filter(c => c !== id);
-      if (prev.length >= MAX_OTHER) return prev;
-      return [...prev, id];
-    });
-  };
 
   useEffect(() => {
     if (user) {
       fetchSettings();
       preloadPushSDK();
     }
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps -- fetchSettings reads user
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      const { data } = await supabase
+      // Step 0: Verify we have a valid session
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session) {
+        console.error('No active Supabase session!');
+        setError('Your session has expired. Please sign out and sign in again.');
+        setLoading(false);
+        return;
+      }
+      console.log('[Settings] Session OK, user:', sessionData.session.user.id);
+
+      // Step 1: Try to read existing settings
+      const { data, error: fetchErr } = await supabase
         .from('user_settings')
         .select('phone_number, phone_verified, country, countries, push_enabled')
         .eq('user_id', user.id)
         .single();
 
-      if (data) {
+      if (fetchErr && fetchErr.code === 'PGRST116') {
+        // No row exists yet - create one
+        console.log('[Settings] No user_settings row found, creating one...');
+        const { error: insertErr } = await supabase.from('user_settings').insert({
+          user_id: user.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+        if (insertErr) {
+          console.error('[Settings] Failed to create settings row:', insertErr);
+          setError('Could not initialize settings: ' + insertErr.message);
+        } else {
+          console.log('[Settings] Settings row created successfully');
+        }
+      } else if (fetchErr) {
+        console.error('[Settings] Fetch settings error:', fetchErr);
+        setError('Could not load settings: ' + fetchErr.message);
+      } else if (data) {
+        console.log('[Settings] Loaded settings:', data);
         setPhoneNumber(data.phone_number || '');
         setPhoneVerified(data.phone_verified || false);
         setCountry(data.country || '');
@@ -64,11 +86,53 @@ export default function Settings() {
         setPushEnabled(!!data.push_enabled);
       }
     } catch (err) {
-      console.error('Fetch settings error:', err);
+      console.error('[Settings] Fetch settings error:', err);
+      setError('Error loading settings: ' + (err.message || String(err)));
     }
     setLoading(false);
   };
 
+  // ---- Helper: save to user_settings with error checking ----
+  const saveSettings = async (fields) => {
+    setError(null);
+    console.log('[Settings] Saving:', fields);
+    const { data: saveData, error: saveErr } = await supabase.from('user_settings').upsert(
+      { user_id: user.id, ...fields, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
+    );
+    if (saveErr) {
+      console.error('[Settings] Save FAILED:', saveErr);
+      setError('Failed to save: ' + saveErr.message);
+      return false;
+    }
+    console.log('[Settings] Save OK:', saveData);
+    // Verify it actually saved by reading it back
+    const { data: verify } = await supabase
+      .from('user_settings')
+      .select('country, countries, push_enabled')
+      .eq('user_id', user.id)
+      .single();
+    console.log('[Settings] Verify read-back:', verify);
+    showSaved();
+    return true;
+  };
+
+  // ---- Country ----
+  const handleSelectCountry = async (id) => {
+    setCountry(id);
+    // Also add to otherCountries if not already there (for multi-country)
+    await saveSettings({ country: id, countries: otherCountries.length ? otherCountries : null });
+  };
+
+  const handleToggleOtherCountry = async (id) => {
+    const next = otherCountries.includes(id)
+      ? otherCountries.filter(x => x !== id)
+      : [...otherCountries, id];
+    setOtherCountries(next);
+    await saveSettings({ country, countries: next.length ? next : null });
+  };
+
+  // ---- Push ----
   const handleEnablePush = async () => {
     setPushLoading(true);
     setError(null);
@@ -93,7 +157,7 @@ export default function Settings() {
     try {
       await disablePush(user.id);
       setPushEnabled(false);
-      showSaved();
+      showSaved('Notifications off');
     } catch (err) {
       setError(err?.message || 'Something went wrong.');
     } finally {
@@ -101,6 +165,7 @@ export default function Settings() {
     }
   };
 
+  // ---- Phone ----
   const formatPhone = (value) => {
     const digits = value.replace(/\D/g, '');
     if (digits.length <= 3) return digits;
@@ -113,17 +178,13 @@ export default function Settings() {
       setError('Please enter a valid phone number');
       return;
     }
-
     setPhoneLoading(true);
     setError(null);
-    
     try {
-      const { error } = await supabase.functions.invoke('send-sms', {
+      const { error: fnErr } = await supabase.functions.invoke('send-sms', {
         body: { phone: phoneNumber, userId: user.id }
       });
-
-      if (error) throw error;
-      
+      if (fnErr) throw fnErr;
       setCodeSent(true);
       showSaved('Code sent!');
     } catch (err) {
@@ -137,17 +198,13 @@ export default function Settings() {
       setError('Please enter the 6-digit code');
       return;
     }
-
     setPhoneLoading(true);
     setError(null);
-
     try {
-      const { error } = await supabase.functions.invoke('verify-phone', {
+      const { error: fnErr } = await supabase.functions.invoke('verify-phone', {
         body: { code: verificationCode, userId: user.id }
       });
-
-      if (error) throw error;
-
+      if (fnErr) throw fnErr;
       setPhoneVerified(true);
       setCodeSent(false);
       setShowPhoneInput(false);
@@ -161,13 +218,12 @@ export default function Settings() {
 
   const removePhone = async () => {
     if (!confirm('Remove your verified phone number?')) return;
-
     try {
-      await supabase.from('user_settings').update({
+      const { error: rmErr } = await supabase.from('user_settings').update({
         phone_number: null,
         phone_verified: false
       }).eq('user_id', user.id);
-
+      if (rmErr) throw rmErr;
       setPhoneNumber('');
       setPhoneVerified(false);
       showSaved('Phone removed');
@@ -176,6 +232,7 @@ export default function Settings() {
     }
   };
 
+  // ---- UI helpers ----
   const showSaved = (msg = 'Saved') => {
     setSaved(msg);
     setTimeout(() => setSaved(false), 3000);
@@ -184,28 +241,19 @@ export default function Settings() {
   const handleDeleteAccount = async () => {
     if (!confirm('Are you sure? This will permanently delete your account and all data.')) return;
     if (!confirm('This action CANNOT be undone. Are you absolutely sure?')) return;
-    
     alert('Account deletion would be processed. For now, signing out.');
-    logout();
+    signOut();
   };
 
   if (loading) {
     return (
       <div className="settings-page">
         <header className="page-header">
-          <Link to="/dashboard" className="back-btn">
-            <ArrowLeft size={20} />
-            Back
-          </Link>
-          <div className="header-title">
-            <SettingsIcon size={24} />
-            <span>Settings</span>
-          </div>
+          <Link to="/dashboard" className="back-btn"><ArrowLeft size={20} /> Back</Link>
+          <div className="header-title"><SettingsIcon size={24} /><span>Settings</span></div>
           <div style={{ width: 80 }} />
         </header>
-        <main className="settings-main">
-          <div className="loading">Loading settings...</div>
-        </main>
+        <main className="settings-main"><div className="loading">Loading settings...</div></main>
       </div>
     );
   }
@@ -213,14 +261,8 @@ export default function Settings() {
   return (
     <div className="settings-page">
       <header className="page-header">
-        <Link to="/dashboard" className="back-btn">
-          <ArrowLeft size={20} />
-          Back
-        </Link>
-        <div className="header-title">
-          <SettingsIcon size={24} />
-          <span>Settings</span>
-        </div>
+        <Link to="/dashboard" className="back-btn"><ArrowLeft size={20} /> Back</Link>
+        <div className="header-title"><SettingsIcon size={24} /><span>Settings</span></div>
         <div style={{ width: 80 }} />
       </header>
 
@@ -234,81 +276,62 @@ export default function Settings() {
             </div>
           )}
 
-          {/* Country -- change anytime */}
+          {/* Country */}
           <section className="settings-section">
-            <h2>
-              <Globe size={20} />
-              Country
-            </h2>
+            <h2><Globe size={20} /> Country</h2>
             <p className="section-desc">
-              We optimize the app for your primary country. You can add other countries if you operate in more than one.
+              Select the countries you need to track compliance for. The first one you pick is your primary.
             </p>
             <div className="setting-card setting-card-padded">
-              <div className="form-group">
-                <label className="form-label">Primary country</label>
-                <div className="country-options">
-                  {COUNTRIES.map(c => (
+              <div className="country-options">
+                {COUNTRIES.map(c => {
+                  const isPrimary = country === c.id;
+                  const isOther = otherCountries.includes(c.id);
+                  const isSelected = isPrimary || isOther;
+                  return (
                     <button
                       key={c.id}
                       type="button"
-                      className={`country-option ${country === c.id ? 'selected' : ''}`}
+                      className={`country-option ${isSelected ? 'selected' : ''}`}
                       onClick={() => {
-                        setCountry(c.id);
-                        supabase.from('user_settings').upsert({
-                          user_id: user.id,
-                          country: c.id,
-                          countries: otherCountries.length ? otherCountries : null,
-                          updated_at: new Date().toISOString()
-                        }, { onConflict: 'user_id' }).then(() => showSaved());
+                        if (isPrimary) {
+                          // Deselect primary
+                          setCountry('');
+                          saveSettings({ country: null, countries: otherCountries.length ? otherCountries : null });
+                        } else if (isOther) {
+                          // Remove from other
+                          const next = otherCountries.filter(x => x !== c.id);
+                          setOtherCountries(next);
+                          saveSettings({ country, countries: next.length ? next : null });
+                        } else if (!country) {
+                          // No primary yet, set this as primary
+                          handleSelectCountry(c.id);
+                        } else {
+                          // Already have primary, add as other
+                          handleToggleOtherCountry(c.id);
+                        }
                       }}
                     >
                       <span className="country-flag">{c.flag}</span>
                       <span>{c.name}</span>
+                      {isPrimary && <span className="country-badge">Primary</span>}
+                      {isOther && <span className="country-badge other">Added</span>}
                     </button>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-              <div className="form-group optional-group">
-                <label className="form-label form-label-optional">Other countries (optional, up to {MAX_OTHER})</label>
-                <div className="country-options country-options-multi">
-                  {COUNTRIES.filter(c => c.id !== country).map(c => (
-                    <label key={c.id} className="country-option checkbox-option">
-                      <input
-                        type="checkbox"
-                        checked={otherCountries.includes(c.id)}
-                        onChange={() => {
-                          const next = otherCountries.includes(c.id)
-                            ? otherCountries.filter(x => x !== c.id)
-                            : [...otherCountries, c.id].slice(0, MAX_OTHER);
-                          setOtherCountries(next);
-                          supabase.from('user_settings').upsert({
-                            user_id: user.id,
-                            country,
-                            countries: next.length ? next : null,
-                            updated_at: new Date().toISOString()
-                          }, { onConflict: 'user_id' }).then(() => showSaved());
-                        }}
-                        disabled={otherCountries.length >= MAX_OTHER && !otherCountries.includes(c.id)}
-                      />
-                      <span className="country-flag">{c.flag}</span>
-                      <span>{c.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+              {!country && (
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                  Tap a country to get started. You can select both.
+                </p>
+              )}
             </div>
           </section>
 
           {/* Push Notifications */}
           <section className="settings-section">
-            <h2>
-              <Bell size={20} />
-              Push Notifications
-            </h2>
-            <p className="section-desc">
-              Get reminded about upcoming deadlines on your device.
-            </p>
-
+            <h2><Bell size={20} /> Push Notifications</h2>
+            <p className="section-desc">Get reminded about upcoming deadlines on your device.</p>
             <div className="setting-card">
               <div className="setting-header">
                 <div className={`setting-icon ${pushEnabled ? 'active' : 'muted'}`}>
@@ -316,151 +339,68 @@ export default function Settings() {
                 </div>
                 <div className="setting-info">
                   <h3>{pushEnabled ? 'Notifications On' : 'Notifications Off'}</h3>
-                  <p>
-                    {pushEnabled 
-                      ? "You'll get reminders before deadlines expire"
-                      : "Turn on to get deadline reminders"
-                    }
-                  </p>
+                  <p>{pushEnabled ? "You'll get reminders before deadlines expire" : "Turn on to get deadline reminders"}</p>
                 </div>
                 {pushEnabled ? (
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={handleDisablePush}
-                    disabled={pushLoading}
-                  >
+                  <button className="btn btn-ghost btn-sm" onClick={handleDisablePush} disabled={pushLoading}>
                     {pushLoading ? 'Turning off...' : 'Turn Off'}
                   </button>
                 ) : (
-                  <button
-                    className="btn btn-primary btn-sm"
-                    onClick={handleEnablePush}
-                    disabled={pushLoading}
-                  >
+                  <button className="btn btn-primary btn-sm" onClick={handleEnablePush} disabled={pushLoading}>
                     {pushLoading ? 'Enabling...' : 'Turn On'}
                   </button>
                 )}
               </div>
               {!pushEnabled && !pushLoading && (
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '8px 16px 12px', margin: 0 }}>
-                  Your browser will ask for permission. If you previously blocked notifications, 
+                  Your browser will ask for permission. If you previously blocked notifications,
                   go to your browser settings &gt; Site Settings &gt; Notifications and allow this site.
                 </p>
               )}
             </div>
           </section>
 
-          {/* Phone Verification (Optional) */}
+          {/* Phone Verification */}
           <section className="settings-section">
-            <h2>
-              <Phone size={20} />
-              Phone Verification
-              <span className="badge-optional">Optional</span>
-            </h2>
-            <p className="section-desc">
-              Add your phone number for extra account security.
-            </p>
-
+            <h2><Phone size={20} /> Phone Verification <span className="badge-optional">Optional</span></h2>
+            <p className="section-desc">Add your phone number for extra account security.</p>
             <div className="setting-card">
               {phoneVerified ? (
-                // Phone is verified
                 <div className="setting-header">
-                  <div className="setting-icon active">
-                    <CheckCircle size={20} />
-                  </div>
-                  <div className="setting-info">
-                    <h3>Phone Verified</h3>
-                    <p>{phoneNumber}</p>
-                  </div>
-                  <button className="btn btn-ghost btn-sm" onClick={removePhone}>
-                    Remove
-                  </button>
+                  <div className="setting-icon active"><CheckCircle size={20} /></div>
+                  <div className="setting-info"><h3>Phone Verified</h3><p>{phoneNumber}</p></div>
+                  <button className="btn btn-ghost btn-sm" onClick={removePhone}>Remove</button>
                 </div>
               ) : !showPhoneInput ? (
-                // Show add phone button
                 <div className="setting-header">
-                  <div className="setting-icon muted">
-                    <Phone size={20} />
-                  </div>
-                  <div className="setting-info">
-                    <h3>No phone added</h3>
-                    <p>Add for extra security</p>
-                  </div>
-                  <button 
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => setShowPhoneInput(true)}
-                  >
-                    Add Phone
-                  </button>
+                  <div className="setting-icon muted"><Phone size={20} /></div>
+                  <div className="setting-info"><h3>No phone added</h3><p>Add for extra security</p></div>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setShowPhoneInput(true)}>Add Phone</button>
                 </div>
               ) : (
-                // Phone input flow
                 <>
                   <div className="setting-header">
-                    <div className="setting-icon">
-                      <Phone size={20} />
-                    </div>
+                    <div className="setting-icon"><Phone size={20} /></div>
                     <div className="setting-info">
                       <h3>{codeSent ? 'Enter Code' : 'Add Phone'}</h3>
-                      <p>{codeSent ? 'Check your phone for the code' : 'Canadian number'}</p>
+                      <p>{codeSent ? 'Check your phone for the code' : 'Canadian or US number'}</p>
                     </div>
-                    <button 
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => {
-                        setShowPhoneInput(false);
-                        setCodeSent(false);
-                        setVerificationCode('');
-                      }}
-                    >
-                      Cancel
-                    </button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => { setShowPhoneInput(false); setCodeSent(false); setVerificationCode(''); }}>Cancel</button>
                   </div>
                   <div className="setting-details">
                     {!codeSent ? (
                       <div className="phone-input-row">
-                        <input
-                          type="tel"
-                          placeholder="(555) 123-4567"
-                          value={phoneNumber}
-                          onChange={(e) => setPhoneNumber(formatPhone(e.target.value))}
-                          maxLength={14}
-                        />
-                        <button 
-                          className="btn btn-primary btn-sm"
-                          onClick={sendVerificationCode}
-                          disabled={phoneLoading}
-                        >
-                          {phoneLoading ? 'Sending...' : 'Send Code'}
-                        </button>
+                        <input type="tel" placeholder="(555) 123-4567" value={phoneNumber} onChange={(e) => setPhoneNumber(formatPhone(e.target.value))} maxLength={14} />
+                        <button className="btn btn-primary btn-sm" onClick={sendVerificationCode} disabled={phoneLoading}>{phoneLoading ? 'Sending...' : 'Send Code'}</button>
                       </div>
                     ) : (
                       <div className="phone-input-row">
-                        <input
-                          type="text"
-                          placeholder="123456"
-                          value={verificationCode}
-                          onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                          maxLength={6}
-                          style={{ letterSpacing: '0.3em', textAlign: 'center' }}
-                        />
-                        <button 
-                          className="btn btn-primary btn-sm"
-                          onClick={verifyCode}
-                          disabled={phoneLoading}
-                        >
-                          {phoneLoading ? 'Verifying...' : 'Verify'}
-                        </button>
+                        <input type="text" placeholder="123456" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))} maxLength={6} style={{ letterSpacing: '0.3em', textAlign: 'center' }} />
+                        <button className="btn btn-primary btn-sm" onClick={verifyCode} disabled={phoneLoading}>{phoneLoading ? 'Verifying...' : 'Verify'}</button>
                       </div>
                     )}
                     {codeSent && (
-                      <button 
-                        className="btn btn-ghost btn-sm" 
-                        onClick={sendVerificationCode}
-                        disabled={phoneLoading}
-                        style={{ marginTop: '8px' }}
-                      >
-                        Resend code
-                      </button>
+                      <button className="btn btn-ghost btn-sm" onClick={sendVerificationCode} disabled={phoneLoading} style={{ marginTop: '8px' }}>Resend code</button>
                     )}
                   </div>
                 </>
@@ -471,9 +411,7 @@ export default function Settings() {
           {/* In-App Notifications */}
           <section className="settings-section">
             <h2>In-App Notifications</h2>
-            <p className="section-desc">
-              These appear in the notification bell when you open {APP_CONFIG.name}.
-            </p>
+            <p className="section-desc">These appear in the notification bell when you open {APP_CONFIG.name}.</p>
             <div className="info-card">
               <p>&#10003; Deadline reminders (30, 14, 7 days before)</p>
               <p>&#10003; Document scan results</p>
@@ -481,12 +419,9 @@ export default function Settings() {
             </div>
           </section>
 
-          {/* Privacy Notice */}
+          {/* Privacy */}
           <section className="settings-section privacy">
-            <h2>
-              <Shield size={20} />
-              Your Privacy
-            </h2>
+            <h2><Shield size={20} /> Your Privacy</h2>
             <ul>
               <li>All your data is encrypted with your password</li>
               <li>We cannot read your documents or compliance details</li>
@@ -500,16 +435,9 @@ export default function Settings() {
             <h2>Danger Zone</h2>
             <div className="setting-card danger">
               <div className="setting-header">
-                <div className="setting-icon danger">
-                  <Trash2 size={20} />
-                </div>
-                <div className="setting-info">
-                  <h3>Delete Account</h3>
-                  <p>Permanently delete your account and all data</p>
-                </div>
-                <button className="btn btn-danger btn-sm" onClick={handleDeleteAccount}>
-                  Delete
-                </button>
+                <div className="setting-icon danger"><Trash2 size={20} /></div>
+                <div className="setting-info"><h3>Delete Account</h3><p>Permanently delete your account and all data</p></div>
+                <button className="btn btn-danger btn-sm" onClick={handleDeleteAccount}>Delete</button>
               </div>
             </div>
           </section>
