@@ -321,71 +321,7 @@ export default function Dashboard() {
           {loading ? (
             <div className="loading">Loading...</div>
           ) : items.length === 0 ? (
-            <div className="empty-state">
-              <Calendar size={48} />
-              <h3>Your life, completely in order</h3>
-              <p>Never miss a deadline, payment, or renewal again. What do you need to track?</p>
-              <div className="empty-group-tabs">
-                <button className="empty-group-tab active" onClick={(e) => { document.querySelectorAll('.empty-group-tab').forEach(t => t.classList.remove('active')); e.currentTarget.classList.add('active'); document.getElementById('empty-personal').style.display = ''; document.getElementById('empty-business').style.display = 'none'; }}>
-                  👤 Personal
-                </button>
-                <button className="empty-group-tab" onClick={(e) => { document.querySelectorAll('.empty-group-tab').forEach(t => t.classList.remove('active')); e.currentTarget.classList.add('active'); document.getElementById('empty-personal').style.display = 'none'; document.getElementById('empty-business').style.display = ''; }}>
-                  💼 Business
-                </button>
-              </div>
-              <div id="empty-personal" className="category-suggestions">
-                {APP_CONFIG.categories.filter(c => c.group === 'personal').map(cat => {
-                  const examples = {
-                    immigration: 'Work permits, visas, PR cards',
-                    tax: 'T1 returns, RRSP, property tax',
-                    driving: 'License renewals, registration',
-                    parking: 'Parking tickets & fines',
-                    health: 'Health card, dental, prescriptions',
-                    education: 'Exams, assignments, tuition deadlines',
-                    work_schedule: 'Shifts, pay days, contract dates',
-                    housing: 'Rent, internet, phone, hydro bills',
-                    retirement_estate: 'Wills, insurance, pensions',
-                  };
-                  const emojis = {
-                    immigration: '✈️', tax: '💰', driving: '🚗', parking: '🅿️',
-                    health: '❤️', education: '📚', work_schedule: '⏰',
-                    housing: '🏡', retirement_estate: '📜', other: '📌'
-                  };
-                  return (
-                    <button key={cat.id} className="category-suggestion" onClick={() => { requireCountryForTracking(() => { setShowAddModal(true); setSelectedCategory(cat.id); }); }}>
-                      <span className="cat-sug-icon">{emojis[cat.id] || '📌'}</span>
-                      <span className="cat-sug-name">{cat.name}</span>
-                      <span className="cat-sug-examples">{examples[cat.id] || ''}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <div id="empty-business" className="category-suggestions" style={{ display: 'none' }}>
-                {APP_CONFIG.categories.filter(c => c.group === 'business').map(cat => {
-                  const examples = {
-                    business_tax: 'T2 corporate, HST/GST, payroll',
-                    employees: 'Onboarding, visas, police checks',
-                    assets: 'Equipment, warranties, software licenses',
-                    liabilities: 'Loans, invoices, lease payments',
-                    business_license: 'Municipal license, annual returns',
-                    office: 'Leases, insurance, utilities',
-                    property: 'Property tax, pet license',
-                    professional: 'Certifications, professional designations',
-                  };
-                  const emojis = {
-                    business_tax: '💵', employees: '👥', assets: '📦', liabilities: '⚠️',
-                    business_license: '📋', office: '💼', property: '🏠', professional: '🎓'
-                  };
-                  return (
-                    <button key={cat.id} className="category-suggestion" onClick={() => { requireCountryForTracking(() => { setShowAddModal(true); setSelectedCategory(cat.id); }); }}>
-                      <span className="cat-sug-icon">{emojis[cat.id] || '📌'}</span>
-                      <span className="cat-sug-name">{cat.name}</span>
-                      <span className="cat-sug-examples">{examples[cat.id] || ''}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            <EmptyState requireCountryForTracking={requireCountryForTracking} setShowAddModal={setShowAddModal} setSelectedCategory={setSelectedCategory} />
           ) : (
             <>
               {(groupedItems.overdue.length > 0 || groupedItems.urgent.length > 0) && (
@@ -664,8 +600,26 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory })
 {"documentType":"lease/warranty/registration/license","assetName":"","value":"","purchaseDate":"YYYY-MM-DD","expiryDate":"YYYY-MM-DD","number":""}`,
       liabilities: `Extract from this financial obligation document and return ONLY JSON:
 {"documentType":"loan/lease/invoice/statement","creditor":"","amount":"","dueDate":"YYYY-MM-DD","accountNumber":""}`,
+      business_insurance: `Extract from this insurance document and return ONLY JSON:
+{"documentType":"liability/E&O/auto/WSIB/cyber/D&O","insurer":"","policyNumber":"","expiryDate":"YYYY-MM-DD","premium":"","coverage":""}`,
       business_license: `Extract from this license and return ONLY JSON:
 {"businessName":"","licenseNumber":"","expiryDate":"YYYY-MM-DD","type":""}`,
+      inst_regulatory: `Extract from this regulatory/accreditation document and return ONLY JSON:
+{"documentType":"inspection/accreditation/audit/compliance","authority":"","referenceNumber":"","expiryDate":"YYYY-MM-DD","nextReviewDate":"YYYY-MM-DD"}`,
+      inst_staff: `Extract from this staff compliance document and return ONLY JSON:
+{"documentType":"certification/police check/first aid/contract","staffName":"","position":"","expiryDate":"YYYY-MM-DD","issueDate":"YYYY-MM-DD","number":""}`,
+      inst_student: `Extract from this student/member services document and return ONLY JSON:
+{"documentType":"enrollment/transcript/financial aid/visa","studentName":"","program":"","dueDate":"YYYY-MM-DD","number":""}`,
+      inst_finance: `Extract from this institutional finance document and return ONLY JSON:
+{"documentType":"grant/funding/budget/tax return","funder":"","amount":"","dueDate":"YYYY-MM-DD","period":""}`,
+      inst_safety: `Extract from this safety/inspection document and return ONLY JSON:
+{"documentType":"fire/building/elevator/playground","inspector":"","nextInspection":"YYYY-MM-DD","referenceNumber":"","status":""}`,
+      inst_facilities: `Extract from this facilities document and return ONLY JSON:
+{"documentType":"maintenance/contract/inspection","provider":"","nextService":"YYYY-MM-DD","contractExpiry":"YYYY-MM-DD"}`,
+      inst_legal: `Extract from this legal/insurance document and return ONLY JSON:
+{"documentType":"insurance/union agreement/privacy/governance","provider":"","policyNumber":"","expiryDate":"YYYY-MM-DD"}`,
+      inst_programs: `Extract from this program/curriculum document and return ONLY JSON:
+{"documentType":"curriculum/schedule/accreditation","programName":"","deadline":"YYYY-MM-DD","semester":"","items":[{"name":"","date":"YYYY-MM-DD"}]}`,
       education: `Extract from this school/education document (timetable, syllabus, curriculum, transcript, enrollment) and return ONLY JSON:
 {"documentType":"timetable/syllabus/transcript/enrollment","courseName":"","instructor":"","dueDate":"YYYY-MM-DD","examDate":"YYYY-MM-DD","semester":"","items":[{"name":"","date":"YYYY-MM-DD"}]}`,
       work_schedule: `Extract from this work schedule/timetable and return ONLY JSON:
@@ -720,15 +674,20 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory })
       immigration: '✈️', tax: '💰', driving: '🚗', parking: '🅿️', health: '❤️',
       education: '📚', work_schedule: '⏰', retirement_estate: '📜', housing: '🏡',
       business_tax: '💵', employees: '👥', assets: '📦', liabilities: '⚠️',
-      office: '💼', business_license: '📋', property: '🏠', 
-      professional: '🎓', other: '📌'
+      business_insurance: '🛡️', office: '💼', business_license: '📋', property: '🏠', 
+      professional: '🎓', other: '📌',
+      inst_regulatory: '🏛️', inst_staff: '👨‍🏫', inst_student: '🎓', inst_finance: '💰',
+      inst_safety: '🔥', inst_facilities: '🔧', inst_legal: '⚖️', inst_programs: '📖'
     };
     return emojis[catId] || '📌';
   };
 
-  const personalCategories = APP_CONFIG.categories.filter(c => c.group === 'personal');
-  const businessCategories = APP_CONFIG.categories.filter(c => c.group === 'business');
-  const visibleCategories = activeGroup === 'personal' ? personalCategories : businessCategories;
+  const groupedCats = {
+    personal: APP_CONFIG.categories.filter(c => c.group === 'personal'),
+    business: APP_CONFIG.categories.filter(c => c.group === 'business'),
+    institution: APP_CONFIG.categories.filter(c => c.group === 'institution'),
+  };
+  const visibleCategories = groupedCats[activeGroup] || groupedCats.personal;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -754,6 +713,13 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory })
               >
                 <span className="group-tab-icon">💼</span>
                 Business
+              </button>
+              <button
+                className={`group-tab ${activeGroup === 'institution' ? 'active' : ''}`}
+                onClick={() => setActiveGroup('institution')}
+              >
+                <span className="group-tab-icon">🏛️</span>
+                Institution
               </button>
             </div>
             <div className="category-grid">
@@ -854,6 +820,87 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory })
             </div>
           </form>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Empty state with 3 group tabs ───
+const EMPTY_EXAMPLES = {
+  immigration: 'Work permits, visas, PR cards',
+  tax: 'T1 returns, RRSP, property tax',
+  driving: 'License renewals, registration',
+  parking: 'Parking tickets & fines',
+  health: 'Health card, dental, prescriptions',
+  education: 'Exams, assignments, tuition deadlines',
+  work_schedule: 'Shifts, pay days, contract dates',
+  housing: 'Rent, internet, phone, hydro bills',
+  retirement_estate: 'Wills, insurance, pensions',
+  other: 'Anything else you need to track',
+  employees: 'Onboarding, visas, police checks, payroll',
+  business_tax: 'T2 corporate, HST/GST, payroll remittance',
+  assets: 'Equipment, warranties, software licenses',
+  liabilities: 'Loans, invoices, lease payments',
+  business_license: 'Municipal license, annual returns, WSIB',
+  business_insurance: 'Liability, E&O, cyber, D&O policies',
+  office: 'Leases, utilities, equipment',
+  property: 'Property tax, municipal fees',
+  professional: 'Certifications, designations, CE credits',
+  inst_regulatory: 'Inspections, accreditation, audits',
+  inst_staff: 'Certifications, police checks, first aid',
+  inst_student: 'Report cards, financial aid, visa tracking',
+  inst_finance: 'Funding apps, grants, charitable returns',
+  inst_safety: 'Fire drills, building inspections, AEDs',
+  inst_facilities: 'HVAC, pest control, generator tests',
+  inst_legal: 'Insurance, union agreements, privacy',
+  inst_programs: 'Curriculum review, exam schedules, field trips',
+};
+const EMPTY_EMOJIS = {
+  immigration: '✈️', tax: '💰', driving: '🚗', parking: '🅿️', health: '❤️',
+  education: '📚', work_schedule: '⏰', housing: '🏡', retirement_estate: '📜', other: '📌',
+  employees: '👥', business_tax: '💵', assets: '📦', liabilities: '⚠️',
+  business_license: '📋', business_insurance: '🛡️', office: '💼', property: '🏠', professional: '🎓',
+  inst_regulatory: '🏛️', inst_staff: '👨‍🏫', inst_student: '🎓', inst_finance: '💰',
+  inst_safety: '🔥', inst_facilities: '🔧', inst_legal: '⚖️', inst_programs: '📖',
+};
+
+function EmptyState({ requireCountryForTracking, setShowAddModal, setSelectedCategory }) {
+  const [activeTab, setActiveTab] = useState('personal');
+  const groups = [
+    { id: 'personal', label: 'Personal', icon: '👤' },
+    { id: 'business', label: 'Business', icon: '💼' },
+    { id: 'institution', label: 'Institution', icon: '🏛️' },
+  ];
+  const cats = APP_CONFIG.categories.filter(c => c.group === activeTab);
+
+  return (
+    <div className="empty-state">
+      <Calendar size={48} />
+      <h3>Your life, completely in order</h3>
+      <p>Never miss a deadline, payment, or renewal again. What do you need to track?</p>
+      <div className="empty-group-tabs">
+        {groups.map(g => (
+          <button
+            key={g.id}
+            className={`empty-group-tab ${activeTab === g.id ? 'active' : ''}`}
+            onClick={() => setActiveTab(g.id)}
+          >
+            {g.icon} {g.label}
+          </button>
+        ))}
+      </div>
+      <div className="category-suggestions">
+        {cats.map(cat => (
+          <button
+            key={cat.id}
+            className="category-suggestion"
+            onClick={() => { requireCountryForTracking(() => { setShowAddModal(true); setSelectedCategory(cat.id); }); }}
+          >
+            <span className="cat-sug-icon">{EMPTY_EMOJIS[cat.id] || '📌'}</span>
+            <span className="cat-sug-name">{cat.name}</span>
+            <span className="cat-sug-examples">{EMPTY_EXAMPLES[cat.id] || ''}</span>
+          </button>
+        ))}
       </div>
     </div>
   );

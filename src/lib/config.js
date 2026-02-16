@@ -37,8 +37,9 @@ export const APP_CONFIG = {
     }
   },
   
-  // COMPLIANCE CATEGORIES — grouped into Personal vs Business
+  // COMPLIANCE CATEGORIES — Personal / Business / Institution
   categories: [
+    // ── Personal ──
     { id: "immigration", name: "Immigration & Visas", icon: "Plane", color: "#3b82f6", group: "personal" },
     { id: "tax", name: "Personal Taxes", icon: "DollarSign", color: "#10b981", group: "personal" },
     { id: "driving", name: "Driving & Vehicles", icon: "Car", color: "#f59e0b", group: "personal" },
@@ -48,15 +49,28 @@ export const APP_CONFIG = {
     { id: "education", name: "Education & School", icon: "BookOpen", color: "#8b5cf6", group: "personal" },
     { id: "work_schedule", name: "Work & Shifts", icon: "Clock", color: "#f97316", group: "personal" },
     { id: "retirement_estate", name: "Retirement & Estate", icon: "Landmark", color: "#0d9488", group: "personal" },
-    { id: "business_tax", name: "Business Taxes", icon: "DollarSign", color: "#059669", group: "business" },
+    { id: "other", name: "Other", icon: "Pin", color: "#64748b", group: "personal" },
+
+    // ── Business ──
     { id: "employees", name: "Employees & HR", icon: "Users", color: "#6366f1", group: "business" },
+    { id: "business_tax", name: "Business Taxes", icon: "DollarSign", color: "#059669", group: "business" },
     { id: "assets", name: "Assets & Equipment", icon: "Package", color: "#0ea5e9", group: "business" },
     { id: "liabilities", name: "Liabilities & Debt", icon: "AlertTriangle", color: "#e11d48", group: "business" },
-    { id: "business_license", name: "Business Licenses", icon: "FileText", color: "#7c3aed", group: "business" },
+    { id: "business_license", name: "Business Licenses & Permits", icon: "FileText", color: "#7c3aed", group: "business" },
+    { id: "business_insurance", name: "Insurance & Liability", icon: "Shield", color: "#0891b2", group: "business" },
     { id: "office", name: "Office & Operations", icon: "Briefcase", color: "#8b5cf6", group: "business" },
     { id: "property", name: "Property & Municipal", icon: "Building", color: "#14b8a6", group: "business" },
     { id: "professional", name: "Professional Licenses", icon: "GraduationCap", color: "#f97316", group: "business" },
-    { id: "other", name: "Other", icon: "Pin", color: "#64748b", group: "personal" }
+
+    // ── Institution (schools, hospitals, nonprofits, government) ──
+    { id: "inst_regulatory", name: "Regulatory & Accreditation", icon: "Shield", color: "#7c3aed", group: "institution" },
+    { id: "inst_staff", name: "Staff Compliance", icon: "Users", color: "#2563eb", group: "institution" },
+    { id: "inst_student", name: "Student & Member Services", icon: "BookOpen", color: "#8b5cf6", group: "institution" },
+    { id: "inst_finance", name: "Funding & Financial", icon: "DollarSign", color: "#059669", group: "institution" },
+    { id: "inst_safety", name: "Safety & Inspections", icon: "AlertTriangle", color: "#dc2626", group: "institution" },
+    { id: "inst_facilities", name: "Facilities & Property", icon: "Building", color: "#14b8a6", group: "institution" },
+    { id: "inst_legal", name: "Legal & Insurance", icon: "FileText", color: "#0891b2", group: "institution" },
+    { id: "inst_programs", name: "Programs & Curriculum", icon: "Calendar", color: "#f59e0b", group: "institution" },
   ],
   
   // PARKING TICKET PORTALS BY CITY (lookup, pay, dispute)
@@ -470,7 +484,19 @@ export const APP_CONFIG = {
       { name: "WSIB", reminderDays: [60, 30, 14] }
     ],
     professional: [
-      { name: "Professional License", reminderDays: [90, 60, 30, 14] }
+      { name: "Professional License", reminderDays: [90, 60, 30, 14] },
+      { name: "Designation Renewal (CPA, P.Eng, etc.)", reminderDays: [90, 60, 30, 14] },
+      { name: "Continuing Education Credits", reminderDays: [60, 30, 14, 7] }
+    ],
+    business_insurance: [
+      { name: "General Liability Insurance", reminderDays: [60, 30, 14, 7] },
+      { name: "Professional Liability / E&O Insurance", reminderDays: [60, 30, 14, 7] },
+      { name: "Commercial Auto Insurance", reminderDays: [60, 30, 14, 7] },
+      { name: "Workers Compensation (WSIB)", reminderDays: [60, 30, 14, 7] },
+      { name: "Property / Contents Insurance", reminderDays: [60, 30, 14, 7] },
+      { name: "Cyber Liability Insurance", reminderDays: [60, 30, 14, 7] },
+      { name: "Directors & Officers Insurance", reminderDays: [60, 30, 14, 7] },
+      { name: "Key Person Insurance", reminderDays: [60, 30, 14, 7] }
     ],
     property: [
       { name: "Property Tax", reminderDays: [30, 14, 7] },
@@ -499,6 +525,103 @@ export const APP_CONFIG = {
       { name: "Annual Return (Federal)", reminderDays: [60, 30, 14] },
       { name: "Equipment Lease", reminderDays: [60, 30, 14] },
       { name: "Professional Liability Insurance", reminderDays: [60, 30, 14] }
+    ],
+
+    // ── Institution templates ──
+    inst_regulatory: [
+      { name: "Ministry of Education Inspection", reminderDays: [90, 60, 30, 14, 7] },
+      { name: "Accreditation Renewal", reminderDays: [180, 90, 60, 30, 14] },
+      { name: "Annual Compliance Report", reminderDays: [60, 30, 14, 7] },
+      { name: "Government Audit", reminderDays: [60, 30, 14, 7] },
+      { name: "Accessibility Compliance Deadline (AODA)", reminderDays: [90, 60, 30, 14] },
+      { name: "Privacy Impact Assessment", reminderDays: [60, 30, 14, 7] },
+      { name: "Health & Safety Act Compliance Review", reminderDays: [60, 30, 14] },
+      { name: "Charitable Status Renewal (CRA)", reminderDays: [90, 60, 30, 14] },
+      { name: "Hospital Accreditation (Accreditation Canada)", reminderDays: [180, 90, 60, 30] },
+      { name: "Licensing Renewal (Childcare / Long-Term Care)", reminderDays: [120, 90, 60, 30, 14] }
+    ],
+    inst_staff: [
+      { name: "Teacher Certification Renewal (OCT)", reminderDays: [120, 90, 60, 30, 14] },
+      { name: "Vulnerable Sector Police Check", reminderDays: [90, 60, 30, 14] },
+      { name: "Staff First Aid / CPR Certification", reminderDays: [60, 30, 14, 7] },
+      { name: "Work Permit Expiry (International Staff)", reminderDays: [180, 90, 60, 30, 14] },
+      { name: "Professional Development Hours", reminderDays: [60, 30, 14, 7] },
+      { name: "Nursing License Renewal (CNO)", reminderDays: [120, 90, 60, 30, 14] },
+      { name: "WHMIS Training Renewal", reminderDays: [60, 30, 14] },
+      { name: "Employee Contract Renewal", reminderDays: [90, 60, 30, 14] },
+      { name: "Probation Period End", reminderDays: [30, 14, 7] },
+      { name: "Annual Performance Evaluation", reminderDays: [30, 14, 7] },
+      { name: "Benefits Enrollment Deadline", reminderDays: [30, 14, 7, 3] }
+    ],
+    inst_student: [
+      { name: "Report Card Submission", reminderDays: [14, 7, 3, 1] },
+      { name: "OSAP / Financial Aid Processing", reminderDays: [30, 14, 7, 3] },
+      { name: "Scholarship Disbursement", reminderDays: [30, 14, 7] },
+      { name: "International Student Visa Tracking", reminderDays: [180, 90, 60, 30, 14] },
+      { name: "Co-op Placement Paperwork", reminderDays: [30, 14, 7, 3] },
+      { name: "Student Registration Deadline", reminderDays: [30, 14, 7, 3] },
+      { name: "Admissions Application Deadline", reminderDays: [60, 30, 14, 7] },
+      { name: "Transcript Release", reminderDays: [14, 7, 3] },
+      { name: "Student Record Retention Review", reminderDays: [60, 30, 14] },
+      { name: "Immunization Record Verification", reminderDays: [30, 14, 7] }
+    ],
+    inst_finance: [
+      { name: "Government Funding Application", reminderDays: [60, 30, 14, 7] },
+      { name: "Grant Reporting Deadline", reminderDays: [30, 14, 7, 3] },
+      { name: "Charitable Return Filing (T3010)", dueDate: "June 30", reminderDays: [60, 30, 14, 7] },
+      { name: "Annual Budget Submission", reminderDays: [60, 30, 14, 7] },
+      { name: "Tuition Fee Collection Deadline", reminderDays: [30, 14, 7, 3] },
+      { name: "Payroll Run", reminderDays: [7, 3, 1] },
+      { name: "Property Tax Payment", reminderDays: [30, 14, 7] },
+      { name: "Audit Completion", reminderDays: [60, 30, 14, 7] },
+      { name: "Donor Receipt Issuance", reminderDays: [30, 14, 7] }
+    ],
+    inst_safety: [
+      { name: "Fire Safety Inspection", reminderDays: [60, 30, 14, 7] },
+      { name: "Building Code Inspection", reminderDays: [60, 30, 14, 7] },
+      { name: "Fire Drill", reminderDays: [14, 7, 3, 1] },
+      { name: "Lockdown Drill", reminderDays: [14, 7, 3, 1] },
+      { name: "Emergency Plan Review", reminderDays: [60, 30, 14] },
+      { name: "Elevator Inspection (TSSA)", reminderDays: [60, 30, 14] },
+      { name: "Boiler / Pressure Vessel Inspection", reminderDays: [60, 30, 14] },
+      { name: "Playground Safety Inspection", reminderDays: [30, 14, 7] },
+      { name: "Hazardous Materials Audit", reminderDays: [60, 30, 14] },
+      { name: "AED / Defibrillator Maintenance", reminderDays: [30, 14, 7] }
+    ],
+    inst_facilities: [
+      { name: "HVAC Maintenance", reminderDays: [30, 14, 7] },
+      { name: "Roof Inspection", reminderDays: [60, 30, 14] },
+      { name: "Pest Control Service", reminderDays: [14, 7, 3] },
+      { name: "Water Quality Testing", reminderDays: [30, 14, 7] },
+      { name: "Backflow Prevention Test", reminderDays: [60, 30, 14] },
+      { name: "Generator Testing", reminderDays: [30, 14, 7] },
+      { name: "Parking Lot Maintenance", reminderDays: [30, 14, 7] },
+      { name: "Snow Removal Contract Renewal", reminderDays: [90, 60, 30] },
+      { name: "Janitorial Contract Renewal", reminderDays: [60, 30, 14] },
+      { name: "Security System Inspection", reminderDays: [60, 30, 14] }
+    ],
+    inst_legal: [
+      { name: "Insurance Policy Renewal", reminderDays: [60, 30, 14, 7] },
+      { name: "Directors & Officers Insurance", reminderDays: [60, 30, 14, 7] },
+      { name: "Union Agreement Renewal", reminderDays: [180, 90, 60, 30] },
+      { name: "Collective Bargaining Deadline", reminderDays: [90, 60, 30, 14] },
+      { name: "Legal Filing Deadline", reminderDays: [30, 14, 7, 3] },
+      { name: "Privacy Policy Review (FIPPA / PHIPA)", reminderDays: [60, 30, 14] },
+      { name: "Board Governance Review", reminderDays: [60, 30, 14] },
+      { name: "Annual General Meeting", reminderDays: [60, 30, 14, 7] },
+      { name: "Conflict of Interest Declarations", reminderDays: [30, 14, 7] }
+    ],
+    inst_programs: [
+      { name: "Curriculum Review Deadline", reminderDays: [60, 30, 14, 7] },
+      { name: "Program Accreditation Submission", reminderDays: [90, 60, 30, 14] },
+      { name: "Academic Calendar Finalization", reminderDays: [60, 30, 14] },
+      { name: "Course Offering Deadline", reminderDays: [30, 14, 7] },
+      { name: "Exam Schedule Publication", reminderDays: [30, 14, 7] },
+      { name: "Textbook / Material Ordering", reminderDays: [60, 30, 14] },
+      { name: "Field Trip Approval Deadline", reminderDays: [14, 7, 3] },
+      { name: "Graduation Ceremony Planning", reminderDays: [90, 60, 30, 14] },
+      { name: "Research Ethics Board Submission", reminderDays: [30, 14, 7] },
+      { name: "Clinical Placement Agreement", reminderDays: [60, 30, 14, 7] }
     ]
   }
 };
