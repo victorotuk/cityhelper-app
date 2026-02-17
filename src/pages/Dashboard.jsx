@@ -52,15 +52,17 @@ export default function Dashboard() {
   const [userCountries, setUserCountries] = useState([]); // primary + other countries
   const [activeCountry, setActiveCountry] = useState(null); // current switch (for multi-country)
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  const [persona, setPersona] = useState(null);
   const navigate = useNavigate();
 
   const COUNTRY_LABELS = { ca: 'Canada', us: 'United States' };
   const COUNTRY_FLAGS = { ca: '🇨🇦', us: '🇺🇸' };
 
-  // Fetch user country settings
+  // Fetch user country settings + persona
   const refreshCountry = async () => {
     if (!user) return;
-    const { data } = await supabase.from('user_settings').select('country, countries').eq('user_id', user.id).single();
+    const { data } = await supabase.from('user_settings').select('country, countries, persona').eq('user_id', user.id).single();
+    if (data?.persona) setPersona(data.persona);
     const primary = data?.country || null;
     const others = Array.isArray(data?.countries) ? data.countries : [];
     const list = primary ? [primary, ...others].filter((c, i, a) => a.indexOf(c) === i) : others.filter((c, i, a) => a.indexOf(c) === i);
@@ -284,37 +286,17 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {/* Stats */}
-        <div className="stats-row">
-          <div className="stat-card overdue">
-            <AlertTriangle size={24} />
-            <div className="stat-content">
-              <span className="stat-number">{groupedItems.overdue.length + groupedItems.urgent.length}</span>
-              <span className="stat-label">Need Attention</span>
-            </div>
-          </div>
-          <div className="stat-card warning">
-            <Clock size={24} />
-            <div className="stat-content">
-              <span className="stat-number">{groupedItems.warning.length}</span>
-              <span className="stat-label">Coming Up</span>
-            </div>
-          </div>
-          <div className="stat-card ok">
-            <CheckCircle size={24} />
-            <div className="stat-content">
-              <span className="stat-number">{groupedItems.ok.length}</span>
-              <span className="stat-label">All Good</span>
-            </div>
-          </div>
-          <div className="stat-card total">
-            <FileText size={24} />
-            <div className="stat-content">
-              <span className="stat-number">{items.length}</span>
-              <span className="stat-label">Total Items</span>
-            </div>
-          </div>
-        </div>
+        {/* Compliance Health */}
+        <ComplianceHealth items={items} groupedItems={groupedItems} />
+
+        {/* Personalized suggestions */}
+        {persona?.recommendedCategories && items.length > 0 && (
+          <SuggestedForYou
+            persona={persona}
+            items={items}
+            onAdd={(catId) => { requireCountryForTracking(() => { setShowAddModal(true); setSelectedCategory(catId); }); }}
+          />
+        )}
 
         {/* Items list */}
         <div className="items-list">
@@ -435,7 +417,7 @@ export default function Dashboard() {
       {showWelcome && (
         <WelcomeGuide 
           userId={user.id} 
-          onComplete={() => setShowWelcome(false)} 
+          onComplete={(p) => { setShowWelcome(false); if (p) setPersona(p); }} 
         />
       )}
     </div>
@@ -904,6 +886,93 @@ function EmptyState({ requireCountryForTracking, setShowAddModal, setSelectedCat
             <span className="cat-sug-icon">{EMPTY_EMOJIS[cat.id] || '📌'}</span>
             <span className="cat-sug-name">{cat.name}</span>
             <span className="cat-sug-examples">{EMPTY_EXAMPLES[cat.id] || ''}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Compliance Health Score ───
+function ComplianceHealth({ items, groupedItems }) {
+  const total = items.length;
+  if (total === 0) return null;
+
+  const overdueCount = groupedItems.overdue.length;
+  const urgentCount = groupedItems.urgent.length;
+  const warningCount = groupedItems.warning.length;
+  const okCount = groupedItems.ok.length;
+
+  // Score: 100 = everything green, lose points for issues
+  const score = Math.max(0, Math.round(
+    100 - (overdueCount * 25) - (urgentCount * 10) - (warningCount * 3)
+  ));
+
+  const getScoreColor = (s) => {
+    if (s >= 80) return 'var(--success, #10b981)';
+    if (s >= 50) return 'var(--warning, #f59e0b)';
+    return 'var(--danger, #dc2626)';
+  };
+
+  const getMessage = (s) => {
+    if (s === 100) return "Everything's in order. You're on top of it.";
+    if (s >= 80) return "Looking good. A few things to keep an eye on.";
+    if (s >= 50) return "Some items need your attention soon.";
+    if (s >= 25) return "Several deadlines are overdue or urgent.";
+    return "You have critical items that need immediate attention.";
+  };
+
+  const color = getScoreColor(score);
+
+  return (
+    <div className="compliance-health">
+      <div className="health-score" style={{ borderColor: color }}>
+        <span className="health-number" style={{ color }}>{score}</span>
+        <span className="health-label">Health</span>
+      </div>
+      <div className="health-details">
+        <p className="health-message">{getMessage(score)}</p>
+        <div className="health-stats">
+          {overdueCount > 0 && <span className="health-stat overdue">{overdueCount} overdue</span>}
+          {urgentCount > 0 && <span className="health-stat urgent">{urgentCount} urgent</span>}
+          {warningCount > 0 && <span className="health-stat warning">{warningCount} soon</span>}
+          <span className="health-stat ok">{okCount} good</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Suggested For You ───
+function SuggestedForYou({ persona, items, onAdd }) {
+  const trackedCategories = new Set(items.map(i => i.category));
+  
+  // Recommend categories user selected but hasn't started tracking
+  const suggestions = (persona.recommendedCategories || [])
+    .filter(catId => !trackedCategories.has(catId))
+    .map(catId => APP_CONFIG.categories.find(c => c.id === catId))
+    .filter(Boolean)
+    .slice(0, 4);
+
+  if (suggestions.length === 0) return null;
+
+  return (
+    <div className="suggested-section">
+      <h3 className="suggested-title">Suggested for you</h3>
+      <div className="suggested-cards">
+        {suggestions.map(cat => (
+          <button
+            key={cat.id}
+            className="suggested-card"
+            onClick={() => onAdd(cat.id)}
+            style={{ borderLeftColor: cat.color }}
+          >
+            <span className="suggested-icon">{EMPTY_EMOJIS[cat.id] || '📌'}</span>
+            <div className="suggested-text">
+              <strong>{cat.name}</strong>
+              <small>{EMPTY_EXAMPLES[cat.id] || ''}</small>
+            </div>
+            <Plus size={16} className="suggested-add" />
           </button>
         ))}
       </div>

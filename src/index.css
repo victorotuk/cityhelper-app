@@ -5121,3 +5121,105 @@ input, select, textarea { font-family: inherit; }
   background: var(--accent);
   color: var(--bg-deep);
 }
+
+/* ============= ONBOARDING QUIZ ============= */
+.onboarding-quiz { max-width: 480px; max-height: 85vh; overflow-y: auto; }
+.quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 16px 0;
+  max-height: 45vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.quiz-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-main);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+  text-align: left;
+}
+.quiz-option:hover { border-color: var(--text-muted); background: var(--bg-hover); }
+.quiz-option.selected { border-color: var(--accent); background: var(--accent-glow); }
+.quiz-option-icon { font-size: 20px; flex-shrink: 0; }
+.quiz-option-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.quiz-option-text strong { font-size: 14px; color: var(--text-primary); }
+.quiz-option-text small { font-size: 12px; color: var(--text-muted); }
+.quiz-check { color: var(--accent); flex-shrink: 0; }
+
+/* ============= COMPLIANCE HEALTH ============= */
+.compliance-health {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-md);
+}
+.health-score {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 3px solid;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.health-number { font-size: 24px; font-weight: 700; line-height: 1; }
+.health-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.health-details { flex: 1; }
+.health-message { font-size: 14px; color: var(--text-primary); margin: 0 0 8px; }
+.health-stats { display: flex; flex-wrap: wrap; gap: 8px; }
+.health-stat {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+.health-stat.overdue { color: #dc2626; background: rgba(220, 38, 38, 0.12); }
+.health-stat.urgent { color: #ea580c; background: rgba(234, 88, 12, 0.12); }
+.health-stat.warning { color: #d97706; background: rgba(217, 119, 6, 0.12); }
+.health-stat.ok { color: #16a34a; background: rgba(22, 163, 74, 0.12); }
+
+/* ============= SUGGESTED FOR YOU ============= */
+.suggested-section { margin-bottom: var(--space-lg); }
+.suggested-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-sm);
+}
+.suggested-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.suggested-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+  text-align: left;
+}
+.suggested-card:hover { border-color: var(--accent); background: var(--bg-hover); }
+.suggested-icon { font-size: 18px; flex-shrink: 0; }
+.suggested-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.suggested-text strong { font-size: 13px; color: var(--text-primary); }
+.suggested-text small { font-size: 11px; color: var(--text-muted); }
+.suggested-add { color: var(--text-muted); flex-shrink: 0; }
