@@ -71,6 +71,7 @@ export const APP_CONFIG = {
     { id: "inst_facilities", name: "Facilities & Property", icon: "Building", color: "#14b8a6", group: "institution" },
     { id: "inst_legal", name: "Legal & Insurance", icon: "FileText", color: "#0891b2", group: "institution" },
     { id: "inst_programs", name: "Programs & Curriculum", icon: "Calendar", color: "#f59e0b", group: "institution" },
+    { id: "inst_sports", name: "Sports & Recreation", icon: "Trophy", color: "#ea580c", group: "institution" },
   ],
   
   // PARKING TICKET PORTALS BY CITY (lookup, pay, dispute)
@@ -622,6 +623,24 @@ export const APP_CONFIG = {
       { name: "Graduation Ceremony Planning", reminderDays: [90, 60, 30, 14] },
       { name: "Research Ethics Board Submission", reminderDays: [30, 14, 7] },
       { name: "Clinical Placement Agreement", reminderDays: [60, 30, 14, 7] }
+    ],
+    inst_sports: [
+      { name: "League Registration Deadline", reminderDays: [60, 30, 14, 7] },
+      { name: "Player Eligibility Paperwork", reminderDays: [30, 14, 7, 3] },
+      { name: "Medical Clearance / Physical", reminderDays: [60, 30, 14, 7] },
+      { name: "Coaching Certification Renewal", reminderDays: [90, 60, 30, 14] },
+      { name: "Coach Background Check (VSS)", reminderDays: [90, 60, 30, 14] },
+      { name: "First Aid / CPR Certification", reminderDays: [60, 30, 14, 7] },
+      { name: "Team Insurance Policy Renewal", reminderDays: [60, 30, 14, 7] },
+      { name: "Facility Booking / Permit", reminderDays: [30, 14, 7, 3] },
+      { name: "Arena / Field Safety Inspection", reminderDays: [30, 14, 7] },
+      { name: "Equipment Safety Check", reminderDays: [30, 14, 7] },
+      { name: "Sponsorship Agreement Renewal", reminderDays: [60, 30, 14] },
+      { name: "Municipal Grant Application", reminderDays: [60, 30, 14, 7] },
+      { name: "Annual General Meeting", reminderDays: [30, 14, 7] },
+      { name: "Tournament Registration", reminderDays: [30, 14, 7, 3] },
+      { name: "Referee / Official Certification", reminderDays: [60, 30, 14] },
+      { name: "Season Fee Collection Deadline", reminderDays: [30, 14, 7, 3] }
     ]
   }
 };

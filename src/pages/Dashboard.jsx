@@ -620,6 +620,8 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory })
 {"documentType":"insurance/union agreement/privacy/governance","provider":"","policyNumber":"","expiryDate":"YYYY-MM-DD"}`,
       inst_programs: `Extract from this program/curriculum document and return ONLY JSON:
 {"documentType":"curriculum/schedule/accreditation","programName":"","deadline":"YYYY-MM-DD","semester":"","items":[{"name":"","date":"YYYY-MM-DD"}]}`,
+      inst_sports: `Extract from this sports/recreation document and return ONLY JSON:
+{"documentType":"registration/insurance/certification/permit","teamName":"","leagueName":"","personName":"","expiryDate":"YYYY-MM-DD","number":""}`,
       education: `Extract from this school/education document (timetable, syllabus, curriculum, transcript, enrollment) and return ONLY JSON:
 {"documentType":"timetable/syllabus/transcript/enrollment","courseName":"","instructor":"","dueDate":"YYYY-MM-DD","examDate":"YYYY-MM-DD","semester":"","items":[{"name":"","date":"YYYY-MM-DD"}]}`,
       work_schedule: `Extract from this work schedule/timetable and return ONLY JSON:
@@ -677,7 +679,8 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory })
       business_insurance: '🛡️', office: '💼', business_license: '📋', property: '🏠', 
       professional: '🎓', other: '📌',
       inst_regulatory: '🏛️', inst_staff: '👨‍🏫', inst_student: '🎓', inst_finance: '💰',
-      inst_safety: '🔥', inst_facilities: '🔧', inst_legal: '⚖️', inst_programs: '📖'
+      inst_safety: '🔥', inst_facilities: '🔧', inst_legal: '⚖️', inst_programs: '📖',
+      inst_sports: '🏆'
     };
     return emojis[catId] || '📌';
   };
@@ -854,6 +857,7 @@ const EMPTY_EXAMPLES = {
   inst_facilities: 'HVAC, pest control, generator tests',
   inst_legal: 'Insurance, union agreements, privacy',
   inst_programs: 'Curriculum review, exam schedules, field trips',
+  inst_sports: 'Registrations, certifications, inspections',
 };
 const EMPTY_EMOJIS = {
   immigration: '✈️', tax: '💰', driving: '🚗', parking: '🅿️', health: '❤️',
@@ -862,6 +866,7 @@ const EMPTY_EMOJIS = {
   business_license: '📋', business_insurance: '🛡️', office: '💼', property: '🏠', professional: '🎓',
   inst_regulatory: '🏛️', inst_staff: '👨‍🏫', inst_student: '🎓', inst_finance: '💰',
   inst_safety: '🔥', inst_facilities: '🔧', inst_legal: '⚖️', inst_programs: '📖',
+  inst_sports: '🏆',
 };
 
 function EmptyState({ requireCountryForTracking, setShowAddModal, setSelectedCategory }) {
