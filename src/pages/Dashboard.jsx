@@ -152,7 +152,7 @@ export default function Dashboard() {
   };
 
   const handleCopyItem = (item) => {
-    const catId = ['personal_tax', 'business_tax'].includes(item.category) ? 'tax' : item.category;
+    const catId = ['personal_trust', 'business_trust'].includes(item.category) ? 'trust' : item.category;
     const category = APP_CONFIG.categories.find(c => c.id === catId);
     const text = `${item.name}\nCategory: ${category?.name || 'General'}\nDue: ${item.due_date ? format(parseISO(item.due_date), 'MMMM d, yyyy') : 'No date set'}\n${item.notes ? `Notes: ${item.notes}` : ''}`;
     navigator.clipboard.writeText(text);
@@ -469,14 +469,14 @@ function getRenewalUrl(itemName, country) {
 
 function ItemCard({ item, getStatusInfo, onDelete, onAddToCalendar, onCopy, onPay, onRenew, userCountry }) {
   const statusInfo = getStatusInfo(item.due_date);
-  const catId = ['personal_tax', 'business_tax'].includes(item.category) ? 'tax' : item.category;
+  const catId = ['personal_trust', 'business_trust'].includes(item.category) ? 'trust' : item.category;
   const category = APP_CONFIG.categories.find(c => c.id === catId);
   const payHandler = onPay?.(catId);
   const renewalUrl = onRenew && userCountry ? getRenewalUrl(item.name, userCountry) : null;
   
   const getCategoryEmoji = (id) => {
     const emojis = {
-      immigration: '✈️', tax: '💰', personal_tax: '💰', business_tax: '💰',
+      immigration: '✈️', trust: '🏛️', personal_trust: '🏛️', business_trust: '🏛️',
       driving: '🚗', parking: '🅿️', health: '❤️', retirement_estate: '📜', housing: '🏡',
       office: '💼', business_license: '📋', property: '🏠', 
       professional: '🎓', other: '📌'
@@ -577,10 +577,10 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory, a
 {"documentType":"","name":"","number":"","expiryDate":"YYYY-MM-DD","class":""}`,
       health: `Extract from this health card and return ONLY JSON:
 {"name":"","cardNumber":"","expiryDate":"YYYY-MM-DD"}`,
-      tax: `Extract from this tax document and return ONLY JSON:
-{"documentType":"T4/T5/T2/receipt","year":"","amount":"","dueDate":"YYYY-MM-DD"}`,
-      business_tax: `Extract from this business tax document and return ONLY JSON:
-{"documentType":"T2/HST/GST/payroll","businessName":"","amount":"","dueDate":"YYYY-MM-DD","period":""}`,
+      trust: `Extract from this trust, estate, or tax document and return ONLY JSON:
+{"documentType":"trust/will/POA/T4/T5/receipt","name":"","trustee":"","beneficiary":"","amount":"","expiryDate":"YYYY-MM-DD","reviewDate":"YYYY-MM-DD"}`,
+      business_trust: `Extract from this business trust, shareholder, or tax document and return ONLY JSON:
+{"documentType":"trust/shareholder-agreement/T2/HST/GST/succession","businessName":"","trustee":"","amount":"","dueDate":"YYYY-MM-DD","period":""}`,
       employees: `Extract from this employee/HR document and return ONLY JSON:
 {"documentType":"contract/permit/check/certification","employeeName":"","position":"","startDate":"YYYY-MM-DD","expiryDate":"YYYY-MM-DD","number":""}`,
       assets: `Extract from this asset/equipment document and return ONLY JSON:
@@ -660,9 +660,9 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory, a
   
   const getCategoryEmoji = (catId) => {
     const emojis = {
-      immigration: '✈️', tax: '💰', driving: '🚗', parking: '🅿️', health: '❤️',
+      immigration: '✈️', trust: '🏛️', driving: '🚗', parking: '🅿️', health: '❤️',
       education: '📚', work_schedule: '⏰', retirement_estate: '📜', housing: '🏡',
-      business_tax: '💵', employees: '👥', assets: '📦', liabilities: '⚠️',
+      business_trust: '🏛️', employees: '👥', assets: '📦', liabilities: '⚠️',
       business_insurance: '🛡️', office: '💼', business_license: '📋', property: '🏠', 
       professional: '🎓', other: '📌',
       inst_regulatory: '🏛️', inst_staff: '👨‍🏫', inst_student: '🎓', inst_finance: '💰',
@@ -818,7 +818,7 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory, a
 // ─── Empty state with 3 group tabs ───
 const EMPTY_EXAMPLES = {
   immigration: 'Work permits, visas, PR cards',
-  tax: 'T1 returns, RRSP, property tax',
+  trust: 'Living trusts, wills, beneficiaries, POA',
   driving: 'License renewals, registration',
   parking: 'Parking tickets & fines',
   health: 'Health card, dental, prescriptions',
@@ -828,7 +828,7 @@ const EMPTY_EXAMPLES = {
   retirement_estate: 'Wills, insurance, pensions',
   other: 'Anything else you need to track',
   employees: 'Onboarding, visas, police checks, payroll',
-  business_tax: 'T2 corporate, HST/GST, payroll remittance',
+  business_trust: 'Corporate trusts, shareholder agreements, T2',
   assets: 'Equipment, warranties, software licenses',
   liabilities: 'Loans, invoices, lease payments',
   business_license: 'Municipal license, annual returns, WSIB',
@@ -847,9 +847,9 @@ const EMPTY_EXAMPLES = {
   inst_sports: 'Registrations, certifications, inspections',
 };
 const EMPTY_EMOJIS = {
-  immigration: '✈️', tax: '💰', driving: '🚗', parking: '🅿️', health: '❤️',
+  immigration: '✈️', trust: '🏛️', driving: '🚗', parking: '🅿️', health: '❤️',
   education: '📚', work_schedule: '⏰', housing: '🏡', retirement_estate: '📜', other: '📌',
-  employees: '👥', business_tax: '💵', assets: '📦', liabilities: '⚠️',
+  employees: '👥', business_trust: '🏛️', assets: '📦', liabilities: '⚠️',
   business_license: '📋', business_insurance: '🛡️', office: '💼', property: '🏠', professional: '🎓',
   inst_regulatory: '🏛️', inst_staff: '👨‍🏫', inst_student: '🎓', inst_finance: '💰',
   inst_safety: '🔥', inst_facilities: '🔧', inst_legal: '⚖️', inst_programs: '📖',

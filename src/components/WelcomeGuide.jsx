@@ -82,19 +82,19 @@ const ORG_STRUGGLES = [
 
 // ── Category mappings ──
 const ROLE_CATEGORIES = {
-  student: ['education', 'tax', 'health', 'immigration'],
-  employee: ['work_schedule', 'tax', 'health', 'driving'],
-  business_owner: ['employees', 'business_tax', 'business_license', 'business_insurance', 'assets', 'liabilities'],
-  freelancer: ['tax', 'business_tax', 'professional', 'business_insurance'],
-  newcomer: ['immigration', 'health', 'driving', 'housing', 'tax'],
+  student: ['education', 'trust', 'health', 'immigration'],
+  employee: ['work_schedule', 'trust', 'health', 'driving'],
+  business_owner: ['employees', 'business_trust', 'business_license', 'business_insurance', 'assets', 'liabilities'],
+  freelancer: ['trust', 'business_trust', 'professional', 'business_insurance'],
+  newcomer: ['immigration', 'health', 'driving', 'housing', 'trust'],
   parent: ['health', 'education', 'housing', 'driving'],
-  homeowner: ['housing', 'property', 'tax', 'retirement_estate'],
-  renter: ['housing', 'tax'],
+  homeowner: ['housing', 'property', 'trust', 'retirement_estate'],
+  renter: ['housing', 'trust'],
   driver: ['driving', 'parking'],
-  landlord: ['property', 'business_tax', 'business_insurance', 'housing'],
-  retiree: ['retirement_estate', 'health', 'tax'],
+  landlord: ['property', 'business_trust', 'business_insurance', 'housing'],
+  retiree: ['retirement_estate', 'health', 'trust'],
   caregiver: ['health', 'housing'],
-  tradesperson: ['professional', 'business_license', 'business_insurance', 'business_tax'],
+  tradesperson: ['professional', 'business_license', 'business_insurance', 'business_trust'],
   athlete_coach: ['inst_sports', 'health'],
   healthcare: ['professional', 'health', 'inst_staff'],
 };
@@ -102,7 +102,7 @@ const ROLE_CATEGORIES = {
 const STRUGGLE_CATEGORIES = {
   deadlines: ['education', 'work_schedule', 'immigration'],
   tickets: ['parking', 'driving'],
-  taxes: ['tax', 'business_tax'],
+  taxes: ['trust', 'business_trust'],
   renewals: ['driving', 'immigration', 'health', 'professional', 'business_license'],
   bills: ['housing', 'office'],
   appointments: ['health', 'education', 'work_schedule'],
@@ -118,15 +118,15 @@ const STRUGGLE_CATEGORIES = {
   kids: ['education', 'health'],
   contracts: ['employees', 'office', 'housing'],
   certifications: ['professional', 'inst_staff'],
-  estate: ['retirement_estate'],
+  estate: ['retirement_estate', 'trust'],
   equipment: ['assets'],
 };
 
 const ORG_TYPE_CATEGORIES = {
-  small_business: ['business_license', 'business_tax', 'business_insurance', 'employees'],
+  small_business: ['business_license', 'business_trust', 'business_insurance', 'employees'],
   tech_company: ['assets', 'business_license', 'business_insurance', 'employees', 'inst_safety'],
   construction: ['business_license', 'inst_safety', 'employees', 'assets', 'professional'],
-  professional_services: ['professional', 'business_tax', 'business_insurance', 'employees'],
+  professional_services: ['professional', 'business_trust', 'business_insurance', 'employees'],
   healthcare_org: ['inst_regulatory', 'inst_staff', 'inst_safety', 'professional', 'business_insurance'],
   school: ['inst_regulatory', 'inst_staff', 'inst_programs', 'inst_safety', 'inst_finance'],
   nonprofit: ['inst_regulatory', 'inst_finance', 'inst_legal', 'inst_staff'],
@@ -134,13 +134,13 @@ const ORG_TYPE_CATEGORIES = {
   property_management: ['property', 'housing', 'business_insurance', 'inst_safety'],
   transportation: ['assets', 'driving', 'business_insurance', 'employees', 'business_license'],
   manufacturing: ['assets', 'inst_safety', 'employees', 'business_license', 'inst_regulatory'],
-  other: ['business_license', 'business_tax', 'employees', 'business_insurance'],
+  other: ['business_license', 'business_trust', 'employees', 'business_insurance'],
 };
 
 const ORG_STRUGGLE_CATEGORIES = {
   employee_compliance: ['employees', 'inst_staff'],
   licenses_permits: ['business_license', 'inst_regulatory'],
-  tax_filings: ['business_tax'],
+  tax_filings: ['business_trust'],
   insurance_coverage: ['business_insurance', 'inst_legal'],
   asset_maintenance: ['assets'],
   vendor_contracts: ['office', 'liabilities'],
