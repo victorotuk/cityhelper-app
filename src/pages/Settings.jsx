@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Settings as SettingsIcon, Bell, BellOff, Shield, Phone, CheckCircle, Trash2, Globe } from 'lucide-react';
+import { ArrowLeft, Settings as SettingsIcon, Bell, BellOff, Shield, Phone, CheckCircle, Trash2, Globe, RefreshCw } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 import { APP_CONFIG } from '../lib/config';
 import { requestPushPermission, disablePush, preloadPushSDK } from '../lib/push';
+import WelcomeGuide from '../components/WelcomeGuide';
 
 export default function Settings() {
   const { user, signOut } = useAuthStore();
@@ -27,6 +28,10 @@ export default function Settings() {
   const [verificationCode, setVerificationCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
   const [phoneLoading, setPhoneLoading] = useState(false);
+
+  // Persona / Quiz
+  const [persona, setPersona] = useState(null);
+  const [showQuiz, setShowQuiz] = useState(false);
 
   const COUNTRIES = [
     { id: 'ca', name: 'Canada', flag: '\u{1F1E8}\u{1F1E6}' },
@@ -56,7 +61,7 @@ export default function Settings() {
       // Step 1: Try to read existing settings
       const { data, error: fetchErr } = await supabase
         .from('user_settings')
-        .select('phone_number, phone_verified, country, countries, push_enabled')
+        .select('phone_number, phone_verified, country, countries, push_enabled, persona')
         .eq('user_id', user.id)
         .single();
 
@@ -84,6 +89,7 @@ export default function Settings() {
         setCountry(data.country || '');
         setOtherCountries(Array.isArray(data.countries) ? data.countries : []);
         setPushEnabled(!!data.push_enabled);
+        setPersona(data.persona || null);
       }
     } catch (err) {
       console.error('[Settings] Fetch settings error:', err);
@@ -328,6 +334,32 @@ export default function Settings() {
             </div>
           </section>
 
+          {/* Personalization Quiz */}
+          <section className="settings-section">
+            <h2><RefreshCw size={20} /> Personalization</h2>
+            <p className="section-desc">
+              {!persona?.completedOnboarding
+                ? "You haven't completed the personalization quiz yet."
+                : persona?.accountType === 'organization'
+                  ? `Organization: ${persona.orgInfo?.name || 'Unnamed'} (${persona.orgInfo?.type || 'other'})`
+                  : `Personal: ${(persona.roles || []).length} roles, ${(persona.struggles || []).length} struggles selected.`}
+            </p>
+            <div className="setting-card">
+              <div className="setting-header">
+                <div className={`setting-icon ${persona?.completedOnboarding ? 'active' : 'muted'}`}>
+                  <RefreshCw size={20} />
+                </div>
+                <div className="setting-info">
+                  <h3>{persona?.completedOnboarding ? 'Update Your Profile' : 'Set Up Your Profile'}</h3>
+                  <p>{persona?.completedOnboarding ? 'Retake the quiz to update your recommendations' : 'Take the quiz so we can personalize your dashboard'}</p>
+                </div>
+                <button className="btn btn-primary btn-sm" onClick={() => setShowQuiz(true)}>
+                  {persona?.completedOnboarding ? 'Retake Quiz' : 'Take Quiz'}
+                </button>
+              </div>
+            </div>
+          </section>
+
           {/* Push Notifications */}
           <section className="settings-section">
             <h2><Bell size={20} /> Push Notifications</h2>
@@ -443,6 +475,21 @@ export default function Settings() {
           </section>
         </div>
       </main>
+
+      {showQuiz && (
+        <WelcomeGuide
+          userId={user.id}
+          existingPersona={persona}
+          isRetake={true}
+          onComplete={(newPersona) => {
+            setShowQuiz(false);
+            if (newPersona) {
+              setPersona(newPersona);
+              showSaved('Profile updated!');
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

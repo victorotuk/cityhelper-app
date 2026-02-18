@@ -224,7 +224,11 @@ export default function Dashboard() {
               )}
             </div>
           )}
-          <span className="header-email">{user?.email}</span>
+          <span className="header-email">
+            {persona?.accountType === 'organization' && persona?.orgInfo?.name
+              ? persona.orgInfo.name
+              : user?.email}
+          </span>
           <NotificationBell />
           <Link to="/settings" className="btn btn-ghost btn-sm" title="Settings">
             <Settings size={18} />
@@ -303,7 +307,7 @@ export default function Dashboard() {
           {loading ? (
             <div className="loading">Loading...</div>
           ) : items.length === 0 ? (
-            <EmptyState requireCountryForTracking={requireCountryForTracking} setShowAddModal={setShowAddModal} setSelectedCategory={setSelectedCategory} />
+            <EmptyState requireCountryForTracking={requireCountryForTracking} setShowAddModal={setShowAddModal} setSelectedCategory={setSelectedCategory} persona={persona} />
           ) : (
             <>
               {(groupedItems.overdue.length > 0 || groupedItems.urgent.length > 0) && (
@@ -393,6 +397,7 @@ export default function Dashboard() {
           onClose={() => { setShowAddModal(false); setSelectedCategory(null); }}
           onAdd={handleAddItem}
           selectedCategory={selectedCategory}
+          accountType={persona?.accountType}
           setSelectedCategory={setSelectedCategory}
         />
       )}
@@ -541,13 +546,13 @@ function ItemCard({ item, getStatusInfo, onDelete, onAddToCalendar, onCopy, onPa
 
 const BILL_CATEGORIES = ['housing', 'office', 'property'];
 
-function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory }) {
+function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory, accountType }) {
   const [name, setName] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
   const [payUrl, setPayUrl] = useState('');
   const [payPhone, setPayPhone] = useState('');
-  const [activeGroup, setActiveGroup] = useState('personal');
+  const [activeGroup, setActiveGroup] = useState(accountType === 'organization' ? 'business' : 'personal');
 
   const isBillCategory = BILL_CATEGORIES.includes(selectedCategory);
 
@@ -851,19 +856,32 @@ const EMPTY_EMOJIS = {
   inst_sports: '🏆',
 };
 
-function EmptyState({ requireCountryForTracking, setShowAddModal, setSelectedCategory }) {
-  const [activeTab, setActiveTab] = useState('personal');
-  const groups = [
-    { id: 'personal', label: 'Personal', icon: '👤' },
-    { id: 'business', label: 'Business', icon: '💼' },
-    { id: 'institution', label: 'Institution', icon: '🏛️' },
-  ];
+function EmptyState({ requireCountryForTracking, setShowAddModal, setSelectedCategory, persona }) {
+  const isOrg = persona?.accountType === 'organization';
+  const defaultTab = isOrg ? 'business' : 'personal';
+  const [activeTab, setActiveTab] = useState(defaultTab);
+  const groups = isOrg
+    ? [
+        { id: 'business', label: 'Business', icon: '💼' },
+        { id: 'institution', label: 'Institution', icon: '🏛️' },
+        { id: 'personal', label: 'Personal', icon: '👤' },
+      ]
+    : [
+        { id: 'personal', label: 'Personal', icon: '👤' },
+        { id: 'business', label: 'Business', icon: '💼' },
+        { id: 'institution', label: 'Institution', icon: '🏛️' },
+      ];
   const cats = APP_CONFIG.categories.filter(c => c.group === activeTab);
+
+  const orgName = persona?.orgInfo?.name;
+  const headline = isOrg
+    ? `${orgName ? orgName + ', everything' : 'Everything'} in order`
+    : 'Your life, completely in order';
 
   return (
     <div className="empty-state">
       <Calendar size={48} />
-      <h3>Your life, completely in order</h3>
+      <h3>{headline}</h3>
       <p>Never miss a deadline, payment, or renewal again. What do you need to track?</p>
       <div className="empty-group-tabs">
         {groups.map(g => (
