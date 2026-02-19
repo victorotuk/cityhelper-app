@@ -39,7 +39,7 @@ export default function Landing() {
               {APP_CONFIG.description}
             </p>
             <p className="hero-body subtle">
-              Track visas, trusts, licenses, renewals — all encrypted so only you can see them.
+              Track trusts, visas, taxes, licenses, renewals — all encrypted so only you can see them.
             </p>
             <div className="hero-actions">
               <Link to="/auth" className="btn btn-primary btn-lg">
@@ -143,7 +143,8 @@ export default function Landing() {
                 <h3 className="feature-title">{cat.name}</h3>
                 <p className="feature-text">
                   {cat.id === 'immigration' && 'Work permits, study permits, visitor visas, PR cards'}
-                  {cat.id === 'trust' && 'Living trusts, wills, beneficiaries, POA, estate plans — build your legacy'}
+                  {cat.id === 'trust' && 'Living trusts, wills, beneficiaries, POA — protect what matters'}
+                  {cat.id === 'tax' && 'T1, T2, HST/GST, RRSP, payroll — personal and business'}
                   {cat.id === 'driving' && 'License renewals, sticker, insurance, registration'}
                   {cat.id === 'parking' && 'Track parking and highway traffic infractions in every province'}
                   {cat.id === 'health' && 'Health cards (all provinces), medical appointments, health & dental insurance'}

@@ -7,7 +7,7 @@ export const APP_CONFIG = {
   // BRANDING - Change these to rebrand the entire app
   name: "CityHelper",           // App name (change this!)
   tagline: "Never miss a deadline",
-  description: "Track all your compliance — trusts, licenses, visas, renewals — in one place.",
+  description: "Track all your compliance — trusts, taxes, licenses, visas, renewals — in one place.",
   
   // BRAND VISUALS
   logo: "🍁",
@@ -27,7 +27,7 @@ export const APP_CONFIG = {
       name: "Personal",
       price: 8,
       scanLimit: 50,
-      features: ["Unlimited items", "Document vault", "Trust & tax estimator", "SMS alerts", "Calendar sync", "50 document scans/month"]
+      features: ["Unlimited items", "Document vault", "Tax estimator", "SMS alerts", "Calendar sync", "50 document scans/month"]
     },
     business: {
       name: "Business", 
@@ -41,7 +41,8 @@ export const APP_CONFIG = {
   categories: [
     // ── Personal ──
     { id: "immigration", name: "Immigration & Visas", icon: "Plane", color: "#3b82f6", group: "personal" },
-    { id: "trust", name: "Trusts & Legacy", icon: "Landmark", color: "#10b981", group: "personal" },
+    { id: "trust", name: "Trusts", icon: "Landmark", color: "#7c3aed", group: "personal" },
+    { id: "tax", name: "Personal Taxes", icon: "DollarSign", color: "#10b981", group: "personal" },
     { id: "driving", name: "Driving & Vehicles", icon: "Car", color: "#f59e0b", group: "personal" },
     { id: "parking", name: "Traffic & Parking", icon: "ParkingCircle", color: "#dc2626", group: "personal" },
     { id: "health", name: "Health", icon: "Heart", color: "#ef4444", group: "personal" },
@@ -53,7 +54,7 @@ export const APP_CONFIG = {
 
     // ── Business ──
     { id: "employees", name: "Employees & HR", icon: "Users", color: "#6366f1", group: "business" },
-    { id: "business_trust", name: "Business Trusts & Tax", icon: "Landmark", color: "#059669", group: "business" },
+    { id: "business_tax", name: "Business Taxes", icon: "DollarSign", color: "#059669", group: "business" },
     { id: "assets", name: "Assets & Equipment", icon: "Package", color: "#0ea5e9", group: "business" },
     { id: "liabilities", name: "Liabilities & Debt", icon: "AlertTriangle", color: "#e11d48", group: "business" },
     { id: "business_license", name: "Business Licenses & Permits", icon: "FileText", color: "#7c3aed", group: "business" },
@@ -434,17 +435,21 @@ export const APP_CONFIG = {
       { name: "Will / Testament Update", reminderDays: [365, 180, 90] },
       { name: "Beneficiary Designation Review", reminderDays: [365, 90, 30] },
       { name: "Power of Attorney Renewal", reminderDays: [180, 90, 60, 30] },
-      { name: "T1 Personal Tax Return", dueDate: "April 30", reminderDays: [60, 30, 14, 7] },
-      { name: "RRSP / Investment Contribution Deadline", dueDate: "March 1", reminderDays: [30, 14, 7] },
       { name: "Estate Plan Annual Review", reminderDays: [365, 180, 90] },
-      { name: "Trust Distribution Deadline", reminderDays: [60, 30, 14, 7] }
+      { name: "Trust Distribution Deadline", reminderDays: [60, 30, 14, 7] },
+      { name: "Trustee Appointment / Change", reminderDays: [90, 60, 30] },
+      { name: "Trust Funding / Transfer", reminderDays: [60, 30, 14, 7] }
     ],
-    business_trust: [
-      { name: "Corporate Trust Agreement Review", reminderDays: [365, 180, 90, 30] },
+    tax: [
+      { name: "T1 Personal Tax Return", dueDate: "April 30", reminderDays: [60, 30, 14, 7] },
+      { name: "T1 Self-Employed", dueDate: "June 15", reminderDays: [60, 30, 14, 7] },
+      { name: "RRSP Contribution Deadline", dueDate: "March 1", reminderDays: [30, 14, 7] },
+      { name: "Property Tax Installment", reminderDays: [30, 14, 7] }
+    ],
+    business_tax: [
       { name: "T2 Corporate Tax Return", reminderDays: [90, 60, 30, 14] },
       { name: "HST/GST Return (Quarterly)", reminderDays: [30, 14, 7] },
-      { name: "Shareholder Agreement Renewal", reminderDays: [180, 90, 60, 30] },
-      { name: "Succession Plan Review", reminderDays: [365, 180, 90] },
+      { name: "HST/GST Return (Annual)", reminderDays: [60, 30, 14] },
       { name: "Payroll Remittance", reminderDays: [14, 7, 3] },
       { name: "T4 / T5 Slips Filing", dueDate: "February 28", reminderDays: [30, 14, 7] }
     ],
