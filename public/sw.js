@@ -2,12 +2,12 @@
 self.addEventListener('push', (event) => {
   const promise = (async () => {
     const data = event.data ? await event.data.json().catch(() => ({})) : {}
-    const title = data.title || 'CityHelper'
+    const title = data.title || 'Nava'
     const options = {
       body: data.body || '',
       icon: data.icon || '/vite.svg',
       badge: '/vite.svg',
-      tag: data.tag || 'cityhelper-reminder',
+      tag: data.tag || 'nava-reminder',
       renotify: true,
     }
     await self.registration.showNotification(title, options)

@@ -1,13 +1,14 @@
-## CityHelper — Project Status
-Updated: 2026-02-01
+## Nava — Project Status
+Updated: 2026-02-21
 
 ### Overall
 - Status: In progress
-- Single workspace: `cityhelper` on Desktop (merged cityhelper-app)
+- Single workspace: `nava` on Desktop (merged nava-app)
 - Stack: React + Vite, Capacitor (Android/iOS), Supabase, Tauri (desktop)
 
 ### Recent
-- **Merged**: cityhelper-app merged into cityhelper. Single project now contains full React app, Android, iOS, Supabase, stripe-webhook, app.html (Predictably Human).
+- **Email suggestions**: Connect Gmail or Outlook to scan inbox for trackable items (subscriptions, tickets, renewals, bills). Multi-provider OAuth (email-oauth), AI extraction (fetch-email-suggestions). Migrations 019–021. Configured: Google OAuth, Microsoft Entra.
+- **Merged**: nava-app merged into nava. Single project now contains full React app, Android, iOS, Supabase, stripe-webhook, app.html (Predictably Human).
 - **Bill Pay**: pay_url and pay_phone on compliance_items (migration 010). Housing, Office, Property items support "Pay online" URL and "Call to pay" phone.
 - **Android**: Built successfully via Codemagic. App installed on Android device, ready for iteration.
 - AI chat (Groq), document scanning (OpenAI), ScanUpload, ChatBubble, codemagic.yaml.
@@ -15,19 +16,23 @@ Updated: 2026-02-01
 ### Mobile
 - **Android**: ✅ Built and installed. Codemagic `android-build` workflow. APK on device.
 - **iOS**: On hold until Xcode available for manual provisioning profile.
-  - GitHub + Apple Developer connected. Bundle ID `com.cityhelper.app` registered.
+  - GitHub + Apple Developer connected. Bundle ID `com.nava.app` registered.
 
 ### Pending Tasks
 - Android: Set up app signing keys for Play Store when ready.
 - iOS: When Xcode available, create provisioning profile and test build.
 
 ### Links
-- GitHub: `https://github.com/victorotuk/cityhelper-app`
+- GitHub: `https://github.com/victorotuk/nava-app`
 - Codemagic: `https://codemagic.io/app/695ded806dc729a6cfbc5215/build/695dededcec99af532b9b1ca`
 
 ### Changelog
+- 2026-02-21
+  - **Rebrand to Nava**: name, formalName (Nava.ai for domains/copyright), UI palette (serene horizon — warm gold #d4a574, soft blues).
+  - **AI agent**: ai-chat function calling — add/list/update items via natural language.
+  - **Email suggestions**: Gmail + Outlook support. Settings → Email suggestions: Connect Gmail/Outlook, scan inbox, add or dismiss AI-extracted items. Edge functions: email-oauth (unified OAuth), fetch-email-suggestions (multi-provider). Migrations: 019 (email_connections, email_suggestion_dismissed), 020 (oauth_states), 021 (oauth_states.provider). Supabase secrets: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET, APP_URL.
 - 2026-02-01
-  - Merged cityhelper-app into cityhelper. Single workspace.
+  - Merged nava-app into nava. Single workspace.
   - PROJECT_STATUS updated: Android built and on device.
   - Bill Pay (migration 010, AddItemModal, ItemCard).
   - Lint fixes: all ESLint errors resolved (`npm run lint` passes). PayTicket/ScanUpload/config/Apply/store fixes; argsIgnorePattern for underscore params; Apply loadSavedApplication wrapped in queueMicrotask.

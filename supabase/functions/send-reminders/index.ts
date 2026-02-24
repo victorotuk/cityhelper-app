@@ -95,7 +95,7 @@ async function getAppServer(): Promise<ApplicationServer | null> {
   try {
     const vapidKeys = importVapidKeys(JSON.parse(vapidJson) as ExportedVapidKeys)
     return await ApplicationServer.new({
-      contactInformation: 'mailto:support@cityhelper.app',
+      contactInformation: Deno.env.get('APP_SUPPORT_EMAIL') || 'mailto:support@nava.ai',
       vapidKeys,
     })
   } catch (e) {
@@ -162,10 +162,10 @@ serve(async (req) => {
       } | null
       if (!sub?.endpoint || !sub?.keys?.p256dh || !sub?.keys?.auth) continue
 
-      // Get this user's compliance items with due dates
+      // Get this user's compliance items with due dates (exclude snoozed)
       const { data: items } = await supabase
         .from('compliance_items')
-        .select('id, name, category, due_date, status')
+        .select('id, name, category, due_date, status, snooze_until')
         .eq('user_id', user.user_id)
         .not('due_date', 'is', null)
         .in('status', ['active', 'pending', null])
@@ -173,8 +173,14 @@ serve(async (req) => {
       if (!items?.length) continue
       results.items_checked += items.length
 
+      // Filter out snoozed items
+      const nowIso = now.toISOString()
+      const notSnoozed = items.filter(
+        (i: { snooze_until?: string | null }) => !i.snooze_until || i.snooze_until <= nowIso
+      )
+
       // Calculate urgency for each item
-      const actionableItems = items
+      const actionableItems = notSnoozed
         .map(item => {
           const dueDate = new Date(item.due_date)
           const daysUntil = Math.floor(

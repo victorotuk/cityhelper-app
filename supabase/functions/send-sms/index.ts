@@ -87,7 +87,7 @@ serve(async (req) => {
       body: new URLSearchParams({
         To: cleanPhone,
         From: TWILIO_PHONE_NUMBER,
-        Body: `Your CityHelper verification code is: ${code}`,
+        Body: `Your ${Deno.env.get('APP_NAME') || 'Nava'} verification code is: ${code}`,
       }).toString(),
     })
 

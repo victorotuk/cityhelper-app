@@ -9,7 +9,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const SYSTEM_PROMPT = `You are CityHelper, a friendly AI assistant specializing in Canadian compliance for individuals and businesses.
+const getSystemPrompt = () => `You are ${Deno.env.get('APP_NAME') || 'Nava'}, a friendly AI assistant specializing in Canadian compliance for individuals and businesses.
 
 You help with:
 - Immigration: work permits, study permits, visitor visas, PR applications, citizenship
@@ -57,7 +57,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'system', content: getSystemPrompt() },
           ...messages
         ],
         max_tokens: 1000,

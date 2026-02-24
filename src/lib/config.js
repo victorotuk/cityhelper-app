@@ -1,16 +1,20 @@
 // ============================================
 // APP CONFIGURATION
-// Change the name here and it updates everywhere
+// Change the name here → updates everywhere in the app.
+// For Edge Functions (SMS, email, AI): set APP_NAME secret in Supabase + redeploy.
+// See REBRAND.md for full instructions.
 // ============================================
 
 export const APP_CONFIG = {
-  // BRANDING - Change these to rebrand the entire app
-  name: "CityHelper",           // App name (change this!)
+  // BRANDING
+  name: "Nava",                // In-app display name
+  formalName: "Nava",         // Domains, app store, copyright, formal contexts
   tagline: "Never miss a deadline",
   description: "Track all your compliance — trusts, taxes, licenses, visas, renewals — in one place.",
   
-  // BRAND VISUALS
-  logo: "🍁",
+  // BRAND VISUALS — Set logoImage when you add public/nava-logo.png
+  logo: "N",           // Fallback for brand mark when no image
+  logoImage: "/nava-logo.png",
   
   // CONTACT
   supportEmail: "support@example.com",
@@ -37,42 +41,84 @@ export const APP_CONFIG = {
     }
   },
   
-  // COMPLIANCE CATEGORIES — Personal / Business / Institution
+  // COMPLIANCE CATEGORIES — Organized by theme (Personal → Business → Institution)
   categories: [
-    // ── Personal ──
-    { id: "immigration", name: "Immigration & Visas", icon: "Plane", color: "#3b82f6", group: "personal" },
-    { id: "trust", name: "Trusts", icon: "Landmark", color: "#7c3aed", group: "personal" },
+    // ── PERSONAL: Money & Finance ──
+    { id: "credit_banking", name: "Banking & Credit", icon: "CreditCard", color: "#6366f1", group: "personal", groups: ["personal", "business"] },
     { id: "tax", name: "Personal Taxes", icon: "DollarSign", color: "#10b981", group: "personal" },
+    { id: "subscriptions", name: "Subscriptions", icon: "Repeat", color: "#8b5cf6", group: "personal", groups: ["personal", "business"] },
+
+    // ── PERSONAL: Health & Life ──
+    { id: "health", name: "Health", icon: "Heart", color: "#ef4444", group: "personal" },
+    { id: "personal_insurance", name: "Personal Insurance", icon: "Shield", color: "#0891b2", group: "personal" },
+    { id: "pet_care", name: "Pet Care", icon: "Dog", color: "#a16207", group: "personal" },
+    { id: "kids_family", name: "Kids & Family", icon: "Baby", color: "#ec4899", group: "personal" },
+
+    // ── PERSONAL: Home ──
+    { id: "housing", name: "Housing & Rentals", icon: "Home", color: "#06b6d4", group: "personal" },
+    { id: "moving", name: "Moving", icon: "Truck", color: "#14b8a6", group: "personal", groups: ["personal", "business"] },
+
+    // ── PERSONAL: Travel & Mobility ──
+    { id: "immigration", name: "Immigration & Visas", icon: "Plane", color: "#3b82f6", group: "personal" },
+    { id: "travel", name: "Travel", icon: "Plane", color: "#0d9488", group: "personal", groups: ["personal", "business"] },
     { id: "driving", name: "Driving & Vehicles", icon: "Car", color: "#f59e0b", group: "personal" },
     { id: "parking", name: "Traffic & Parking", icon: "ParkingCircle", color: "#dc2626", group: "personal" },
-    { id: "health", name: "Health", icon: "Heart", color: "#ef4444", group: "personal" },
-    { id: "housing", name: "Housing & Rentals", icon: "Home", color: "#06b6d4", group: "personal" },
+
+    // ── PERSONAL: Work & Education ──
     { id: "education", name: "Education & School", icon: "BookOpen", color: "#8b5cf6", group: "personal" },
     { id: "work_schedule", name: "Work & Shifts", icon: "Clock", color: "#f97316", group: "personal" },
+
+    // ── PERSONAL: Legal & Government ──
+    { id: "legal_court", name: "Legal & Court", icon: "Scale", color: "#64748b", group: "personal", groups: ["personal", "business"] },
+    { id: "government_benefits", name: "Government Benefits", icon: "FileCheck", color: "#0ea5e9", group: "personal" },
+
+    // ── PERSONAL: Estate & Retirement ──
+    { id: "trust", name: "Trusts", icon: "Landmark", color: "#7c3aed", group: "personal" },
     { id: "retirement_estate", name: "Retirement & Estate", icon: "Landmark", color: "#0d9488", group: "personal" },
+
+    // ── PERSONAL: Events & Dates ──
+    { id: "important_dates", name: "Important Dates & Events", icon: "CalendarHeart", color: "#ec4899", group: "personal", groups: ["personal", "business"] },
+
+    // ── PERSONAL: Other ──
     { id: "other", name: "Other", icon: "Pin", color: "#64748b", group: "personal" },
 
-    // ── Business ──
+    // ── BUSINESS: HR & Benefits ──
     { id: "employees", name: "Employees & HR", icon: "Users", color: "#6366f1", group: "business" },
+    { id: "employee_benefits", name: "Employee Benefits", icon: "Gift", color: "#ec4899", group: "business" },
+
+    // ── BUSINESS: Finance ──
     { id: "business_tax", name: "Business Taxes", icon: "DollarSign", color: "#059669", group: "business" },
-    { id: "assets", name: "Assets & Equipment", icon: "Package", color: "#0ea5e9", group: "business" },
     { id: "liabilities", name: "Liabilities & Debt", icon: "AlertTriangle", color: "#e11d48", group: "business" },
+
+    // ── BUSINESS: Legal & Compliance ──
+    { id: "contracts", name: "Contracts & Agreements", icon: "FileSignature", color: "#0d9488", group: "business" },
+    { id: "data_privacy", name: "Data & Privacy Compliance", icon: "Lock", color: "#6366f1", group: "business" },
+    { id: "certifications", name: "Certifications & Standards", icon: "Award", color: "#7c3aed", group: "business" },
+
+    // ── BUSINESS: Operations ──
+    { id: "office", name: "Office & Operations", icon: "Briefcase", color: "#8b5cf6", group: "business" },
+    { id: "assets", name: "Assets & Equipment", icon: "Package", color: "#0ea5e9", group: "business" },
     { id: "business_license", name: "Business Licenses & Permits", icon: "FileText", color: "#7c3aed", group: "business" },
     { id: "business_insurance", name: "Insurance & Liability", icon: "Shield", color: "#0891b2", group: "business" },
-    { id: "office", name: "Office & Operations", icon: "Briefcase", color: "#8b5cf6", group: "business" },
     { id: "property", name: "Property & Municipal", icon: "Building", color: "#14b8a6", group: "business" },
+
+    // ── BUSINESS: IP & Environment ──
+    { id: "patents_ip", name: "Patents & Intellectual Property", icon: "Copyright", color: "#f59e0b", group: "business" },
+    { id: "environmental", name: "Environmental Compliance", icon: "Leaf", color: "#22c55e", group: "business" },
+
+    // ── BUSINESS: Professional ──
     { id: "professional", name: "Professional Licenses", icon: "GraduationCap", color: "#f97316", group: "business" },
 
-    // ── Institution (schools, hospitals, nonprofits, government) ──
-    { id: "inst_regulatory", name: "Regulatory & Accreditation", icon: "Shield", color: "#7c3aed", group: "institution" },
-    { id: "inst_staff", name: "Staff Compliance", icon: "Users", color: "#2563eb", group: "institution" },
-    { id: "inst_student", name: "Student & Member Services", icon: "BookOpen", color: "#8b5cf6", group: "institution" },
-    { id: "inst_finance", name: "Funding & Financial", icon: "DollarSign", color: "#059669", group: "institution" },
-    { id: "inst_safety", name: "Safety & Inspections", icon: "AlertTriangle", color: "#dc2626", group: "institution" },
+    // ── INSTITUTION ──
     { id: "inst_facilities", name: "Facilities & Property", icon: "Building", color: "#14b8a6", group: "institution" },
+    { id: "inst_finance", name: "Funding & Financial", icon: "DollarSign", color: "#059669", group: "institution" },
     { id: "inst_legal", name: "Legal & Insurance", icon: "FileText", color: "#0891b2", group: "institution" },
     { id: "inst_programs", name: "Programs & Curriculum", icon: "Calendar", color: "#f59e0b", group: "institution" },
+    { id: "inst_regulatory", name: "Regulatory & Accreditation", icon: "Shield", color: "#7c3aed", group: "institution" },
+    { id: "inst_safety", name: "Safety & Inspections", icon: "AlertTriangle", color: "#dc2626", group: "institution" },
     { id: "inst_sports", name: "Sports & Recreation", icon: "Trophy", color: "#ea580c", group: "institution" },
+    { id: "inst_staff", name: "Staff Compliance", icon: "Users", color: "#2563eb", group: "institution" },
+    { id: "inst_student", name: "Student & Member Services", icon: "BookOpen", color: "#8b5cf6", group: "institution" },
   ],
   
   // PARKING TICKET PORTALS BY CITY (lookup, pay, dispute)
@@ -366,7 +412,23 @@ export const APP_CONFIG = {
     driving: [
       { name: "Driver's License", reminderDays: [90, 60, 30, 14] },
       { name: "Vehicle Registration", reminderDays: [60, 30, 14, 7] },
-      { name: "Car Insurance", reminderDays: [60, 30, 14, 7] }
+      { name: "Car Insurance", reminderDays: [60, 30, 14, 7] },
+      { name: "Oil Change", reminderDays: [30, 14, 7] },
+      { name: "Tire Rotation", reminderDays: [30, 14, 7] },
+      { name: "Winter/Summer Tire Swap", reminderDays: [14, 7, 3] },
+      { name: "Vehicle Inspection", reminderDays: [60, 30, 14, 7] },
+      { name: "Emission Test", reminderDays: [60, 30, 14, 7] },
+      { name: "Brake Inspection", reminderDays: [30, 14, 7] }
+    ],
+    parking: [
+      { name: "Parking Ticket Payment", reminderDays: [14, 7, 3, 1] },
+      { name: "Parking Ticket Dispute Deadline", reminderDays: [14, 7, 3, 1] },
+      { name: "Highway 407 / 407 ETR Invoice", reminderDays: [30, 14, 7, 3] },
+      { name: "407 ETR Transponder Account", reminderDays: [60, 30, 14, 7] },
+      { name: "E-ZPass / I-Pass Payment", reminderDays: [14, 7, 3, 1] },
+      { name: "Toll Road Invoice (Unpaid)", reminderDays: [30, 14, 7, 3] },
+      { name: "Transponder Renewal / Replacement", reminderDays: [60, 30, 14, 7] },
+      { name: "Toll Violation Notice", reminderDays: [14, 7, 3, 1] }
     ],
     retirement_estate: [
       { name: "Will", reminderDays: [90, 60, 30] },
@@ -383,6 +445,8 @@ export const APP_CONFIG = {
       { name: "TFSA", reminderDays: [60, 30, 14, 7] }
     ],
     health: [
+      { name: "Prescription Refill", reminderDays: [14, 7, 3, 1] },
+      { name: "Medication Prior Authorization Renewal", reminderDays: [60, 30, 14, 7] },
       { name: "OHIP Card (Ontario)", reminderDays: [90, 60, 30, 14] },
       { name: "RAMQ Card (Quebec)", reminderDays: [90, 60, 30, 14] },
       { name: "MSP Card (British Columbia)", reminderDays: [90, 60, 30, 14] },
@@ -453,6 +517,26 @@ export const APP_CONFIG = {
       { name: "Payroll Remittance", reminderDays: [14, 7, 3] },
       { name: "T4 / T5 Slips Filing", dueDate: "February 28", reminderDays: [30, 14, 7] }
     ],
+    employee_benefits: [
+      { name: "Health & Dental Plan Renewal", reminderDays: [90, 60, 30, 14] },
+      { name: "Benefits Open Enrollment", reminderDays: [60, 30, 14, 7] },
+      { name: "Gym / Fitness Program", reminderDays: [60, 30, 14, 7] },
+      { name: "Sports / Recreation Program", reminderDays: [60, 30, 14, 7] },
+      { name: "Education / Tuition Reimbursement", reminderDays: [60, 30, 14, 7] },
+      { name: "Training Budget Period", reminderDays: [30, 14, 7, 3] },
+      { name: "Relocation / Housing Stipend", reminderDays: [60, 30, 14, 7] },
+      { name: "Pet Insurance Benefit", reminderDays: [60, 30, 14, 7] },
+      { name: "Employee Software Licenses", reminderDays: [60, 30, 14, 7] },
+      { name: "Company Retreat / Trip", reminderDays: [60, 30, 14, 7, 3, 1] },
+      { name: "Incentive Trip", reminderDays: [90, 60, 30, 14, 7] },
+      { name: "Childcare Subsidy", reminderDays: [60, 30, 14, 7] },
+      { name: "Wellness Program", reminderDays: [60, 30, 14, 7] },
+      { name: "EAP / Counseling Benefit", reminderDays: [60, 30, 14] },
+      { name: "Transit / Commuter Benefit", reminderDays: [30, 14, 7] },
+      { name: "Meal / Food Allowance", reminderDays: [30, 14, 7] },
+      { name: "RRSP / 401k Match Review", reminderDays: [60, 30, 14] },
+      { name: "Life / Disability Insurance Renewal", reminderDays: [60, 30, 14, 7] },
+    ],
     employees: [
       { name: "New Hire Onboarding", reminderDays: [14, 7, 3, 1] },
       { name: "Work Permit / Visa Expiry", reminderDays: [180, 90, 60, 30, 14] },
@@ -512,9 +596,14 @@ export const APP_CONFIG = {
     ],
     property: [
       { name: "Property Tax", reminderDays: [30, 14, 7] },
-      { name: "Pet License", reminderDays: [30, 14, 7] }
+      { name: "Pet License", reminderDays: [60, 30, 14, 7] }
     ],
     housing: [
+      { name: "Mortgage Renewal", reminderDays: [180, 120, 90, 60, 30] },
+      { name: "Home Insurance Renewal", reminderDays: [60, 30, 14, 7] },
+      { name: "Home Warranty Expiry", reminderDays: [90, 60, 30, 14] },
+      { name: "HVAC Service", reminderDays: [30, 14, 7] },
+      { name: "Furnace Filter Replacement", reminderDays: [30, 14, 7] },
       { name: "Lease Expiry", reminderDays: [90, 60, 30, 14] },
       { name: "Rent Increase Notice", reminderDays: [90, 60, 30] },
       { name: "Tenant Insurance", reminderDays: [60, 30, 14, 7] },
@@ -652,6 +741,142 @@ export const APP_CONFIG = {
       { name: "Tournament Registration", reminderDays: [30, 14, 7, 3] },
       { name: "Referee / Official Certification", reminderDays: [60, 30, 14] },
       { name: "Season Fee Collection Deadline", reminderDays: [30, 14, 7, 3] }
+    ],
+
+    // ── New personal categories ──
+    subscriptions: [
+      { name: "Netflix", reminderDays: [14, 7, 3] },
+      { name: "Spotify", reminderDays: [14, 7, 3] },
+      { name: "Gym Membership", reminderDays: [30, 14, 7, 3] },
+      { name: "Software Subscription", reminderDays: [30, 14, 7, 3] },
+      { name: "Cloud Storage", reminderDays: [30, 14, 7, 3] },
+      { name: "Streaming Service", reminderDays: [14, 7, 3] },
+      { name: "News/Magazine Subscription", reminderDays: [30, 14, 7] },
+      { name: "Professional Association Dues", reminderDays: [60, 30, 14, 7] },
+      { name: "Domain Name Renewal", reminderDays: [60, 30, 14, 7] },
+      { name: "Password Manager", reminderDays: [30, 14, 7] }
+    ],
+    pet_care: [
+      { name: "Vet Appointment", reminderDays: [14, 7, 3, 1] },
+      { name: "Vaccination Due", reminderDays: [30, 14, 7, 3] },
+      { name: "Flea/Tick Treatment", reminderDays: [14, 7, 3] },
+      { name: "Heartworm Prevention", reminderDays: [14, 7, 3] },
+      { name: "Grooming Appointment", reminderDays: [14, 7, 3, 1] },
+      { name: "Pet License Renewal", reminderDays: [60, 30, 14, 7] },
+      { name: "Pet Insurance Renewal", reminderDays: [60, 30, 14, 7] },
+      { name: "Dental Cleaning (Pet)", reminderDays: [60, 30, 14, 7] }
+    ],
+    kids_family: [
+      { name: "Daycare Registration", reminderDays: [90, 60, 30, 14] },
+      { name: "Child Immunization Due", reminderDays: [30, 14, 7, 3] },
+      { name: "Child Tax Benefit Review", reminderDays: [60, 30, 14] },
+      { name: "Parent-Teacher Conference", reminderDays: [7, 3, 1] },
+      { name: "Report Card Pickup", reminderDays: [7, 3, 1] },
+      { name: "Extracurricular Registration", reminderDays: [30, 14, 7, 3] },
+      { name: "Child Support Payment", reminderDays: [7, 3, 1] },
+      { name: "Custody Agreement Review", reminderDays: [90, 60, 30] }
+    ],
+    personal_insurance: [
+      { name: "Auto Insurance Renewal", reminderDays: [60, 30, 14, 7] },
+      { name: "Home Insurance Renewal", reminderDays: [60, 30, 14, 7] },
+      { name: "Renter's Insurance Renewal", reminderDays: [60, 30, 14, 7] },
+      { name: "Life Insurance Renewal", reminderDays: [60, 30, 14, 7] },
+      { name: "Umbrella Policy Renewal", reminderDays: [60, 30, 14, 7] }
+    ],
+    credit_banking: [
+      { name: "Credit Card Renewal", reminderDays: [60, 30, 14, 7] },
+      { name: "Credit Card Statement Due", reminderDays: [7, 3, 1] },
+      { name: "Bank Account Review", reminderDays: [90, 60, 30] },
+      { name: "Loan Payment Due", reminderDays: [14, 7, 3, 1] },
+      { name: "Line of Credit Review", reminderDays: [30, 14, 7] },
+      { name: "RESP Contribution", reminderDays: [30, 14, 7] },
+      { name: "Investment Rebalancing", reminderDays: [90, 60, 30] }
+    ],
+    travel: [
+      { name: "Flight Departure", reminderDays: [7, 3, 1] },
+      { name: "Flight Check-in", reminderDays: [1] },
+      { name: "Flight Return", reminderDays: [7, 3, 1] },
+      { name: "Visa/Entry Requirements (Trip)", reminderDays: [60, 30, 14, 7] },
+      { name: "Travel Insurance Expiry", reminderDays: [60, 30, 14, 7] },
+      { name: "Global Entry Renewal", reminderDays: [180, 90, 60, 30] },
+      { name: "TSA PreCheck Renewal", reminderDays: [180, 90, 60, 30] },
+      { name: "NEXUS Renewal", reminderDays: [180, 90, 60, 30] },
+      { name: "Frequent Flyer Points Expiry", reminderDays: [90, 60, 30, 14] },
+      { name: "Travel Credit Card Annual Fee", reminderDays: [60, 30, 14, 7] }
+    ],
+    important_dates: [
+      { name: "Birthday", reminderDays: [30, 14, 7, 3, 1] },
+      { name: "Anniversary", reminderDays: [30, 14, 7, 3, 1] },
+      { name: "Wedding RSVP", reminderDays: [30, 14, 7, 3, 1] },
+      { name: "Wedding Date", reminderDays: [60, 30, 14, 7, 3, 1] },
+      { name: "Party / Event Invitation", reminderDays: [14, 7, 3, 1] },
+      { name: "Baby Shower", reminderDays: [14, 7, 3, 1] },
+      { name: "Reunion", reminderDays: [30, 14, 7, 3, 1] },
+      { name: "Conference / Trade Show", reminderDays: [60, 30, 14, 7, 3] },
+      { name: "Gala / Fundraiser", reminderDays: [30, 14, 7, 3, 1] },
+      { name: "Holiday Gathering", reminderDays: [14, 7, 3, 1] }
+    ],
+    legal_court: [
+      { name: "Court Date", reminderDays: [30, 14, 7, 3, 1] },
+      { name: "Small Claims Filing Deadline", reminderDays: [30, 14, 7, 3] },
+      { name: "Jury Duty", reminderDays: [14, 7, 3, 1] },
+      { name: "Legal Filing Deadline", reminderDays: [30, 14, 7, 3] },
+      { name: "Statute of Limitations", reminderDays: [90, 60, 30, 14] },
+      { name: "Divorce/Custody Paperwork", reminderDays: [30, 14, 7, 3] }
+    ],
+    moving: [
+      { name: "Change of Address", reminderDays: [14, 7, 3, 1] },
+      { name: "Mail Forwarding End Date", reminderDays: [30, 14, 7, 3] },
+      { name: "Utility Transfer", reminderDays: [14, 7, 3, 1] },
+      { name: "Move-in Date", reminderDays: [30, 14, 7, 3, 1] },
+      { name: "Move-out Inspection", reminderDays: [14, 7, 3, 1] },
+      { name: "Key Return", reminderDays: [7, 3, 1] }
+    ],
+    government_benefits: [
+      { name: "EI (Employment Insurance) Review", reminderDays: [30, 14, 7] },
+      { name: "CPP Application", reminderDays: [90, 60, 30] },
+      { name: "OAS (Old Age Security) Review", reminderDays: [60, 30, 14] },
+      { name: "Disability Benefits Review", reminderDays: [60, 30, 14] },
+      { name: "Tax Credit Renewal", reminderDays: [60, 30, 14] },
+      { name: "Census / Survey Response", reminderDays: [30, 14, 7] },
+      { name: "Voter Registration", reminderDays: [60, 30, 14] }
+    ],
+
+    // ── New business categories ──
+    contracts: [
+      { name: "Client Contract Renewal", reminderDays: [90, 60, 30, 14] },
+      { name: "Vendor Agreement Renewal", reminderDays: [90, 60, 30, 14] },
+      { name: "NDA Expiry", reminderDays: [60, 30, 14, 7] },
+      { name: "Service Level Agreement Review", reminderDays: [60, 30, 14] },
+      { name: "Partnership Agreement Review", reminderDays: [90, 60, 30] },
+      { name: "Non-Compete Expiry", reminderDays: [90, 60, 30, 14] }
+    ],
+    certifications: [
+      { name: "ISO Certification Renewal", reminderDays: [180, 90, 60, 30] },
+      { name: "SOC 2 Audit", reminderDays: [90, 60, 30, 14] },
+      { name: "Industry Certification Renewal", reminderDays: [90, 60, 30, 14] },
+      { name: "Quality Management Review", reminderDays: [60, 30, 14] },
+      { name: "Safety Certification", reminderDays: [90, 60, 30, 14] }
+    ],
+    patents_ip: [
+      { name: "Patent Maintenance Fee", reminderDays: [90, 60, 30, 14] },
+      { name: "Trademark Renewal", reminderDays: [180, 90, 60, 30] },
+      { name: "Copyright Registration Renewal", reminderDays: [60, 30, 14] },
+      { name: "Domain Dispute Deadline", reminderDays: [30, 14, 7, 3] }
+    ],
+    environmental: [
+      { name: "Environmental Permit Renewal", reminderDays: [90, 60, 30, 14] },
+      { name: "Waste Reporting Deadline", reminderDays: [30, 14, 7, 3] },
+      { name: "Emissions Reporting", reminderDays: [60, 30, 14, 7] },
+      { name: "Environmental Audit", reminderDays: [90, 60, 30, 14] }
+    ],
+    data_privacy: [
+      { name: "GDPR Compliance Review", reminderDays: [90, 60, 30] },
+      { name: "CCPA/PIPEDA Review", reminderDays: [90, 60, 30] },
+      { name: "Data Retention Policy Review", reminderDays: [60, 30, 14] },
+      { name: "Privacy Policy Update", reminderDays: [60, 30, 14] },
+      { name: "Consent Form Renewal", reminderDays: [30, 14, 7] },
+      { name: "Data Processing Agreement Review", reminderDays: [90, 60, 30] }
     ]
   }
 };

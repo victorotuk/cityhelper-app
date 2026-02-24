@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase';
 export default function Assistant() {
   const [messages, setMessages] = useState([{
     role: 'assistant',
-    content: `Hey! 👋 I'm your Canadian compliance assistant.\n\nAsk me anything about:\n• Taxes (T1, T2, HST/GST)\n• Immigration (permits, visas, PR)\n• Housing (leases, tenant rights)\n• Driving (licenses, registration)\n• Business compliance\n\nWhat can I help you with?`
+    content: `Hey! 👋 I'm your compliance assistant — you can do everything through me, no clicking needed.\n\n**I can:**\n• **Track** — Add, list, filter, mark done, snooze, share items\n• **Estate** — Add executors, nominees, trustees to your estate plan\n• **Business** — Add corporations, LLCs, locations\n• **Guides** — "How do I apply for a work permit?" or "I want to start a trust and nest a corporation inside it" — I'll give you step-by-step guidance\n• **Applications** — Work permit, study permit, visitor visa, PR card\n\nJust tell me what you need. What can I help you with?`
   }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -114,7 +114,7 @@ export default function Assistant() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about taxes, licenses, permits..."
+              placeholder="Add my Netflix renewal March 15, or ask anything..."
               disabled={loading}
             />
             <button type="submit" disabled={loading || !input.trim()}>

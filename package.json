@@ -1,20 +1,19 @@
 {
-  "name": "cityhelper-app",
+  "name": "nava-app",
   "private": true,
   "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:alt": "vite --port 5174",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
-    
     "// Mobile (iOS & Android)": "",
     "cap:sync": "npx cap sync",
     "ios": "npm run build && npx cap sync ios && npx cap open ios",
     "android": "npm run build && npx cap sync android && npx cap open android",
     "android:run": "npm run build && npx cap sync android && npx cap run android",
-    
     "// Desktop (Mac & Windows)": "",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
@@ -25,6 +24,8 @@
     "@capacitor/cli": "^7.4.4",
     "@capacitor/core": "^8.0.0",
     "@capacitor/ios": "^8.0.0",
+    "@capgo/capacitor-share-target": "^8.0.17",
+    "@ebarooni/capacitor-calendar": "^8.0.0",
     "@supabase/supabase-js": "^2.89.0",
     "@tanstack/react-query": "^5.90.16",
     "@tauri-apps/api": "^2.9.1",

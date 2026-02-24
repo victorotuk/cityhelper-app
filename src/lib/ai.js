@@ -3,6 +3,8 @@
 // Full selection of AI models like paal.ai
 // ============================================
 
+import { APP_CONFIG } from './config.js';
+
 const AI_PROVIDERS = {
   // OpenAI Models
   'gpt-4o': {
@@ -140,7 +142,7 @@ const PROVIDER_GROUPS = {
 };
 
 // System prompt for Canadian compliance assistant
-const SYSTEM_PROMPT = `You are CityHelper, your all-in-one Canadian compliance assistant. Users talk to YOU for everything - no need to navigate elsewhere.
+const SYSTEM_PROMPT = `You are ${APP_CONFIG.name}, your all-in-one Canadian compliance assistant. Users talk to YOU for everything - no need to navigate elsewhere.
 
 ## What You Handle
 

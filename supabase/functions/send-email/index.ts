@@ -9,8 +9,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const APP_NAME = 'CityHelper'
-const APP_URL = 'https://cityhelper.app' // Change to your domain
+const APP_NAME = Deno.env.get('APP_NAME') || 'Nava'
+const APP_URL = Deno.env.get('APP_URL') || 'https://nava.ai'
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {

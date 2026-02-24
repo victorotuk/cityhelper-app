@@ -25,7 +25,7 @@ const ROLES = [
 // ── Personal struggles ──
 const STRUGGLES = [
   { id: 'deadlines', label: 'Missing deadlines', icon: '⏰' },
-  { id: 'tickets', label: 'Traffic tickets & fines', icon: '🅿️' },
+  { id: 'tickets', label: 'Traffic tickets, tolls & fines', icon: '🅿️' },
   { id: 'taxes', label: 'Tax filing dates', icon: '💰' },
   { id: 'renewals', label: 'Document renewals (license, passport, etc.)', icon: '📄' },
   { id: 'bills', label: 'Bills & payments', icon: '💸' },
@@ -137,6 +137,29 @@ const ORG_TYPE_CATEGORIES = {
   other: ['business_license', 'business_tax', 'employees', 'business_insurance'],
 };
 
+// ── Life moments (personal) ──
+const LIFE_MOMENTS = [
+  { id: 'moving', label: "I'm moving", icon: '🚚', desc: 'Change of address, utilities, mail' },
+  { id: 'expecting_baby', label: 'Expecting a baby', icon: '👶', desc: 'Health, benefits, daycare' },
+  { id: 'new_job', label: 'Starting a new job', icon: '💼', desc: 'Tax forms, benefits, contracts' },
+  { id: 'getting_married', label: 'Getting married', icon: '💍', desc: 'Name change, benefits, estate' },
+  { id: 'buying_home', label: 'Buying a home', icon: '🏠', desc: 'Mortgage, insurance, property tax' },
+  { id: 'retiring', label: 'Retiring soon', icon: '🌅', desc: 'Pensions, benefits, estate planning' },
+  { id: 'starting_business', label: 'Starting a business', icon: '🏪', desc: 'Licenses, taxes, insurance' },
+  { id: 'none', label: "Nothing major right now", icon: '✨', desc: 'Skip this' },
+];
+
+const LIFE_MOMENT_CATEGORIES = {
+  moving: ['moving', 'housing', 'government_benefits'],
+  expecting_baby: ['kids_family', 'health', 'government_benefits'],
+  new_job: ['work_schedule', 'tax', 'health', 'employee_benefits'],
+  getting_married: ['important_dates', 'retirement_estate', 'trust'],
+  buying_home: ['housing', 'property', 'personal_insurance', 'tax'],
+  retiring: ['retirement_estate', 'health', 'trust', 'government_benefits'],
+  starting_business: ['business_license', 'business_tax', 'business_insurance'],
+  none: [],
+};
+
 const ORG_STRUGGLE_CATEGORIES = {
   employee_compliance: ['employees', 'inst_staff'],
   licenses_permits: ['business_license', 'inst_regulatory'],
@@ -168,6 +191,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
   // Personal flow state
   const [selectedRoles, setSelectedRoles] = useState(existingPersona?.roles || []);
   const [selectedStruggles, setSelectedStruggles] = useState(existingPersona?.struggles || []);
+  const [lifeMoments, setLifeMoments] = useState(existingPersona?.lifeMoments || []);
 
   // Org flow state
   const [orgName, setOrgName] = useState(existingPersona?.orgInfo?.name || '');
@@ -185,6 +209,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
     if (accountType === 'personal') {
       selectedRoles.forEach(r => (ROLE_CATEGORIES[r] || []).forEach(c => catSet.add(c)));
       selectedStruggles.forEach(s => (STRUGGLE_CATEGORIES[s] || []).forEach(c => catSet.add(c)));
+      lifeMoments.filter(m => m !== 'none').forEach(m => (LIFE_MOMENT_CATEGORIES[m] || []).forEach(c => catSet.add(c)));
     } else {
       (ORG_TYPE_CATEGORIES[orgType] || []).forEach(c => catSet.add(c));
       orgStruggles.forEach(s => (ORG_STRUGGLE_CATEGORIES[s] || []).forEach(c => catSet.add(c)));
@@ -200,7 +225,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
       onboardedAt: new Date().toISOString(),
       recommendedCategories: getRecommendedCategories(),
       ...(accountType === 'personal'
-        ? { roles: selectedRoles, struggles: selectedStruggles }
+        ? { roles: selectedRoles, struggles: selectedStruggles, lifeMoments: lifeMoments.filter(m => m !== 'none') }
         : { orgInfo: { name: orgName, type: orgType }, orgStruggles }),
     };
     try {
@@ -228,7 +253,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
   };
 
   const stepOrder = accountType === 'personal'
-    ? ['welcome', 'account_type', 'roles', 'struggles']
+    ? ['welcome', 'account_type', 'roles', 'struggles', 'life_moments']
     : ['welcome', 'account_type', 'org_info', 'org_struggles'];
 
   const visibleSteps = isRetake ? stepOrder.slice(1) : stepOrder;
@@ -239,6 +264,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
       case 'account_type': return !!accountType;
       case 'roles': return selectedRoles.length > 0;
       case 'struggles': return selectedStruggles.length > 0;
+      case 'life_moments': return true;
       case 'org_info': return orgName.trim() && orgType;
       case 'org_struggles': return orgStruggles.length > 0;
       default: return true;
@@ -250,6 +276,8 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
       setStep(accountType === 'personal' ? 'roles' : 'org_info');
     } else if (step === 'roles') {
       setStep('struggles');
+    } else if (step === 'struggles') {
+      setStep('life_moments');
     } else if (step === 'org_info') {
       setStep('org_struggles');
     }
@@ -260,6 +288,8 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
       setStep('account_type');
     } else if (step === 'struggles') {
       setStep('roles');
+    } else if (step === 'life_moments') {
+      setStep('struggles');
     } else if (step === 'org_struggles') {
       setStep('org_info');
     } else if (step === 'account_type' && !isRetake) {
@@ -267,7 +297,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
     }
   };
 
-  const isLastStep = step === 'struggles' || step === 'org_struggles';
+  const isLastStep = step === 'life_moments' || step === 'org_struggles';
 
   return (
     <div className="welcome-guide-overlay">
@@ -392,7 +422,43 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
             </div>
             <div className="guide-actions">
               <button className="btn btn-ghost" onClick={goBack}>Back</button>
-              <button className="btn btn-primary" onClick={handleFinish} disabled={saving || !canGoNext()}>
+              <button className="btn btn-primary" onClick={goNext} disabled={!canGoNext()}>
+                Next <ChevronRight size={18} />
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* ── Personal: Life moments ── */}
+        {step === 'life_moments' && (
+          <>
+            <h2 className="guide-title">What&apos;s coming up?</h2>
+            <p className="guide-description">Big life changes? We&apos;ll surface the right things to track.</p>
+            <div className="quiz-options">
+              {LIFE_MOMENTS.map(m => (
+                <button
+                  key={m.id}
+                  className={`quiz-option ${lifeMoments.includes(m.id) ? 'selected' : ''}`}
+                  onClick={() => {
+                    if (m.id === 'none') {
+                      setLifeMoments(['none']);
+                    } else {
+                      setLifeMoments(prev => prev.includes('none') ? [m.id] : prev.includes(m.id) ? prev.filter(x => x !== m.id) : [...prev, m.id]);
+                    }
+                  }}
+                >
+                  <span className="quiz-option-icon">{m.icon}</span>
+                  <span className="quiz-option-text">
+                    <strong>{m.label}</strong>
+                    <small>{m.desc}</small>
+                  </span>
+                  {lifeMoments.includes(m.id) && <Check size={16} className="quiz-check" />}
+                </button>
+              ))}
+            </div>
+            <div className="guide-actions">
+              <button className="btn btn-ghost" onClick={goBack}>Back</button>
+              <button className="btn btn-primary" onClick={handleFinish} disabled={saving}>
                 {saving ? 'Saving...' : <><Check size={18} /> Done</>}
               </button>
             </div>

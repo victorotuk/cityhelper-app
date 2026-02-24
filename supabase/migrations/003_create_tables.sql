@@ -1,5 +1,5 @@
 -- ============================================
--- CITYHELPER DATABASE SCHEMA
+-- NAVA DATABASE SCHEMA
 -- Run this in Supabase SQL Editor
 -- ============================================
 

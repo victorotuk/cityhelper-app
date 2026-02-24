@@ -2,14 +2,16 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useComplianceStore } from '../stores/complianceStore';
+import { useSharedSuggestStore } from '../stores/sharedSuggestStore';
 import { APP_CONFIG } from '../lib/config';
 import { supabase } from '../lib/supabase';
-import { format, differenceInDays, parseISO } from 'date-fns';
+import { format, differenceInDays, parseISO, addDays } from 'date-fns';
 import { 
   Plus, 
   LogOut, 
   Calendar, 
   AlertTriangle,
+  MessageSquarePlus,
   Clock,
   CheckCircle,
   X,
@@ -22,24 +24,39 @@ import {
   CalendarPlus,
   Download,
   Copy,
+  Clipboard,
   CreditCard,
   ChevronDown,
   Globe,
   ExternalLink,
   RefreshCw,
-  Phone
+  Share2,
+  Phone,
+  Target,
+  Check,
+  Edit3,
+  User,
+  Package,
+  Building2,
+  History
 } from 'lucide-react';
 import NotificationBell from '../components/NotificationBell';
 import WelcomeGuide from '../components/WelcomeGuide';
+import SuggestionBox from '../components/SuggestionBox';
 import DisputeTicket from '../components/DisputeTicket';
 import PayTicket from '../components/PayTicket';
 import { parseTicketFromNotes } from '../lib/payTicketUtils';
+import { parseTextForSuggestion } from '../lib/smartSuggestParse';
 import ScanUpload from '../components/ScanUpload';
+import ShareItemModal from '../components/ShareItemModal';
+import BulkEditModal from '../components/BulkEditModal';
+import CalendarImportModal from '../components/CalendarImportModal';
+import AuditModal from '../components/AuditModal';
 import { addToGoogleCalendar, exportAllToCalendar } from '../lib/calendar';
 
 export default function Dashboard() {
   const { user, signOut } = useAuthStore();
-  const { items, loading, fetchItems, addItem, deleteItem } = useComplianceStore();
+  const { items, loading, fetchItems, addItem, deleteItem, renewItem, snoozeItem, updateItem } = useComplianceStore();
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
@@ -48,12 +65,42 @@ export default function Dashboard() {
   const [showPayModal, setShowPayModal] = useState(false);
   const [payInitialValues, setPayInitialValues] = useState({});
   const [showCountryRequired, setShowCountryRequired] = useState(false);
+  const [showSuggestionBox, setShowSuggestionBox] = useState(false);
   const [userCountry, setUserCountry] = useState(null);
   const [userCountries, setUserCountries] = useState([]); // primary + other countries
   const [activeCountry, setActiveCountry] = useState(null); // current switch (for multi-country)
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [persona, setPersona] = useState(null);
+  const [sharedInitialValues, setSharedInitialValues] = useState(null);
+  const [bulkEditMode, setBulkEditMode] = useState(false);
+  const [bulkSelectedIds, setBulkSelectedIds] = useState(new Set());
+  const [showBulkEditModal, setShowBulkEditModal] = useState(false);
+  const [showCalendarImport, setShowCalendarImport] = useState(false);
+  const [auditItem, setAuditItem] = useState(null);
+  const { pendingText, clearPendingText } = useSharedSuggestStore();
+
+  const toggleBulkSelect = (id, isOwned) => {
+    if (!isOwned) return;
+    setBulkSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
   const navigate = useNavigate();
+
+  // When app was opened via Share (shared text), open Add modal with parsed suggestion
+  useEffect(() => {
+    if (!pendingText || !user) return;
+    const s = parseTextForSuggestion(pendingText);
+    clearPendingText();
+    if (s) {
+      setSharedInitialValues(s);
+      setShowAddModal(true);
+      setSelectedCategory(s.category);
+    }
+  }, [pendingText, user, clearPendingText]);
 
   const COUNTRY_LABELS = { ca: 'Canada', us: 'United States' };
   const COUNTRY_FLAGS = { ca: '🇨🇦', us: '🇺🇸' };
@@ -68,10 +115,10 @@ export default function Dashboard() {
     const list = primary ? [primary, ...others].filter((c, i, a) => a.indexOf(c) === i) : others.filter((c, i, a) => a.indexOf(c) === i);
     setUserCountry(primary);
     setUserCountries(list);
-    const stored = localStorage.getItem(`cityhelper_active_country_${user.id}`);
+    const stored = localStorage.getItem(`nava_active_country_${user.id}`);
     const valid = list.includes(stored);
     setActiveCountry(valid ? stored : (primary || list[0] || null));
-    if (stored && !valid) localStorage.setItem(`cityhelper_active_country_${user.id}`, primary || list[0] || '');
+    if (stored && !valid) localStorage.setItem(`nava_active_country_${user.id}`, primary || list[0] || '');
   };
 
   useEffect(() => {
@@ -129,6 +176,19 @@ export default function Dashboard() {
     }
   };
 
+  const handleAddItemsFromCalendar = async (itemsToAdd) => {
+    try {
+      for (const item of itemsToAdd) {
+        await addItem(item);
+      }
+      setShowCalendarImport(false);
+      fetchItems(user.id);
+    } catch (err) {
+      console.error('Failed to add items:', err);
+      alert('Error: ' + err.message);
+    }
+  };
+
   const handleDeleteItem = async (id) => {
     if (confirm('Delete this item?')) {
       await deleteItem(id);
@@ -147,8 +207,17 @@ export default function Dashboard() {
 
   const setActiveCountryAndSave = (code) => {
     setActiveCountry(code);
-    if (user?.id) localStorage.setItem(`cityhelper_active_country_${user.id}`, code);
+    if (user?.id) localStorage.setItem(`nava_active_country_${user.id}`, code);
     setShowCountryDropdown(false);
+  };
+
+  const handleBulkApply = async (updates) => {
+    for (const id of bulkSelectedIds) {
+      await updateItem(id, updates);
+    }
+    setBulkSelectedIds(new Set());
+    setShowBulkEditModal(false);
+    setBulkEditMode(false);
   };
 
   const handleCopyItem = (item) => {
@@ -176,7 +245,15 @@ export default function Dashboard() {
     overdue: items.filter(i => getStatusInfo(i.due_date).status === 'overdue'),
     urgent: items.filter(i => getStatusInfo(i.due_date).status === 'urgent'),
     warning: items.filter(i => getStatusInfo(i.due_date).status === 'warning'),
-    ok: items.filter(i => getStatusInfo(i.due_date).status === 'ok')
+    ok: items.filter(i => getStatusInfo(i.due_date).status === 'ok'),
+    completed: items
+      .filter(i => i.last_completed_at)
+      .filter(i => {
+        const d = new Date(i.last_completed_at);
+        return d > new Date(Date.now() - 30 * 864e5);
+      })
+      .sort((a, b) => new Date(b.last_completed_at) - new Date(a.last_completed_at))
+      .slice(0, 10),
   };
 
   return (
@@ -184,7 +261,11 @@ export default function Dashboard() {
       {/* Header */}
       <header className="dashboard-header">
         <Link to="/dashboard" className="header-brand">
-          <span className="header-logo">{APP_CONFIG.logo}</span>
+          {APP_CONFIG.logoImage ? (
+            <img src={APP_CONFIG.logoImage} alt="Nava" className="header-logo-img" />
+          ) : (
+            <span className="header-logo">{APP_CONFIG.logo}</span>
+          )}
           <span className="header-name">{APP_CONFIG.name}</span>
         </Link>
         <div className="header-actions">
@@ -253,9 +334,21 @@ export default function Dashboard() {
           <Link to="/documents" onClick={() => setShowMenu(false)}>
             <Folder size={18} /> Documents
           </Link>
+          <Link to="/estate" onClick={() => setShowMenu(false)}>
+            <User size={18} /> Estate Executors
+          </Link>
+          <Link to="/assets" onClick={() => setShowMenu(false)}>
+            <Package size={18} /> Asset Inventory
+          </Link>
+          <Link to="/business" onClick={() => setShowMenu(false)}>
+            <Building2 size={18} /> Business Entities
+          </Link>
           <Link to="/settings" onClick={() => setShowMenu(false)}>
             <Settings size={18} /> Settings
           </Link>
+          <button onClick={() => { setShowSuggestionBox(true); setShowMenu(false); }}>
+            <MessageSquarePlus size={18} /> Suggest something to track
+          </button>
         </div>
       )}
 
@@ -283,10 +376,43 @@ export default function Dashboard() {
             <Download size={20} />
             <span>Export Calendar</span>
           </button>
+          <button className="quick-action" onClick={() => setShowCalendarImport(true)}>
+            <Calendar size={20} />
+            <span>Import Calendar</span>
+          </button>
+          {items.length > 0 && (
+            <button
+              className={`quick-action ${bulkEditMode ? 'active' : ''}`}
+              onClick={() => { setBulkEditMode(!bulkEditMode); setBulkSelectedIds(new Set()); }}
+            >
+              <Edit3 size={20} />
+              <span>Bulk Edit</span>
+            </button>
+          )}
         </div>
 
         {/* Compliance Health */}
         <ComplianceHealth items={items} groupedItems={groupedItems} />
+
+        {/* Focus on these 3 (Mial-style priorities) */}
+        {items.length > 0 && (groupedItems.overdue.length > 0 || groupedItems.urgent.length > 0 || groupedItems.warning.length > 0) && (
+          <FocusOnThree
+            groupedItems={groupedItems}
+            getStatusInfo={getStatusInfo}
+            onDelete={handleDeleteItem}
+            onRenew={renewItem}
+            onSnooze={snoozeItem}
+            onAddToCalendar={addToGoogleCalendar}
+            onCopy={handleCopyItem}
+            onPay={(item) => item.category === 'parking' ? () => { setPayInitialValues(parseTicketFromNotes(item.notes)); setShowPayModal(true); } : null}
+            userCountry={activeCountry}
+            onShared={() => fetchItems(user.id)}
+            bulkEditMode={bulkEditMode}
+            bulkSelectedIds={bulkSelectedIds}
+            toggleBulkSelect={toggleBulkSelect}
+            onShowHistory={setAuditItem}
+          />
+        )}
 
         {/* Personalized suggestions */}
         {persona?.recommendedCategories && items.length > 0 && (
@@ -309,7 +435,7 @@ export default function Dashboard() {
                 <div className="items-section urgent">
                   <h3><AlertTriangle size={18} /> Needs Attention</h3>
                   {[...groupedItems.overdue, ...groupedItems.urgent].map(item => (
-                    <ItemCard key={item.id} item={item} getStatusInfo={getStatusInfo} onDelete={handleDeleteItem} onAddToCalendar={addToGoogleCalendar} onCopy={handleCopyItem} onPay={catId => catId === 'parking' ? () => { setPayInitialValues(parseTicketFromNotes(item.notes)); setShowPayModal(true); } : null} onRenew={(url) => url && window.open(url, '_blank')} userCountry={activeCountry} />
+                    <ItemCard key={item.id} item={item} getStatusInfo={getStatusInfo} onDelete={handleDeleteItem} onAddToCalendar={addToGoogleCalendar} onCopy={handleCopyItem} onPay={(i) => i?.category === 'parking' ? () => { setPayInitialValues(parseTicketFromNotes(item.notes)); setShowPayModal(true); } : null} onRenew={(url) => url && window.open(url, '_blank')} userCountry={activeCountry} onMarkDone={() => renewItem(item.id)} onSnooze={(days) => snoozeItem(item.id, addDays(new Date(), days).toISOString())} onShared={() => fetchItems(user.id)} bulkEditMode={bulkEditMode} bulkSelected={bulkSelectedIds.has(item.id)} onBulkToggle={() => toggleBulkSelect(item.id, !item.isShared)} onShowHistory={(i) => setAuditItem(i)} />
                   ))}
                 </div>
               )}
@@ -318,7 +444,7 @@ export default function Dashboard() {
                 <div className="items-section warning">
                   <h3><Clock size={18} /> Coming Up (30 days)</h3>
                   {groupedItems.warning.map(item => (
-                    <ItemCard key={item.id} item={item} getStatusInfo={getStatusInfo} onDelete={handleDeleteItem} onAddToCalendar={addToGoogleCalendar} onCopy={handleCopyItem} onPay={catId => catId === 'parking' ? () => { setPayInitialValues(parseTicketFromNotes(item.notes)); setShowPayModal(true); } : null} onRenew={(url) => url && window.open(url, '_blank')} userCountry={activeCountry} />
+                    <ItemCard key={item.id} item={item} getStatusInfo={getStatusInfo} onDelete={handleDeleteItem} onAddToCalendar={addToGoogleCalendar} onCopy={handleCopyItem} onPay={(i) => i?.category === 'parking' ? () => { setPayInitialValues(parseTicketFromNotes(item.notes)); setShowPayModal(true); } : null} onRenew={(url) => url && window.open(url, '_blank')} userCountry={activeCountry} onMarkDone={() => renewItem(item.id)} onSnooze={(days) => snoozeItem(item.id, addDays(new Date(), days).toISOString())} onShared={() => fetchItems(user.id)} bulkEditMode={bulkEditMode} bulkSelected={bulkSelectedIds.has(item.id)} onBulkToggle={() => toggleBulkSelect(item.id, !item.isShared)} onShowHistory={(i) => setAuditItem(i)} />
                   ))}
                 </div>
               )}
@@ -327,7 +453,17 @@ export default function Dashboard() {
                 <div className="items-section ok">
                   <h3><CheckCircle size={18} /> All Good</h3>
                   {groupedItems.ok.map(item => (
-                    <ItemCard key={item.id} item={item} getStatusInfo={getStatusInfo} onDelete={handleDeleteItem} onAddToCalendar={addToGoogleCalendar} onCopy={handleCopyItem} onPay={catId => catId === 'parking' ? () => { setPayInitialValues(parseTicketFromNotes(item.notes)); setShowPayModal(true); } : null} onRenew={(url) => url && window.open(url, '_blank')} userCountry={activeCountry} />
+                    <ItemCard key={item.id} item={item} getStatusInfo={getStatusInfo} onDelete={handleDeleteItem} onAddToCalendar={addToGoogleCalendar} onCopy={handleCopyItem} onPay={(i) => i?.category === 'parking' ? () => { setPayInitialValues(parseTicketFromNotes(item.notes)); setShowPayModal(true); } : null} onRenew={(url) => url && window.open(url, '_blank')} userCountry={activeCountry} onMarkDone={() => renewItem(item.id)} onSnooze={(days) => snoozeItem(item.id, addDays(new Date(), days).toISOString())} onShared={() => fetchItems(user.id)} bulkEditMode={bulkEditMode} bulkSelected={bulkSelectedIds.has(item.id)} onBulkToggle={() => toggleBulkSelect(item.id, !item.isShared)} onShowHistory={setAuditItem} />
+                  ))}
+                </div>
+              )}
+
+              {groupedItems.completed.length > 0 && (
+                <div className="items-section completed">
+                  <h3><CheckCircle size={18} /> Recently Completed</h3>
+                  <p className="section-desc" style={{ marginBottom: 'var(--space-sm)' }}>Items you marked done in the last 30 days</p>
+                  {groupedItems.completed.map(item => (
+                    <ItemCard key={item.id} item={item} getStatusInfo={getStatusInfo} onDelete={handleDeleteItem} onAddToCalendar={addToGoogleCalendar} onCopy={handleCopyItem} onPay={(i) => i?.category === 'parking' ? () => { setPayInitialValues(parseTicketFromNotes(item.notes)); setShowPayModal(true); } : null} onRenew={(url) => url && window.open(url, '_blank')} userCountry={activeCountry} onMarkDone={() => renewItem(item.id)} onSnooze={(days) => snoozeItem(item.id, addDays(new Date(), days).toISOString())} onShared={() => fetchItems(user.id)} bulkEditMode={bulkEditMode} bulkSelected={bulkSelectedIds.has(item.id)} onBulkToggle={() => toggleBulkSelect(item.id, !item.isShared)} onShowHistory={setAuditItem} />
                   ))}
                 </div>
               )}
@@ -367,7 +503,7 @@ export default function Dashboard() {
                       setUserCountry(c.id);
                       setActiveCountry(c.id);
                       setUserCountries(prev => prev.includes(c.id) ? prev : [c.id, ...prev]);
-                      localStorage.setItem(`cityhelper_active_country_${user.id}`, c.id);
+                      localStorage.setItem(`nava_active_country_${user.id}`, c.id);
                       setShowCountryRequired(false);
                       // Now open the add modal since that's what they wanted
                       setShowAddModal(true);
@@ -389,11 +525,14 @@ export default function Dashboard() {
       {/* Add Modal */}
       {showAddModal && (
         <AddItemModal 
-          onClose={() => { setShowAddModal(false); setSelectedCategory(null); }}
+          onClose={() => { setShowAddModal(false); setSelectedCategory(null); setSharedInitialValues(null); }}
           onAdd={handleAddItem}
           selectedCategory={selectedCategory}
           accountType={persona?.accountType}
           setSelectedCategory={setSelectedCategory}
+          onSuggest={() => { setShowAddModal(false); setShowSuggestionBox(true); }}
+          initialValues={sharedInitialValues}
+          userId={user?.id}
         />
       )}
 
@@ -411,6 +550,45 @@ export default function Dashboard() {
       {/* Pay Ticket Modal */}
       {showPayModal && (
         <PayTicket onClose={() => setShowPayModal(false)} initialValues={payInitialValues} />
+      )}
+
+      {showSuggestionBox && (
+        <SuggestionBox onClose={() => setShowSuggestionBox(false)} />
+      )}
+
+      {/* Bulk edit bar */}
+      {bulkEditMode && bulkSelectedIds.size > 0 && (
+        <div className="bulk-edit-bar">
+          <span>{bulkSelectedIds.size} selected</span>
+          <button className="btn btn-primary btn-sm" onClick={() => setShowBulkEditModal(true)}>
+            <Edit3 size={16} /> Edit
+          </button>
+          <button className="btn btn-ghost btn-sm" onClick={() => { setBulkSelectedIds(new Set()); setBulkEditMode(false); }}>Cancel</button>
+        </div>
+      )}
+
+      {/* Calendar import modal */}
+      {showCalendarImport && (
+        <CalendarImportModal
+          onClose={() => setShowCalendarImport(false)}
+          onAddItems={handleAddItemsFromCalendar}
+          userId={user?.id}
+        />
+      )}
+
+      {/* Audit trail modal */}
+      {auditItem && (
+        <AuditModal item={auditItem} onClose={() => setAuditItem(null)} />
+      )}
+
+      {/* Bulk edit modal */}
+      {showBulkEditModal && (
+        <BulkEditModal
+          selectedIds={Array.from(bulkSelectedIds)}
+          itemCount={bulkSelectedIds.size}
+          onClose={() => setShowBulkEditModal(false)}
+          onApply={handleBulkApply}
+        />
       )}
 
       {/* Welcome Guide for new users */}
@@ -462,32 +640,57 @@ function getRenewalUrl(itemName, country) {
   return null;
 }
 
-function ItemCard({ item, getStatusInfo, onDelete, onAddToCalendar, onCopy, onPay, onRenew, userCountry }) {
+function ItemCard({ item, getStatusInfo, onDelete, onAddToCalendar, onCopy, onPay, onRenew, userCountry, onMarkDone, onSnooze, onShared, bulkEditMode, bulkSelected, onBulkToggle, onShowHistory }) {
+  const [snoozeOpen, setSnoozeOpen] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const statusInfo = getStatusInfo(item.due_date);
   const category = APP_CONFIG.categories.find(c => c.id === item.category);
-  const payHandler = onPay?.(item.category);
+  const payHandler = onPay?.(item);
   const renewalUrl = onRenew && userCountry ? getRenewalUrl(item.name, userCountry) : null;
   
   const getCategoryEmoji = (id) => {
     const emojis = {
       immigration: '✈️', trust: '🏛️', tax: '💰', business_tax: '💰',
       driving: '🚗', parking: '🅿️', health: '❤️', retirement_estate: '📜', housing: '🏡',
-      office: '💼', business_license: '📋', property: '🏠', 
-      professional: '🎓', other: '📌'
+      office: '💼', business_license: '📋', property: '🏠', professional: '🎓', other: '📌',
+      subscriptions: '🔄', pet_care: '🐕', kids_family: '👶', personal_insurance: '🛡️',
+      credit_banking: '💳', travel: '✈️', important_dates: '📅', legal_court: '⚖️', moving: '🚚', government_benefits: '📋',
+      contracts: '📝', certifications: '🏅', patents_ip: '©️', environmental: '🌿', data_privacy: '🔒',
+      employee_benefits: '🎁',
+      education: '📚', work_schedule: '⏰', employees: '👥', assets: '📦', liabilities: '⚠️',
+      business_insurance: '🛡️', inst_regulatory: '🏛️', inst_staff: '👨‍🏫', inst_student: '🎓',
+      inst_finance: '💰', inst_safety: '🔥', inst_facilities: '🔧', inst_legal: '⚖️',
+      inst_programs: '📖', inst_sports: '🏆'
     };
     return emojis[id] || '📌';
   };
 
   return (
-    <div className={`item-card ${statusInfo.status}`}>
+    <div className={`item-card ${statusInfo.status} ${bulkEditMode && !item.isShared ? 'bulk-selectable' : ''}`}>
+      {bulkEditMode && !item.isShared && (
+        <button
+          type="button"
+          className={`bulk-checkbox ${bulkSelected ? 'selected' : ''}`}
+          onClick={() => onBulkToggle?.()}
+          aria-label={bulkSelected ? 'Deselect' : 'Select'}
+        >
+          {bulkSelected && <Check size={14} />}
+        </button>
+      )}
       <div className="item-icon" style={{ background: category?.color || '#64748b' }}>
-        {getCategoryEmoji(catId)}
+        {getCategoryEmoji(item.category)}
       </div>
       <div className="item-content">
         <h4>{item.name}</h4>
         <span className="item-category">{category?.name || 'Other'}</span>
         {item.due_date && (
           <span className="item-date">Due: {format(parseISO(item.due_date), 'MMM d, yyyy')}</span>
+        )}
+        {item.last_completed_at && (
+          <span className="item-completed">Last done: {format(parseISO(item.last_completed_at), 'MMM d, yyyy')}</span>
+        )}
+        {item.document_id && (
+          <Link to="/documents" className="item-doc-link"><FileText size={12} /> Document linked</Link>
         )}
       </div>
       <div className="item-status">
@@ -513,6 +716,38 @@ function ItemCard({ item, getStatusInfo, onDelete, onAddToCalendar, onCopy, onPa
               <Phone size={16} />
             </a>
           )}
+          {onMarkDone && (
+            <button className="btn-icon" onClick={onMarkDone} title="Mark done & set next">
+              <Check size={16} />
+            </button>
+          )}
+          {onSnooze && (
+            <div className="snooze-wrap">
+              <button className="btn-icon" onClick={() => setSnoozeOpen(!snoozeOpen)} title="Snooze reminders">
+                <Clock size={16} />
+              </button>
+              {snoozeOpen && (
+                <>
+                  <div className="snooze-backdrop" onClick={() => setSnoozeOpen(false)} />
+                  <div className="snooze-menu">
+                    <button onClick={() => { onSnooze(1); setSnoozeOpen(false); }}>1 day</button>
+                    <button onClick={() => { onSnooze(3); setSnoozeOpen(false); }}>3 days</button>
+                    <button onClick={() => { onSnooze(7); setSnoozeOpen(false); }}>1 week</button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          {!item.isShared && onShared && (
+            <button className="btn-icon" onClick={() => setShowShareModal(true)} title="Share with family">
+              <Share2 size={16} />
+            </button>
+          )}
+          {onShowHistory && (
+            <button className="btn-icon" onClick={() => onShowHistory(item)} title="View history">
+              <History size={16} />
+            </button>
+          )}
           <button 
             className="btn-icon" 
             onClick={() => onCopy(item)} 
@@ -534,31 +769,69 @@ function ItemCard({ item, getStatusInfo, onDelete, onAddToCalendar, onCopy, onPa
           </button>
         </div>
       </div>
+      {showShareModal && (
+        <ShareItemModal
+          item={item}
+          onClose={() => setShowShareModal(false)}
+          onShared={() => { onShared?.(); setShowShareModal(false); }}
+        />
+      )}
     </div>
   );
 }
 
-const BILL_CATEGORIES = ['housing', 'office', 'property'];
+const BILL_CATEGORIES = ['housing', 'office', 'property', 'subscriptions', 'credit_banking', 'liabilities'];
 
-function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory, accountType }) {
-  const [name, setName] = useState('');
-  const [dueDate, setDueDate] = useState('');
+const RECURRENCE_OPTIONS = [
+  { value: '', label: 'None' },
+  { value: '1_month', label: 'Every month' },
+  { value: '3_months', label: 'Every 3 months' },
+  { value: '6_months', label: 'Every 6 months' },
+  { value: '1_year', label: 'Every year' },
+];
+
+function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory, accountType, onSuggest, initialValues, userId }) {
+  const [name, setName] = useState(initialValues?.name || '');
+  const [dueDate, setDueDate] = useState(initialValues?.due_date || '');
   const [notes, setNotes] = useState('');
   const [payUrl, setPayUrl] = useState('');
   const [payPhone, setPayPhone] = useState('');
+  const [recurrenceInterval, setRecurrenceInterval] = useState('');
+  const [documentId, setDocumentId] = useState(null);
+  const [documents, setDocuments] = useState([]);
+  const [alertEmails, setAlertEmails] = useState('');
   const [activeGroup, setActiveGroup] = useState(accountType === 'organization' ? 'business' : 'personal');
+
+  // When initialValues changes (e.g. from Share), update form
+  useEffect(() => {
+    if (initialValues) {
+      setName(initialValues.name || '');
+      setDueDate(initialValues.due_date || '');
+    }
+  }, [initialValues?.name, initialValues?.due_date]);
+
+  // Fetch documents for linking (when form is shown)
+  useEffect(() => {
+    if (!selectedCategory || !userId) return;
+    supabase.from('documents').select('id, name').eq('user_id', userId).order('created_at', { ascending: false }).limit(50)
+      .then(({ data }) => setDocuments(data || []));
+  }, [selectedCategory, userId]);
 
   const isBillCategory = BILL_CATEGORIES.includes(selectedCategory);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const emails = alertEmails.trim().split(/[\s,;]+/).filter(Boolean);
     onAdd({
       name,
       category: selectedCategory,
       due_date: dueDate || null,
       notes: notes || null,
       pay_url: payUrl.trim() || null,
-      pay_phone: payPhone.trim() || null
+      pay_phone: payPhone.trim() || null,
+      recurrence_interval: recurrenceInterval || null,
+      document_id: documentId || null,
+      alert_emails: emails.length ? emails : null
     });
   };
 
@@ -569,6 +842,8 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory, a
 {"documentType":"visa/permit/passport","name":"","number":"","expiryDate":"YYYY-MM-DD","issueDate":""}`,
       driving: `Extract from this license/registration and return ONLY JSON:
 {"documentType":"","name":"","number":"","expiryDate":"YYYY-MM-DD","class":""}`,
+      parking: `Extract from this parking ticket, toll road invoice, or traffic violation and return ONLY JSON:
+{"documentType":"parking ticket/toll invoice/407 ETR/E-ZPass/violation notice","amount":"","dueDate":"YYYY-MM-DD","ticketNumber":"","plateNumber":"","location":""}`,
       health: `Extract from this health card and return ONLY JSON:
 {"name":"","cardNumber":"","expiryDate":"YYYY-MM-DD"}`,
       trust: `Extract from this trust or estate planning document and return ONLY JSON:
@@ -605,6 +880,38 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory, a
 {"documentType":"curriculum/schedule/accreditation","programName":"","deadline":"YYYY-MM-DD","semester":"","items":[{"name":"","date":"YYYY-MM-DD"}]}`,
       inst_sports: `Extract from this sports/recreation document and return ONLY JSON:
 {"documentType":"registration/insurance/certification/permit","teamName":"","leagueName":"","personName":"","expiryDate":"YYYY-MM-DD","number":""}`,
+      subscriptions: `Extract from this subscription/receipt and return ONLY JSON:
+{"documentType":"subscription/membership","serviceName":"","amount":"","billingCycle":"monthly/yearly","nextBillingDate":"YYYY-MM-DD","expiryDate":"YYYY-MM-DD"}`,
+      pet_care: `Extract from this pet/vet document and return ONLY JSON:
+{"documentType":"vaccination/health record/license","petName":"","vetName":"","nextDueDate":"YYYY-MM-DD","expiryDate":"YYYY-MM-DD","notes":""}`,
+      kids_family: `Extract from this family/school document and return ONLY JSON:
+{"documentType":"school/daycare/immunization","childName":"","schoolName":"","dueDate":"YYYY-MM-DD","deadline":"YYYY-MM-DD"}`,
+      personal_insurance: `Extract from this insurance document and return ONLY JSON:
+{"documentType":"auto/home/renter","provider":"","policyNumber":"","expiryDate":"YYYY-MM-DD","premium":""}`,
+      credit_banking: `Extract from this banking/credit document and return ONLY JSON:
+{"documentType":"statement/loan/credit","institution":"","accountNumber":"","dueDate":"YYYY-MM-DD","amount":""}`,
+      travel: `Extract from this travel document and return ONLY JSON:
+{"documentType":"insurance/Global Entry/NEXUS/flight","holderName":"","expiryDate":"YYYY-MM-DD","membershipNumber":"","departureDate":"YYYY-MM-DD","flightNumber":"","destination":""}`,
+      important_dates: `Extract from this invitation or date and return ONLY JSON:
+{"documentType":"invitation/birthday/anniversary/event","eventName":"","date":"YYYY-MM-DD","rsvpDeadline":"YYYY-MM-DD","location":""}`,
+      legal_court: `Extract from this legal/court document and return ONLY JSON:
+{"documentType":"court date/filing/summons","caseNumber":"","courtDate":"YYYY-MM-DD","deadline":"YYYY-MM-DD"}`,
+      moving: `Extract from this moving document and return ONLY JSON:
+{"documentType":"change of address/lease","moveDate":"YYYY-MM-DD","address":"","utilityTransfer":"YYYY-MM-DD"}`,
+      government_benefits: `Extract from this government/benefits document and return ONLY JSON:
+{"documentType":"EI/CPP/OAS/benefits","programName":"","reviewDate":"YYYY-MM-DD","deadline":"YYYY-MM-DD"}`,
+      contracts: `Extract from this contract and return ONLY JSON:
+{"documentType":"client/vendor/NDA","parties":"","expiryDate":"YYYY-MM-DD","renewalDate":"YYYY-MM-DD"}`,
+      certifications: `Extract from this certification document and return ONLY JSON:
+{"documentType":"ISO/SOC2/industry","certificationName":"","expiryDate":"YYYY-MM-DD","auditDate":"YYYY-MM-DD"}`,
+      patents_ip: `Extract from this IP/patent document and return ONLY JSON:
+{"documentType":"patent/trademark/copyright","number":"","maintenanceDue":"YYYY-MM-DD","renewalDate":"YYYY-MM-DD"}`,
+      environmental: `Extract from this environmental document and return ONLY JSON:
+{"documentType":"permit/report/audit","permitNumber":"","dueDate":"YYYY-MM-DD","reportingPeriod":""}`,
+      employee_benefits: `Extract from this benefits document and return ONLY JSON:
+{"documentType":"health/dental/gym/education/housing/pet","benefitName":"","provider":"","renewalDate":"YYYY-MM-DD","coveragePeriod":""}`,
+      data_privacy: `Extract from this privacy/compliance document and return ONLY JSON:
+{"documentType":"GDPR/PIPEDA/policy","reviewDate":"YYYY-MM-DD","expiryDate":"YYYY-MM-DD"}`,
       education: `Extract from this school/education document (timetable, syllabus, curriculum, transcript, enrollment) and return ONLY JSON:
 {"documentType":"timetable/syllabus/transcript/enrollment","courseName":"","instructor":"","dueDate":"YYYY-MM-DD","examDate":"YYYY-MM-DD","semester":"","items":[{"name":"","date":"YYYY-MM-DD"}]}`,
       work_schedule: `Extract from this work schedule/timetable and return ONLY JSON:
@@ -661,6 +968,10 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory, a
       business_tax: '💰', employees: '👥', assets: '📦', liabilities: '⚠️',
       business_insurance: '🛡️', office: '💼', business_license: '📋', property: '🏠', 
       professional: '🎓', other: '📌',
+      subscriptions: '🔄', pet_care: '🐕', kids_family: '👶', personal_insurance: '🛡️',
+      credit_banking: '💳', travel: '✈️', important_dates: '📅', legal_court: '⚖️', moving: '🚚', government_benefits: '📋',
+      contracts: '📝', certifications: '🏅', patents_ip: '©️', environmental: '🌿', data_privacy: '🔒',
+      employee_benefits: '🎁',
       inst_regulatory: '🏛️', inst_staff: '👨‍🏫', inst_student: '🎓', inst_finance: '💰',
       inst_safety: '🔥', inst_facilities: '🔧', inst_legal: '⚖️', inst_programs: '📖',
       inst_sports: '🏆'
@@ -668,10 +979,11 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory, a
     return emojis[catId] || '📌';
   };
 
+  const inGroup = (cat, g) => cat.group === g || cat.groups?.includes(g);
   const groupedCats = {
-    personal: APP_CONFIG.categories.filter(c => c.group === 'personal'),
-    business: APP_CONFIG.categories.filter(c => c.group === 'business'),
-    institution: APP_CONFIG.categories.filter(c => c.group === 'institution'),
+    personal: APP_CONFIG.categories.filter(c => inGroup(c, 'personal')),
+    business: APP_CONFIG.categories.filter(c => inGroup(c, 'business')),
+    institution: APP_CONFIG.categories.filter(c => inGroup(c, 'institution')),
   };
   const visibleCategories = groupedCats[activeGroup] || groupedCats.personal;
 
@@ -723,6 +1035,31 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory, a
                 </button>
               ))}
             </div>
+            <div className="paste-suggest-row">
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm paste-suggest-btn"
+                onClick={async () => {
+                  try {
+                    const t = await navigator.clipboard?.readText?.();
+                    if (!t) return;
+                    const s = parseTextForSuggestion(t);
+                    if (s) {
+                      setName(s.name);
+                      setDueDate(s.due_date || '');
+                      setSelectedCategory(s.category);
+                    }
+                  } catch (_) { /* clipboard denied */ }
+                }}
+              >
+                <Clipboard size={16} /> Paste from clipboard & suggest
+              </button>
+            </div>
+            {onSuggest && (
+              <p className="add-modal-suggest">
+                Don&apos;t see what you need? <button type="button" className="link-btn" onClick={onSuggest}>Suggest something to track</button>
+              </p>
+            )}
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="add-form">
@@ -772,6 +1109,42 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory, a
               />
             </div>
 
+            <div className="form-group">
+              <label>Recurrence</label>
+              <select
+                value={recurrenceInterval}
+                onChange={e => setRecurrenceInterval(e.target.value)}
+              >
+                {RECURRENCE_OPTIONS.map(opt => (
+                  <option key={opt.value || 'none'} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <span className="field-hint">For renewals (license, insurance, etc.) — we&apos;ll set the next due date when you mark it done</span>
+            </div>
+
+            {documents.length > 0 && (
+              <div className="form-group">
+                <label>Link document (optional)</label>
+                <select value={documentId || ''} onChange={e => setDocumentId(e.target.value || null)}>
+                  <option value="">None</option>
+                  {documents.map(d => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="form-group">
+              <label>Extra alert emails (optional)</label>
+              <input
+                type="text"
+                value={alertEmails}
+                onChange={e => setAlertEmails(e.target.value)}
+                placeholder="email1@example.com, email2@example.com"
+              />
+              <span className="field-hint">Notify others when this item is due</span>
+            </div>
+
             {isBillCategory && (
               <div className="bill-pay-fields">
                 <label>Pay options (optional)</label>
@@ -817,7 +1190,7 @@ const EMPTY_EXAMPLES = {
   trust: 'Living trusts, wills, beneficiaries, POA',
   tax: 'T1 returns, RRSP, property tax',
   driving: 'License renewals, registration',
-  parking: 'Parking tickets & fines',
+  parking: 'Parking tickets, toll roads (407, E-ZPass), violations',
   health: 'Health card, dental, prescriptions',
   education: 'Exams, assignments, tuition deadlines',
   work_schedule: 'Shifts, pay days, contract dates',
@@ -842,12 +1215,31 @@ const EMPTY_EXAMPLES = {
   inst_legal: 'Insurance, union agreements, privacy',
   inst_programs: 'Curriculum review, exam schedules, field trips',
   inst_sports: 'Registrations, certifications, inspections',
+  subscriptions: 'Netflix, gym, software, domain renewals',
+  pet_care: 'Vet visits, vaccinations, grooming, pet license',
+  kids_family: 'Immunizations, daycare, child tax benefit, custody',
+  personal_insurance: 'Auto, home, renter\'s insurance renewals',
+  credit_banking: 'Credit card, statements, loan payments',
+  travel: 'Flights, travel insurance, Global Entry, NEXUS, points expiry',
+  important_dates: 'Birthdays, anniversaries, weddings, parties, conferences',
+  legal_court: 'Court dates, jury duty, legal filings',
+  moving: 'Change of address, mail forwarding, utility transfer',
+  government_benefits: 'EI, CPP, OAS, disability, tax credits',
+  contracts: 'Client, vendor, NDA renewals',
+  certifications: 'ISO, SOC 2, industry certifications',
+  patents_ip: 'Patent fees, trademark renewals',
+  environmental: 'Permits, waste reporting, audits',
+  data_privacy: 'GDPR, PIPEDA, privacy policy reviews',
 };
 const EMPTY_EMOJIS = {
   immigration: '✈️', trust: '🏛️', tax: '💰', driving: '🚗', parking: '🅿️', health: '❤️',
   education: '📚', work_schedule: '⏰', housing: '🏡', retirement_estate: '📜', other: '📌',
   employees: '👥', business_tax: '💰', assets: '📦', liabilities: '⚠️',
   business_license: '📋', business_insurance: '🛡️', office: '💼', property: '🏠', professional: '🎓',
+  subscriptions: '🔄', pet_care: '🐕', kids_family: '👶', personal_insurance: '🛡️',
+  credit_banking: '💳', travel: '✈️', important_dates: '📅', legal_court: '⚖️', moving: '🚚', government_benefits: '📋',
+  contracts: '📝', certifications: '🏅', patents_ip: '©️', environmental: '🌿',   data_privacy: '🔒',
+  employee_benefits: '🎁',
   inst_regulatory: '🏛️', inst_staff: '👨‍🏫', inst_student: '🎓', inst_finance: '💰',
   inst_safety: '🔥', inst_facilities: '🔧', inst_legal: '⚖️', inst_programs: '📖',
   inst_sports: '🏆',
@@ -868,7 +1260,7 @@ function EmptyState({ requireCountryForTracking, setShowAddModal, setSelectedCat
         { id: 'business', label: 'Business', icon: '💼' },
         { id: 'institution', label: 'Institution', icon: '🏛️' },
       ];
-  const cats = APP_CONFIG.categories.filter(c => c.group === activeTab);
+  const cats = APP_CONFIG.categories.filter(c => c.group === activeTab || c.groups?.includes(activeTab));
 
   const orgName = persona?.orgInfo?.name;
   const headline = isOrg
@@ -902,6 +1294,45 @@ function EmptyState({ requireCountryForTracking, setShowAddModal, setSelectedCat
             <span className="cat-sug-name">{cat.name}</span>
             <span className="cat-sug-examples">{EMPTY_EXAMPLES[cat.id] || ''}</span>
           </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Focus on These 3 (Mial-style priorities) ───
+function FocusOnThree({ groupedItems, getStatusInfo, onDelete, onRenew, onSnooze, onAddToCalendar, onCopy, onPay, userCountry, onShared, bulkEditMode, bulkSelectedIds, toggleBulkSelect, onShowHistory }) {
+  const top3 = [
+    ...groupedItems.overdue,
+    ...groupedItems.urgent,
+    ...groupedItems.warning
+  ].slice(0, 3);
+  if (top3.length === 0) return null;
+
+  return (
+    <div className="focus-on-three">
+      <h3><Target size={18} /> Focus on these 3</h3>
+      <p className="focus-sub">Your most urgent items — knock these out first.</p>
+      <div className="focus-cards">
+        {top3.map((item, i) => (
+          <ItemCard
+            key={item.id}
+            item={item}
+            getStatusInfo={getStatusInfo}
+            onDelete={onDelete}
+            onAddToCalendar={onAddToCalendar}
+            onCopy={onCopy}
+            onPay={onPay}
+            onRenew={(url) => url && window.open(url, '_blank')}
+            userCountry={userCountry}
+            onMarkDone={() => onRenew(item.id)}
+            onSnooze={(days) => onSnooze(item.id, addDays(new Date(), days).toISOString())}
+            onShared={onShared}
+            bulkEditMode={bulkEditMode}
+            bulkSelected={bulkSelectedIds?.has(item.id)}
+            onBulkToggle={() => toggleBulkSelect?.(item.id, !item.isShared)}
+            onShowHistory={onShowHistory}
+          />
         ))}
       </div>
     </div>

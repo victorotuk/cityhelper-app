@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Settings as SettingsIcon, Bell, BellOff, Shield, Phone, CheckCircle, Trash2, Globe, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Settings as SettingsIcon, Bell, BellOff, Shield, Phone, CheckCircle, Trash2, Globe, RefreshCw, MessageSquarePlus, Mail, Smartphone, User, Package, Building2 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 import { APP_CONFIG } from '../lib/config';
 import { requestPushPermission, disablePush, preloadPushSDK } from '../lib/push';
 import WelcomeGuide from '../components/WelcomeGuide';
+import SuggestionBox from '../components/SuggestionBox';
+import EmailSuggestions from '../components/EmailSuggestions';
 
 export default function Settings() {
   const { user, signOut } = useAuthStore();
@@ -33,6 +35,16 @@ export default function Settings() {
   const [persona, setPersona] = useState(null);
   const [showQuiz, setShowQuiz] = useState(false);
 
+  // Weekly digest
+  const [digestEnabled, setDigestEnabled] = useState(false);
+  const [digestDay, setDigestDay] = useState(1);
+
+  // Suggestion box
+  const [showSuggestionBox, setShowSuggestionBox] = useState(false);
+
+  // Notification suggestions (Android only)
+  const [notificationSuggestionsEnabled, setNotificationSuggestionsEnabled] = useState(false);
+
   const COUNTRIES = [
     { id: 'ca', name: 'Canada', flag: '\u{1F1E8}\u{1F1E6}' },
     { id: 'us', name: 'United States', flag: '\u{1F1FA}\u{1F1F8}' }
@@ -58,12 +70,23 @@ export default function Settings() {
       }
       console.log('[Settings] Session OK, user:', sessionData.session.user.id);
 
-      // Step 1: Try to read existing settings
-      const { data, error: fetchErr } = await supabase
+      // Step 1: Try to read existing settings (incl. notification_suggestions_enabled if migrated)
+      let { data, error: fetchErr } = await supabase
         .from('user_settings')
-        .select('phone_number, phone_verified, country, countries, push_enabled, persona')
+        .select('phone_number, phone_verified, country, countries, push_enabled, persona, digest_email_enabled, digest_day, notification_suggestions_enabled')
         .eq('user_id', user.id)
         .single();
+
+      // Fallback: if column doesn't exist yet (migration not run), retry without it
+      if (fetchErr && fetchErr.message?.includes('notification_suggestions_enabled')) {
+        const fallback = await supabase
+          .from('user_settings')
+          .select('phone_number, phone_verified, country, countries, push_enabled, persona, digest_email_enabled, digest_day')
+          .eq('user_id', user.id)
+          .single();
+        data = fallback.data;
+        fetchErr = fallback.error;
+      }
 
       if (fetchErr && fetchErr.code === 'PGRST116') {
         // No row exists yet - create one
@@ -90,6 +113,9 @@ export default function Settings() {
         setOtherCountries(Array.isArray(data.countries) ? data.countries : []);
         setPushEnabled(!!data.push_enabled);
         setPersona(data.persona || null);
+        setDigestEnabled(!!data.digest_email_enabled);
+        setDigestDay(data.digest_day ?? 1);
+        setNotificationSuggestionsEnabled(!!data.notification_suggestions_enabled);
       }
     } catch (err) {
       console.error('[Settings] Fetch settings error:', err);
@@ -360,6 +386,29 @@ export default function Settings() {
             </div>
           </section>
 
+          {/* Estate, Assets, Business */}
+          <section className="settings-section">
+            <h2>Estate & Business</h2>
+            <p className="section-desc">Manage executors, assets, and business entities.</p>
+            <div className="setting-card">
+              <Link to="/estate" className="setting-header link-card">
+                <div className="setting-icon muted"><User size={20} /></div>
+                <div className="setting-info"><h3>Estate Executors & Nominees</h3><p>Executors, trustees, power of attorney</p></div>
+                <span className="link-arrow">→</span>
+              </Link>
+              <Link to="/assets" className="setting-header link-card">
+                <div className="setting-icon muted"><Package size={20} /></div>
+                <div className="setting-info"><h3>Asset Inventory</h3><p>Track assets with photos</p></div>
+                <span className="link-arrow">→</span>
+              </Link>
+              <Link to="/business" className="setting-header link-card">
+                <div className="setting-icon muted"><Building2 size={20} /></div>
+                <div className="setting-info"><h3>Business Entities & Locations</h3><p>Corporations, LLCs, addresses</p></div>
+                <span className="link-arrow">→</span>
+              </Link>
+            </div>
+          </section>
+
           {/* Push Notifications */}
           <section className="settings-section">
             <h2><Bell size={20} /> Push Notifications</h2>
@@ -391,6 +440,54 @@ export default function Settings() {
               )}
             </div>
           </section>
+
+          {/* Weekly Digest Email */}
+          <section className="settings-section">
+            <h2><Mail size={20} /> Weekly Digest</h2>
+            <p className="section-desc">Get a weekly email summary of your upcoming deadlines.</p>
+            <div className="setting-card">
+              <div className="setting-header">
+                <div className={`setting-icon ${digestEnabled ? 'active' : 'muted'}`}>
+                  <Mail size={20} />
+                </div>
+                <div className="setting-info">
+                  <h3>{digestEnabled ? 'Digest On' : 'Digest Off'}</h3>
+                  <p>{digestEnabled ? `Sent every ${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][digestDay]}` : 'Turn on for a weekly summary'}</p>
+                </div>
+                <button
+                  className={`btn btn-sm ${digestEnabled ? 'btn-ghost' : 'btn-primary'}`}
+                  onClick={async () => {
+                    const next = !digestEnabled;
+                    setDigestEnabled(next);
+                    await saveSettings({ digest_email_enabled: next, digest_day: digestDay });
+                  }}
+                >
+                  {digestEnabled ? 'Turn Off' : 'Turn On'}
+                </button>
+              </div>
+              {digestEnabled && (
+                <div className="setting-details" style={{ padding: '12px 16px' }}>
+                  <label style={{ fontSize: '13px', display: 'block', marginBottom: '6px' }}>Send on</label>
+                  <select
+                    value={digestDay}
+                    onChange={async (e) => {
+                      const d = Number(e.target.value);
+                      setDigestDay(d);
+                      await saveSettings({ digest_email_enabled: true, digest_day: d });
+                    }}
+                    style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border)' }}
+                  >
+                    {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, i) => (
+                      <option key={i} value={i}>{day}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Email suggestions (Gmail) */}
+          <EmailSuggestions />
 
           {/* Phone Verification */}
           <section className="settings-section">
@@ -440,6 +537,38 @@ export default function Settings() {
             </div>
           </section>
 
+          {/* Android: Notification Suggestions */}
+          {Capacitor.getPlatform() === 'android' && (
+            <section className="settings-section">
+              <h2><Smartphone size={20} /> Notification Suggestions</h2>
+              <p className="section-desc">When enabled, Nava can suggest adding items when it detects relevant dates in your notifications (e.g. parking tickets, renewal reminders). All processing happens on-device.</p>
+              <div className="setting-card">
+                <div className="setting-header">
+                  <div className={`setting-icon ${notificationSuggestionsEnabled ? 'active' : 'muted'}`}>
+                    <Smartphone size={20} />
+                  </div>
+                  <div className="setting-info">
+                    <h3>{notificationSuggestionsEnabled ? 'Suggestions On' : 'Suggestions Off'}</h3>
+                    <p>{notificationSuggestionsEnabled ? 'We&apos;ll suggest tracking when we detect dates in notifications' : 'Turn on to get suggestions from parking, renewals, bills, etc.'}</p>
+                  </div>
+                  <button
+                    className={`btn btn-sm ${notificationSuggestionsEnabled ? 'btn-ghost' : 'btn-primary'}`}
+                    onClick={async () => {
+                      const next = !notificationSuggestionsEnabled;
+                      setNotificationSuggestionsEnabled(next);
+                      await saveSettings({ notification_suggestions_enabled: next });
+                    }}
+                  >
+                    {notificationSuggestionsEnabled ? 'Turn Off' : 'Turn On'}
+                  </button>
+                </div>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '8px 16px 12px', margin: 0 }}>
+                  Requires &quot;Notification access&quot; in Android Settings → Apps → Nava → Notifications. A compatible plugin is needed for full support.
+                </p>
+              </div>
+            </section>
+          )}
+
           {/* In-App Notifications */}
           <section className="settings-section">
             <h2>In-App Notifications</h2>
@@ -452,6 +581,42 @@ export default function Settings() {
           </section>
 
           {/* Privacy */}
+          {/* Smart Suggestions & Privacy */}
+          <section className="settings-section">
+            <h2>Smart Suggestions</h2>
+            <p className="section-desc">
+              We help you remember what to track — without ever seeing your data.
+            </p>
+            <div className="privacy-note">
+              <strong>Your data stays on your device.</strong> When you paste text, share from another app, or (optionally) use notification suggestions, we process everything locally. We only save what you explicitly choose to add. Nothing is sent to our servers.
+            </div>
+            <ul className="smart-suggest-list">
+              <li><strong>Paste & suggest</strong> — Paste from clipboard in Add Item to auto-detect dates and events</li>
+              <li><strong>Share to Nava</strong> — Share text from Messages, Email, etc. (Android) to suggest tracking</li>
+              <li><strong>Notification suggestions</strong> — (Android, coming soon) Optionally suggest tracking when parking tickets, renewal reminders, etc. appear in notifications</li>
+            </ul>
+          </section>
+
+          {/* Suggestions */}
+          <section className="settings-section">
+            <h2><MessageSquarePlus size={20} /> Suggest a Feature</h2>
+            <p className="section-desc">
+              Have an idea for something new to track? We read every suggestion.
+            </p>
+            <div className="setting-card">
+              <div className="setting-header">
+                <div className="setting-icon muted"><MessageSquarePlus size={20} /></div>
+                <div className="setting-info">
+                  <h3>Suggest something to track</h3>
+                  <p>New categories, templates, or reminders — tell us what you need</p>
+                </div>
+                <button className="btn btn-primary btn-sm" onClick={() => setShowSuggestionBox(true)}>
+                  Open Suggestion Box
+                </button>
+              </div>
+            </div>
+          </section>
+
           <section className="settings-section privacy">
             <h2><Shield size={20} /> Your Privacy</h2>
             <ul>
@@ -475,6 +640,10 @@ export default function Settings() {
           </section>
         </div>
       </main>
+
+      {showSuggestionBox && (
+        <SuggestionBox onClose={() => setShowSuggestionBox(false)} />
+      )}
 
       {showQuiz && (
         <WelcomeGuide

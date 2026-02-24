@@ -8,7 +8,8 @@ export const useAuthStore = create((set, get) => ({
   loading: true,
 
   initialize: async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
     
     if (session?.user) {
       // Restore encryption key if exists
@@ -37,6 +38,10 @@ export const useAuthStore = create((set, get) => ({
         user: session?.user ?? null 
       });
     });
+    } catch (err) {
+      console.error('[Auth] Initialize failed:', err);
+      set({ session: null, user: null, loading: false });
+    }
   },
 
   // Set encryption key (derived from password)
