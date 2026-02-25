@@ -471,12 +471,14 @@ input, select, textarea { font-family: inherit; }
 
 .auth-oauth-buttons {
   display: flex;
+  flex-direction: column;
   gap: var(--space-sm);
   margin-bottom: var(--space-md);
 }
 
 .auth-oauth-buttons .btn {
   width: 100%;
+  justify-content: center;
 }
 
 .auth-divider {
