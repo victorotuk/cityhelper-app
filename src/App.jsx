@@ -1,12 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
 import { supabase } from './lib/supabase';
 import { startNotificationListener, stopNotificationListener } from './lib/notificationListener';
-import { useSharedSuggestStore } from './stores/sharedSuggestStore';
 import Landing from './pages/Landing';
-import Dashboard from './pages/Dashboard';
 import Auth from './pages/Auth';
 import TaxEstimator from './pages/TaxEstimator';
 import Assistant from './pages/Assistant';
@@ -18,13 +16,18 @@ import Assets from './pages/Assets';
 import Business from './pages/Business';
 import ChatBubble from './components/ChatBubble';
 
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+
 function ProtectedRoute({ children, showChat = true }) {
   const { user, loading } = useAuthStore();
 
   if (loading) {
     return (
       <div className="loading-screen">
-        <div className="loading-spinner"></div>
+        <div className="loading-screen-content">
+          <div className="loading-spinner"></div>
+          <span className="loading-text">Loading...</span>
+        </div>
       </div>
     );
   }
@@ -43,7 +46,6 @@ function ProtectedRoute({ children, showChat = true }) {
 
 function App() {
   const { initialize, loading, user } = useAuthStore();
-  const setPendingText = useSharedSuggestStore((s) => s.setPendingText);
 
   useEffect(() => {
     initialize();
@@ -60,11 +62,16 @@ function App() {
         .single();
       return !!data?.notification_suggestions_enabled;
     };
+    const setPendingText = (text) => {
+      import('./stores/sharedSuggestStore').then(({ useSharedSuggestStore }) => {
+        useSharedSuggestStore.getState().setPendingText(text);
+      });
+    };
     startNotificationListener(user.id, getEnabled, setPendingText).catch((err) => {
       console.warn('[NotificationListener] Not available:', err?.message);
     });
     return () => stopNotificationListener();
-  }, [user?.id, setPendingText]);
+  }, [user?.id]);
 
   // Share Target: when user shares text to Nava (Android/iOS), we receive it.
   // Processed on-device only. We never send shared content to our servers.
@@ -95,7 +102,11 @@ function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/dashboard" element={
-        <ProtectedRoute><Dashboard /></ProtectedRoute>
+        <ProtectedRoute>
+          <Suspense fallback={<div className="loading-screen"><div className="loading-screen-content"><div className="loading-spinner"></div><span className="loading-text">Loading...</span></div></div>}>
+            <Dashboard />
+          </Suspense>
+        </ProtectedRoute>
       } />
       <Route path="/tax-estimator" element={
         <ProtectedRoute><TaxEstimator /></ProtectedRoute>

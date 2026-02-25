@@ -18,7 +18,7 @@ export default function Assets() {
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', description: '', category: 'other', value_estimate: '', location: '', notes: '', photo: null });
+  const [form, setForm] = useState({ name: '', description: '', category: 'other', value_estimate: '', location: '', notes: '', photo: null, current_mileage: '', last_mileage_update: '' });
 
   useEffect(() => {
     if (!user) return;
@@ -41,7 +41,7 @@ export default function Assets() {
         reader.readAsDataURL(form.photo);
       });
     }
-    const { error } = await supabase.from('assets').insert({
+    const payload = {
       user_id: user.id,
       name: form.name.trim(),
       description: form.description.trim() || null,
@@ -50,12 +50,17 @@ export default function Assets() {
       location: form.location.trim() || null,
       notes: form.notes.trim() || null,
       photo_url: photoUrl,
-    });
+    };
+    if (form.category === 'vehicle' && form.current_mileage) {
+      payload.current_mileage = parseInt(form.current_mileage, 10) || null;
+      payload.last_mileage_update = form.last_mileage_update || new Date().toISOString().slice(0, 10);
+    }
+    const { error } = await supabase.from('assets').insert(payload);
     if (error) {
       alert('Error: ' + error.message);
       return;
     }
-    setForm({ name: '', description: '', category: 'other', value_estimate: '', location: '', notes: '', photo: null });
+    setForm({ name: '', description: '', category: 'other', value_estimate: '', location: '', notes: '', photo: null, current_mileage: '', last_mileage_update: '' });
     setShowForm(false);
     const { data } = await supabase.from('assets').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
     setAssets(data || []);
@@ -93,7 +98,7 @@ export default function Assets() {
                     </div>
                     <div className="setting-info">
                       <h3>{a.name}</h3>
-                      <p>{CATEGORIES.find(c => c.id === a.category)?.label || a.category} {a.value_estimate && `· ${a.value_estimate}`}</p>
+                      <p>{CATEGORIES.find(c => c.id === a.category)?.label || a.category} {a.value_estimate && `· ${a.value_estimate}`} {a.category === 'vehicle' && a.current_mileage != null && `· ${a.current_mileage.toLocaleString()} km`}</p>
                       {a.location && <small style={{ color: 'var(--text-muted)' }}>{a.location}</small>}
                     </div>
                     <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(a.id)}><Trash2 size={16} /></button>
@@ -119,6 +124,18 @@ export default function Assets() {
                     <label>Value (estimate)</label>
                     <input value={form.value_estimate} onChange={e => setForm(f => ({ ...f, value_estimate: e.target.value }))} placeholder="e.g. $25,000" />
                   </div>
+                  {form.category === 'vehicle' && (
+                    <>
+                      <div className="form-group">
+                        <label>Current mileage (km)</label>
+                        <input type="number" min="0" value={form.current_mileage} onChange={e => setForm(f => ({ ...f, current_mileage: e.target.value }))} placeholder="e.g. 45000" />
+                      </div>
+                      <div className="form-group">
+                        <label>Last mileage update</label>
+                        <input type="date" value={form.last_mileage_update} onChange={e => setForm(f => ({ ...f, last_mileage_update: e.target.value }))} />
+                      </div>
+                    </>
+                  )}
                   <div className="form-group">
                     <label>Location</label>
                     <input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="Where is it stored?" />

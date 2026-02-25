@@ -651,7 +651,7 @@ function ItemCard({ item, getStatusInfo, onDelete, onAddToCalendar, onCopy, onPa
   const getCategoryEmoji = (id) => {
     const emojis = {
       immigration: '✈️', trust: '🏛️', tax: '💰', business_tax: '💰',
-      driving: '🚗', parking: '🅿️', health: '❤️', retirement_estate: '📜', housing: '🏡',
+      driving: '🚗', parking: '🅿️', health: '❤️', fitness: '💪', retirement_estate: '📜', housing: '🏡',
       office: '💼', business_license: '📋', property: '🏠', professional: '🎓', other: '📌',
       subscriptions: '🔄', pet_care: '🐕', kids_family: '👶', personal_insurance: '🛡️',
       credit_banking: '💳', travel: '✈️', important_dates: '📅', legal_court: '⚖️', moving: '🚚', government_benefits: '📋',
@@ -846,6 +846,8 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory, a
 {"documentType":"parking ticket/toll invoice/407 ETR/E-ZPass/violation notice","amount":"","dueDate":"YYYY-MM-DD","ticketNumber":"","plateNumber":"","location":""}`,
       health: `Extract from this health card and return ONLY JSON:
 {"name":"","cardNumber":"","expiryDate":"YYYY-MM-DD"}`,
+      fitness: `Extract from this fitness/workout document and return ONLY JSON:
+{"documentType":"gym membership/workout log/race registration/certification","name":"","expiryDate":"YYYY-MM-DD","eventDate":"YYYY-MM-DD","goal":"","notes":""}`,
       trust: `Extract from this trust or estate planning document and return ONLY JSON:
 {"documentType":"trust/will/POA/beneficiary","name":"","trustee":"","beneficiary":"","reviewDate":"YYYY-MM-DD","expiryDate":"YYYY-MM-DD"}`,
       tax: `Extract from this tax document and return ONLY JSON:
@@ -963,7 +965,7 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory, a
   
   const getCategoryEmoji = (catId) => {
     const emojis = {
-      immigration: '✈️', trust: '🏛️', tax: '💰', driving: '🚗', parking: '🅿️', health: '❤️',
+      immigration: '✈️', trust: '🏛️', tax: '💰', driving: '🚗', parking: '🅿️', health: '❤️', fitness: '💪',
       education: '📚', work_schedule: '⏰', retirement_estate: '📜', housing: '🏡',
       business_tax: '💰', employees: '👥', assets: '📦', liabilities: '⚠️',
       business_insurance: '🛡️', office: '💼', business_license: '📋', property: '🏠', 
@@ -1192,6 +1194,7 @@ const EMPTY_EXAMPLES = {
   driving: 'License renewals, registration',
   parking: 'Parking tickets, toll roads (407, E-ZPass), violations',
   health: 'Health card, dental, prescriptions',
+  fitness: 'Workouts, gym sessions, running, goals, weigh-ins',
   education: 'Exams, assignments, tuition deadlines',
   work_schedule: 'Shifts, pay days, contract dates',
   housing: 'Rent, internet, phone, hydro bills',

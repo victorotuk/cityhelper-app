@@ -20,6 +20,7 @@ const ROLES = [
   { id: 'tradesperson', label: 'Tradesperson / Contractor', icon: '🔧', desc: 'Certifications, permits, safety' },
   { id: 'athlete_coach', label: 'Athlete / Coach', icon: '🏆', desc: 'Registrations, certifications, schedules' },
   { id: 'healthcare', label: 'Healthcare Worker', icon: '⚕️', desc: 'Licenses, training, certifications' },
+  { id: 'fitness', label: 'Fitness / Active', icon: '💪', desc: 'Workouts, goals, gym, running' },
 ];
 
 // ── Personal struggles ──
@@ -44,6 +45,7 @@ const STRUGGLES = [
   { id: 'certifications', label: 'Professional certifications & training', icon: '🎓' },
   { id: 'estate', label: 'Estate planning & wills', icon: '📜' },
   { id: 'equipment', label: 'Equipment & asset tracking', icon: '📦' },
+  { id: 'fitness', label: 'Workouts & fitness goals', icon: '💪' },
 ];
 
 // ── Organization types ──
@@ -97,6 +99,7 @@ const ROLE_CATEGORIES = {
   tradesperson: ['professional', 'business_license', 'business_insurance', 'business_tax'],
   athlete_coach: ['inst_sports', 'health'],
   healthcare: ['professional', 'health', 'inst_staff'],
+  fitness: ['fitness', 'health'],
 };
 
 const STRUGGLE_CATEGORIES = {
@@ -120,6 +123,7 @@ const STRUGGLE_CATEGORIES = {
   certifications: ['professional', 'inst_staff'],
   estate: ['retirement_estate', 'trust'],
   equipment: ['assets'],
+  fitness: ['fitness', 'health'],
 };
 
 const ORG_TYPE_CATEGORIES = {
@@ -146,6 +150,8 @@ const LIFE_MOMENTS = [
   { id: 'buying_home', label: 'Buying a home', icon: '🏠', desc: 'Mortgage, insurance, property tax' },
   { id: 'retiring', label: 'Retiring soon', icon: '🌅', desc: 'Pensions, benefits, estate planning' },
   { id: 'starting_business', label: 'Starting a business', icon: '🏪', desc: 'Licenses, taxes, insurance' },
+  { id: 'getting_fit', label: 'Getting fit / Working out', icon: '💪', desc: 'Gym, running, goals, habits' },
+  { id: 'other', label: "Something else", icon: '🔹', desc: "Tell the AI what you're working on" },
   { id: 'none', label: "Nothing major right now", icon: '✨', desc: 'Skip this' },
 ];
 
@@ -157,6 +163,8 @@ const LIFE_MOMENT_CATEGORIES = {
   buying_home: ['housing', 'property', 'personal_insurance', 'tax'],
   retiring: ['retirement_estate', 'health', 'trust', 'government_benefits'],
   starting_business: ['business_license', 'business_tax', 'business_insurance'],
+  getting_fit: ['fitness', 'health'],
+  other: ['important_dates', 'health', 'education', 'other'],
   none: [],
 };
 

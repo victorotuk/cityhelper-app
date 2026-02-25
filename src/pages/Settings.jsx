@@ -42,9 +42,6 @@ export default function Settings() {
   // Suggestion box
   const [showSuggestionBox, setShowSuggestionBox] = useState(false);
 
-  // Notification suggestions (Android only)
-  const [notificationSuggestionsEnabled, setNotificationSuggestionsEnabled] = useState(false);
-
   const COUNTRIES = [
     { id: 'ca', name: 'Canada', flag: '\u{1F1E8}\u{1F1E6}' },
     { id: 'us', name: 'United States', flag: '\u{1F1FA}\u{1F1F8}' }
@@ -70,23 +67,12 @@ export default function Settings() {
       }
       console.log('[Settings] Session OK, user:', sessionData.session.user.id);
 
-      // Step 1: Try to read existing settings (incl. notification_suggestions_enabled if migrated)
-      let { data, error: fetchErr } = await supabase
+      // Step 1: Try to read existing settings
+      const { data, error: fetchErr } = await supabase
         .from('user_settings')
-        .select('phone_number, phone_verified, country, countries, push_enabled, persona, digest_email_enabled, digest_day, notification_suggestions_enabled')
+        .select('phone_number, phone_verified, country, countries, push_enabled, persona, digest_email_enabled, digest_day')
         .eq('user_id', user.id)
         .single();
-
-      // Fallback: if column doesn't exist yet (migration not run), retry without it
-      if (fetchErr && fetchErr.message?.includes('notification_suggestions_enabled')) {
-        const fallback = await supabase
-          .from('user_settings')
-          .select('phone_number, phone_verified, country, countries, push_enabled, persona, digest_email_enabled, digest_day')
-          .eq('user_id', user.id)
-          .single();
-        data = fallback.data;
-        fetchErr = fallback.error;
-      }
 
       if (fetchErr && fetchErr.code === 'PGRST116') {
         // No row exists yet - create one
@@ -115,7 +101,6 @@ export default function Settings() {
         setPersona(data.persona || null);
         setDigestEnabled(!!data.digest_email_enabled);
         setDigestDay(data.digest_day ?? 1);
-        setNotificationSuggestionsEnabled(!!data.notification_suggestions_enabled);
       }
     } catch (err) {
       console.error('[Settings] Fetch settings error:', err);

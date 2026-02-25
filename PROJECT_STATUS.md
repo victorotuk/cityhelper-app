@@ -1,5 +1,5 @@
 ## Nava — Project Status
-Updated: 2026-02-21
+Updated: 2026-02-01
 
 ### Overall
 - Status: In progress
@@ -7,6 +7,8 @@ Updated: 2026-02-21
 - Stack: React + Vite, Capacitor (Android/iOS), Supabase, Tauri (desktop)
 
 ### Recent
+- **Mileage tracking (vehicles)**: Manual odometer entry for vehicle assets. Migration 023 adds `current_mileage`, `last_mileage_update` to `assets`. Assets.jsx supports vehicle category with mileage fields.
+- **Planned: Auto mileage** — OBD-II dongle when available (reads odometer, vehicle speed, ignition); otherwise GPS + Google Maps API. Trip detection: speed threshold (>15 mph = driving vs walk/jog), Snap to Roads, user confirmation.
 - **Email suggestions**: Connect Gmail or Outlook to scan inbox for trackable items (subscriptions, tickets, renewals, bills). Multi-provider OAuth (email-oauth), AI extraction (fetch-email-suggestions). Migrations 019–021. Configured: Google OAuth, Microsoft Entra.
 - **Merged**: nava-app merged into nava. Single project now contains full React app, Android, iOS, Supabase, stripe-webhook, app.html (Predictably Human).
 - **Bill Pay**: pay_url and pay_phone on compliance_items (migration 010). Housing, Office, Property items support "Pay online" URL and "Call to pay" phone.
@@ -27,6 +29,8 @@ Updated: 2026-02-21
 - Codemagic: `https://codemagic.io/app/695ded806dc729a6cfbc5215/build/695dededcec99af532b9b1ca`
 
 ### Changelog
+- 2026-02-01
+  - **Mileage tracking**: Migration 023 adds `current_mileage`, `last_mileage_update` to assets table. Assets.jsx: vehicle category with manual odometer entry. Planned: OBD-II auto-read when available; GPS + Maps API fallback; trip detection (speed threshold, Snap to Roads).
 - 2026-02-21
   - **Rebrand to Nava**: name, formalName (Nava.ai for domains/copyright), UI palette (serene horizon — warm gold #d4a574, soft blues).
   - **AI agent**: ai-chat function calling — add/list/update items via natural language.

@@ -167,6 +167,7 @@ export default function Landing() {
                   {cat.icon === 'Trophy' && '🏆'}
                   {cat.icon === 'CalendarHeart' && '📅'}
                   {cat.icon === 'Gift' && '🎁'}
+                  {cat.icon === 'Dumbbell' && '💪'}
                 </div>
                 <h3 className="feature-title">{cat.name}</h3>
                 <p className="feature-text">
@@ -176,6 +177,7 @@ export default function Landing() {
                   {cat.id === 'driving' && 'License renewals, sticker, insurance, registration'}
                   {cat.id === 'parking' && 'Parking tickets, toll roads (407, E-ZPass), traffic violations'}
                   {cat.id === 'health' && 'Health cards (all provinces), medical appointments, health & dental insurance'}
+                  {cat.id === 'fitness' && 'Workouts, gym sessions, running goals, progress check-ins'}
                   {cat.id === 'retirement_estate' && 'Wills, trusts, POA, insurance, RRSP/TFSA, beneficiaries — keep intentions aligned'}
                   {cat.id === 'housing' && 'Lease expiry, rent increases, tenant insurance'}
                   {cat.id === 'office' && 'Commercial lease, WSIB, payroll, business compliance'}

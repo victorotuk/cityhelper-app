@@ -3,7 +3,7 @@
    Warm gold, soft blues, contemplative
    ========================================= */
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap');
+/* Fonts loaded via link in index.html for faster first paint */
 
 :root {
   /* Core palette - deep horizon */
@@ -467,6 +467,16 @@ input, select, textarea { font-family: inherit; }
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.auth-oauth-buttons {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.auth-oauth-buttons .btn {
+  width: 100%;
 }
 
 .auth-divider {

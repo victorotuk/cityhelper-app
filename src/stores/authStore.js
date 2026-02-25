@@ -80,6 +80,16 @@ export const useAuthStore = create((set, get) => ({
     if (error) throw error;
   },
 
+  signInWithAzure: async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'azure',
+      options: {
+        redirectTo: window.location.origin + '/dashboard'
+      }
+    });
+    if (error) throw error;
+  },
+
   signInWithEmail: async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,

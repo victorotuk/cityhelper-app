@@ -50,6 +50,7 @@ export const APP_CONFIG = {
 
     // ── PERSONAL: Health & Life ──
     { id: "health", name: "Health", icon: "Heart", color: "#ef4444", group: "personal" },
+    { id: "fitness", name: "Fitness & Workouts", icon: "Dumbbell", color: "#22c55e", group: "personal" },
     { id: "personal_insurance", name: "Personal Insurance", icon: "Shield", color: "#0891b2", group: "personal" },
     { id: "pet_care", name: "Pet Care", icon: "Dog", color: "#a16207", group: "personal" },
     { id: "kids_family", name: "Kids & Family", icon: "Baby", color: "#ec4899", group: "personal" },
@@ -464,6 +465,18 @@ export const APP_CONFIG = {
       { name: "Health Insurance", reminderDays: [60, 30, 14, 7] },
       { name: "Dental Plan", reminderDays: [60, 30, 14, 7] },
       { name: "Dental Insurance", reminderDays: [60, 30, 14, 7] }
+    ],
+    fitness: [
+      { name: "Gym session", reminderDays: [1] },
+      { name: "Running / Cardio", reminderDays: [1] },
+      { name: "Strength training", reminderDays: [1] },
+      { name: "Yoga / Stretch", reminderDays: [1] },
+      { name: "Rest day check-in", reminderDays: [1] },
+      { name: "Weigh-in / Progress check", reminderDays: [7, 3, 1] },
+      { name: "Fitness goal review", reminderDays: [30, 14, 7] },
+      { name: "Gym membership renewal", reminderDays: [60, 30, 14, 7] },
+      { name: "Personal trainer session", reminderDays: [7, 3, 1] },
+      { name: "Sports league / Class", reminderDays: [7, 3, 1] }
     ],
     education: [
       { name: "Tuition Payment Deadline", reminderDays: [30, 14, 7, 3, 1] },

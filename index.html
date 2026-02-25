@@ -9,6 +9,25 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      window.__APP_ERROR__ = null;
+      window.addEventListener('error', function(e) {
+        window.__APP_ERROR__ = e;
+        var root = document.getElementById('root');
+        if (root && !root.querySelector('[data-error-display]')) {
+          root.innerHTML = '<div data-error-display style="padding:24px;background:#0c0d12;color:#f87171;font-family:monospace;white-space:pre-wrap;font-size:12px;">Bootstrap error: ' + (e.message || '') + '\n\n' + (e.filename || '') + ':' + (e.lineno || '') + '\n\n' + (e.error && e.error.stack ? e.error.stack : '') + '</div>';
+        }
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        window.__APP_ERROR__ = e;
+        var root = document.getElementById('root');
+        if (root && !root.querySelector('[data-error-display]')) {
+          var msg = e.reason && e.reason.message ? e.reason.message : String(e.reason);
+          var stack = e.reason && e.reason.stack ? e.reason.stack : '';
+          root.innerHTML = '<div data-error-display style="padding:24px;background:#0c0d12;color:#f87171;font-family:monospace;white-space:pre-wrap;font-size:12px;">Unhandled promise: ' + msg + '\n\n' + stack + '</div>';
+        }
+      });
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
