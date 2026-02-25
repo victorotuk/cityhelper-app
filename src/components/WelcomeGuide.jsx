@@ -1,7 +1,140 @@
-import { useState } from 'react';
-import { X, ChevronRight, Check, Building2, User } from 'lucide-react';
+import { useState, useRef, useCallback } from 'react';
+import { X, ChevronRight, Check, Building2, User, Mic, MicOff } from 'lucide-react';
 import { APP_CONFIG } from '../lib/config';
 import { supabase } from '../lib/supabase';
+
+const SpeechRecognition = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
+
+function QuizTextInput({ value, onChange, placeholder, maxLength = 200, className = 'quiz-other-input' }) {
+  const [listening, setListening] = useState(false);
+  const [speechPreview, setSpeechPreview] = useState(null);
+  const recognitionRef = useRef(null);
+
+  const toggleSpeech = useCallback((replaceAll = false) => {
+    if (!SpeechRecognition) return;
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+    if (replaceAll) {
+      onChange('');
+      setSpeechPreview(null);
+    }
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+    recognition.onresult = (e) => {
+      const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+      if (transcript.trim()) {
+        onChange((replaceAll ? '' : value ? value + ' ' : '') + transcript.trim());
+        setSpeechPreview(transcript);
+      }
+    };
+    recognition.onend = () => setListening(false);
+    recognition.onerror = () => setListening(false);
+    recognitionRef.current = recognition;
+    recognition.start();
+    setListening(true);
+  }, [listening, value, onChange]);
+
+  return (
+    <div className="quiz-text-with-mic-wrap">
+      <div className="quiz-text-with-mic">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => {
+            onChange(e.target.value);
+            if (speechPreview) setSpeechPreview(null);
+          }}
+          placeholder={placeholder}
+          maxLength={maxLength}
+          className={className}
+        />
+        {SpeechRecognition && (
+          <button
+            type="button"
+            className={`quiz-mic-btn ${listening ? 'listening' : ''}`}
+            onClick={() => toggleSpeech(false)}
+            title={listening ? 'Stop' : 'Speak'}
+            aria-label={listening ? 'Stop listening' : 'Speak'}
+          >
+            {listening ? <MicOff size={16} /> : <Mic size={16} />}
+          </button>
+        )}
+      </div>
+      {speechPreview && (
+        <div className="speech-review-bar speech-review-bar-quiz">
+          <span className="speech-review-text">We heard: &quot;{speechPreview.length > 40 ? speechPreview.slice(0, 40) + '…' : speechPreview}&quot;</span>
+          <button type="button" className="speech-review-again" onClick={() => toggleSpeech(true)}>
+            <Mic size={12} /> Speak again
+          </button>
+          <button type="button" className="speech-review-dismiss" onClick={() => setSpeechPreview(null)} aria-label="Dismiss">×</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function QuizTextareaMic({ value, onChange }) {
+  const [listening, setListening] = useState(false);
+  const [speechPreview, setSpeechPreview] = useState(null);
+  const recognitionRef = useRef(null);
+
+  const toggleSpeech = useCallback((replaceAll = false) => {
+    if (!SpeechRecognition) return;
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+    if (replaceAll) {
+      onChange('');
+      setSpeechPreview(null);
+    }
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+    recognition.onresult = (e) => {
+      const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+      if (transcript.trim()) {
+        onChange((replaceAll ? '' : value ? value + ' ' : '') + transcript.trim());
+        setSpeechPreview(transcript);
+      }
+    };
+    recognition.onend = () => setListening(false);
+    recognition.onerror = () => setListening(false);
+    recognitionRef.current = recognition;
+    recognition.start();
+    setListening(true);
+  }, [listening, value, onChange]);
+
+  return (
+    <div className="quiz-textarea-mic-wrap">
+      <button
+        type="button"
+        className={`quiz-mic-btn quiz-mic-btn-textarea ${listening ? 'listening' : ''}`}
+        onClick={() => toggleSpeech(false)}
+        title={listening ? 'Stop' : 'Speak'}
+        aria-label={listening ? 'Stop listening' : 'Speak'}
+      >
+        {listening ? <MicOff size={16} /> : <Mic size={16} />}
+      </button>
+      {speechPreview && (
+        <div className="speech-review-bar speech-review-bar-quiz speech-review-bar-textarea">
+          <span className="speech-review-text">We heard: &quot;{speechPreview.length > 40 ? speechPreview.slice(0, 40) + '…' : speechPreview}&quot;</span>
+          <button type="button" className="speech-review-again" onClick={() => toggleSpeech(true)}>
+            <Mic size={12} /> Speak again
+          </button>
+          <button type="button" className="speech-review-dismiss" onClick={() => setSpeechPreview(null)} aria-label="Dismiss">×</button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ── Personal roles ──
 const ROLES = [
@@ -219,12 +352,17 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
   const [selectedFocusAreas, setSelectedFocusAreas] = useState(existingPersona?.focusAreas ?? existingPersona?.struggles ?? []);
   const [lifeMoments, setLifeMoments] = useState(existingPersona?.lifeMoments || []);
   const [otherNeeds, setOtherNeeds] = useState(existingPersona?.otherNeeds || '');
+  const [otherRoleDetail, setOtherRoleDetail] = useState(existingPersona?.otherRoleDetail || '');
+  const [otherFocusAreaDetail, setOtherFocusAreaDetail] = useState(existingPersona?.otherFocusAreaDetail || '');
+  const [otherLifeMomentDetail, setOtherLifeMomentDetail] = useState(existingPersona?.otherLifeMomentDetail || '');
 
   // Org flow state
   const [orgName, setOrgName] = useState(existingPersona?.orgInfo?.name || '');
   const [orgType, setOrgType] = useState(existingPersona?.orgInfo?.type || '');
   const [orgFocusAreas, setOrgFocusAreas] = useState(existingPersona?.orgFocusAreas ?? existingPersona?.orgStruggles ?? []);
   const [orgOtherNeeds, setOrgOtherNeeds] = useState(existingPersona?.orgOtherNeeds || '');
+  const [orgOtherFocusAreaDetail, setOrgOtherFocusAreaDetail] = useState(existingPersona?.orgOtherFocusAreaDetail || '');
+  const [orgTypeOtherDetail, setOrgTypeOtherDetail] = useState(existingPersona?.orgTypeOtherDetail || '');
 
   const [saving, setSaving] = useState(false);
 
@@ -239,7 +377,8 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
       selectedFocusAreas.forEach(s => (FOCUS_AREA_CATEGORIES[s] || []).forEach(c => catSet.add(c)));
       lifeMoments.filter(m => m !== 'none').forEach(m => (LIFE_MOMENT_CATEGORIES[m] || []).forEach(c => catSet.add(c)));
     } else {
-      (ORG_TYPE_CATEGORIES[orgType] || []).forEach(c => catSet.add(c));
+      const effectiveOrgType = orgType || (orgTypeOtherDetail.trim() ? 'other' : '');
+      (ORG_TYPE_CATEGORIES[effectiveOrgType] || []).forEach(c => catSet.add(c));
       orgFocusAreas.forEach(s => (ORG_FOCUS_AREA_CATEGORIES[s] || []).forEach(c => catSet.add(c)));
     }
     return [...catSet];
@@ -253,15 +392,25 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
       onboardedAt: new Date().toISOString(),
       recommendedCategories: getRecommendedCategories(),
       ...(accountType === 'personal'
-        ? { roles: selectedRoles, focusAreas: selectedFocusAreas, lifeMoments: lifeMoments.filter(m => m !== 'none'), otherNeeds: otherNeeds.trim() || null }
-        : { orgInfo: { name: orgName, type: orgType }, orgFocusAreas, orgOtherNeeds: orgOtherNeeds.trim() || null }),
+        ? {
+            roles: selectedRoles, focusAreas: selectedFocusAreas, lifeMoments: lifeMoments.filter(m => m !== 'none'),
+            otherNeeds: otherNeeds.trim() || null,
+            otherRoleDetail: otherRoleDetail.trim() || null,
+            otherFocusAreaDetail: otherFocusAreaDetail.trim() || null,
+            otherLifeMomentDetail: otherLifeMomentDetail.trim() || null,
+          }
+        : {
+            orgInfo: { name: orgName, type: orgType || (orgTypeOtherDetail.trim() ? 'other' : '') }, orgFocusAreas, orgOtherNeeds: orgOtherNeeds.trim() || null,
+            orgOtherFocusAreaDetail: orgOtherFocusAreaDetail.trim() || null,
+            orgTypeOtherDetail: orgTypeOtherDetail.trim() || null,
+          }),
     };
     try {
       await supabase.from('user_settings').upsert({
         user_id: userId,
         persona,
         account_type: accountType,
-        ...(accountType === 'organization' ? { org_info: { name: orgName, type: orgType } } : {}),
+        ...(accountType === 'organization' ? { org_info: { name: orgName, type: orgType || (orgTypeOtherDetail.trim() ? 'other' : '') } } : {}),
         onboarding_completed: true,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' });
@@ -290,11 +439,11 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
   const canGoNext = () => {
     switch (step) {
       case 'account_type': return !!accountType;
-      case 'roles': return selectedRoles.length > 0;
-      case 'focus_areas': return selectedFocusAreas.length > 0;
+      case 'roles': return selectedRoles.length > 0 || otherRoleDetail.trim().length > 0;
+      case 'focus_areas': return selectedFocusAreas.length > 0 || otherFocusAreaDetail.trim().length > 0;
       case 'life_moments': return true;
-      case 'org_info': return orgName.trim() && orgType;
-      case 'org_focus_areas': return orgFocusAreas.length > 0;
+      case 'org_info': return orgName.trim() && (orgType || orgTypeOtherDetail.trim().length > 0);
+      case 'org_focus_areas': return orgFocusAreas.length > 0 || orgOtherFocusAreaDetail.trim().length > 0;
       case 'other_needs': return true;
       default: return true;
     }
@@ -353,7 +502,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
             <div className="guide-icon"><span className="guide-emoji">🍁</span></div>
             <h2 className="guide-title">Welcome to {APP_CONFIG.name}</h2>
             <p className="guide-description">
-              Let's set things up for you. A few quick questions so we can show you exactly what matters.
+              A few quick questions so we can show you exactly what matters. You can pick from our menu, type, or speak — whatever works.
             </p>
             <div className="guide-actions">
               <button className="btn btn-ghost" onClick={handleSkip}>Skip</button>
@@ -408,7 +557,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
         {step === 'roles' && (
           <>
             <h2 className="guide-title">What describes you?</h2>
-            <p className="guide-description">Pick all that apply. This helps us show you the right stuff.</p>
+            <p className="guide-description">Pick from the menu, type, or use the mic to speak — whatever works.</p>
             <div className="quiz-options">
               {ROLES.map(r => (
                 <button
@@ -425,6 +574,14 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
                 </button>
               ))}
             </div>
+            <div className="quiz-other-detail">
+              <label className="quiz-other-label">Or type your own</label>
+              <QuizTextInput
+                value={otherRoleDetail}
+                onChange={setOtherRoleDetail}
+                placeholder="e.g. Content creator, gig worker, artist..."
+              />
+            </div>
             <div className="guide-actions">
               <button className="btn btn-ghost" onClick={goBack}>Back</button>
               <button className="btn btn-primary" onClick={goNext} disabled={!canGoNext()}>
@@ -438,7 +595,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
         {step === 'focus_areas' && (
           <>
             <h2 className="guide-title">What do you want to keep on top of?</h2>
-            <p className="guide-description">Pick the areas we'll help you stay on top of.</p>
+            <p className="guide-description">Pick from the menu, type, or use the mic to speak — whatever works.</p>
             <div className="quiz-options grid-2">
               {FOCUS_AREAS.map(s => (
                 <button
@@ -454,6 +611,14 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
                 </button>
               ))}
             </div>
+            <div className="quiz-other-detail">
+              <label className="quiz-other-label">Or type your own</label>
+              <QuizTextInput
+                value={otherFocusAreaDetail}
+                onChange={setOtherFocusAreaDetail}
+                placeholder="e.g. Domain renewals, professional dues, court dates..."
+              />
+            </div>
             <div className="guide-actions">
               <button className="btn btn-ghost" onClick={goBack}>Back</button>
               <button className="btn btn-primary" onClick={goNext} disabled={!canGoNext()}>
@@ -467,7 +632,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
         {step === 'life_moments' && (
           <>
             <h2 className="guide-title">What&apos;s coming up?</h2>
-            <p className="guide-description">Big life changes? We&apos;ll surface the right things to track.</p>
+            <p className="guide-description">Pick from the menu, type, or use the mic to speak — whatever works.</p>
             <div className="quiz-options">
               {LIFE_MOMENTS.map(m => (
                 <button
@@ -490,6 +655,14 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
                 </button>
               ))}
             </div>
+            <div className="quiz-other-detail">
+              <label className="quiz-other-label">Or type your own</label>
+              <QuizTextInput
+                value={otherLifeMomentDetail}
+                onChange={setOtherLifeMomentDetail}
+                placeholder="e.g. Planning a wedding, managing a lawsuit, starting a side project..."
+              />
+            </div>
             <div className="guide-actions">
               <button className="btn btn-ghost" onClick={goBack}>Back</button>
               <button className="btn btn-primary" onClick={goNext}>
@@ -505,20 +678,28 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
             <h2 className="guide-title">Anything else?</h2>
             <p className="guide-description">
               {accountType === 'personal'
-                ? "Other needs, goals, or things you want us to help you track? Optional."
-                : `Any other compliance needs for ${orgName || 'your org'}? Optional.`}
+                ? "Type, use the mic to speak, or skip — we'll use this to personalize. Optional."
+                : `Type, use the mic to speak, or skip — we'll tailor for ${orgName || 'your org'}. Optional.`}
             </p>
             <div className="org-name-field">
-              <textarea
-                placeholder={accountType === 'personal'
-                  ? "e.g. I'm planning a wedding, tracking a lawsuit, managing a rental property..."
-                  : "e.g. Fleet maintenance schedules, grant reporting deadlines, accreditation renewals..."}
-                value={accountType === 'personal' ? otherNeeds : orgOtherNeeds}
-                onChange={(e) => accountType === 'personal' ? setOtherNeeds(e.target.value) : setOrgOtherNeeds(e.target.value)}
-                rows={4}
-                maxLength={500}
-                style={{ resize: 'vertical', minHeight: 80 }}
-              />
+              <div className="quiz-text-with-mic quiz-textarea-wrap">
+                <textarea
+                  placeholder={accountType === 'personal'
+                    ? "e.g. I'm planning a wedding, tracking a lawsuit, managing a rental property..."
+                    : "e.g. Fleet maintenance schedules, grant reporting deadlines, accreditation renewals..."}
+                  value={accountType === 'personal' ? otherNeeds : orgOtherNeeds}
+                  onChange={(e) => accountType === 'personal' ? setOtherNeeds(e.target.value) : setOrgOtherNeeds(e.target.value)}
+                  rows={4}
+                  maxLength={500}
+                  style={{ resize: 'vertical', minHeight: 80 }}
+                />
+                {SpeechRecognition && (
+                  <QuizTextareaMic
+                    value={accountType === 'personal' ? otherNeeds : orgOtherNeeds}
+                    onChange={accountType === 'personal' ? setOtherNeeds : setOrgOtherNeeds}
+                  />
+                )}
+              </div>
               <small className="field-hint">We'll use this to personalize your experience. You can skip.</small>
             </div>
             <div className="guide-actions">
@@ -534,7 +715,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
         {step === 'org_info' && (
           <>
             <h2 className="guide-title">Tell us about your organization</h2>
-            <p className="guide-description">We'll tailor everything to your industry and needs.</p>
+            <p className="guide-description">Pick from the menu, type, or use the mic to speak — whatever works.</p>
             <div className="org-name-field">
               <label htmlFor="org-name">Organization name</label>
               <input
@@ -564,6 +745,14 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
                 </button>
               ))}
             </div>
+            <div className="quiz-other-detail">
+              <label className="quiz-other-label">Or type your own</label>
+              <QuizTextInput
+                value={orgTypeOtherDetail}
+                onChange={setOrgTypeOtherDetail}
+                placeholder="e.g. Co-op, franchise, association..."
+              />
+            </div>
             <div className="guide-actions">
               <button className="btn btn-ghost" onClick={goBack}>Back</button>
               <button className="btn btn-primary" onClick={goNext} disabled={!canGoNext()}>
@@ -577,7 +766,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
         {step === 'org_focus_areas' && (
           <>
             <h2 className="guide-title">What does your org need to stay on top of?</h2>
-            <p className="guide-description">Pick the compliance areas we'll help you track for {orgName || 'your org'}.</p>
+            <p className="guide-description">Pick from the menu, type, or use the mic to speak — whatever works.</p>
             <div className="quiz-options grid-2">
               {ORG_FOCUS_AREAS.map(s => (
                 <button
@@ -592,6 +781,14 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
                   {orgFocusAreas.includes(s.id) && <Check size={16} className="quiz-check" />}
                 </button>
               ))}
+            </div>
+            <div className="quiz-other-detail">
+              <label className="quiz-other-label">Or type your own</label>
+              <QuizTextInput
+                value={orgOtherFocusAreaDetail}
+                onChange={setOrgOtherFocusAreaDetail}
+                placeholder="e.g. Grant reporting, accreditation renewals, fleet maintenance..."
+              />
             </div>
             <div className="guide-actions">
               <button className="btn btn-ghost" onClick={goBack}>Back</button>

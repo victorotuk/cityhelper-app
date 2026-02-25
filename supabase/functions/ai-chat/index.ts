@@ -302,11 +302,30 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    const { messages } = await req.json()
+    const { messages, persona } = await req.json()
     if (!messages || !Array.isArray(messages)) throw new Error('Messages array is required')
 
     const appName = Deno.env.get('APP_NAME') || 'Nava'
+    let personaContext = ''
+    if (persona && typeof persona === 'object') {
+      const parts: string[] = []
+      if (persona.roles?.length) parts.push(`Roles: ${persona.roles.join(', ')}`)
+      if (persona.focusAreas?.length) parts.push(`Focus areas: ${persona.focusAreas.join(', ')}`)
+      if (persona.lifeMoments?.length) parts.push(`Life moments: ${persona.lifeMoments.join(', ')}`)
+      if (persona.otherNeeds) parts.push(`Other needs: ${persona.otherNeeds}`)
+      if (persona.otherRoleDetail) parts.push(`Role detail: ${persona.otherRoleDetail}`)
+      if (persona.otherFocusAreaDetail) parts.push(`Focus area detail: ${persona.otherFocusAreaDetail}`)
+      if (persona.otherLifeMomentDetail) parts.push(`Life moment detail: ${persona.otherLifeMomentDetail}`)
+      if (persona.orgInfo?.name) parts.push(`Org: ${persona.orgInfo.name} (${persona.orgInfo.type || 'unknown'})`)
+      if (persona.orgFocusAreas?.length) parts.push(`Org focus areas: ${persona.orgFocusAreas.join(', ')}`)
+      if (persona.orgOtherNeeds) parts.push(`Org other needs: ${persona.orgOtherNeeds}`)
+      if (persona.orgOtherFocusAreaDetail) parts.push(`Org focus area detail: ${persona.orgOtherFocusAreaDetail}`)
+      if (persona.orgTypeOtherDetail) parts.push(`Org type detail: ${persona.orgTypeOtherDetail}`)
+      if (parts.length) personaContext = `\n\n**USER CONTEXT (from onboarding):** ${parts.join('. ')}. Use this to personalize suggestions and understand what they care about.`
+    }
+
     const systemPrompt = `You are ${appName} AI, a compliance assistant. Users can do everything via chat — no clicking needed.
+${personaContext}
 
 **TOOLS (use when user wants to take action):**
 - add_item, list_items, get_upcoming, filter_items, get_completed

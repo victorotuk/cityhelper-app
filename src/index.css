@@ -1757,11 +1757,14 @@ input, select, textarea { font-family: inherit; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .chat-input {
-  display: flex;
-  gap: var(--space-md);
   padding: var(--space-md) var(--space-lg);
   background: var(--bg-card);
   border-top: 1px solid var(--border-subtle);
+}
+
+.chat-input-row {
+  display: flex;
+  gap: var(--space-md);
 }
 
 .chat-input input {
@@ -1795,6 +1798,86 @@ input, select, textarea { font-family: inherit; }
 
 .chat-input button:hover { background: var(--text-primary); }
 .chat-input button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.chat-input .chat-mic-btn {
+  background: var(--bg-main);
+  border: 1px solid var(--border-visible);
+  color: var(--text-secondary);
+}
+.chat-input .chat-mic-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.chat-input .chat-mic-btn.listening {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: white;
+  animation: pulse-mic 1.2s ease-in-out infinite;
+}
+@keyframes pulse-mic {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.speech-review-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: var(--bg-hover);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.speech-review-text {
+  font-style: italic;
+  color: var(--text-primary);
+  max-width: 100%;
+}
+.speech-review-hint {
+  color: var(--text-muted);
+}
+.speech-review-again {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--accent);
+  color: var(--bg-deep);
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+.speech-review-again:hover { background: var(--text-primary); }
+.speech-review-dismiss {
+  margin-left: auto;
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.speech-review-dismiss:hover { color: var(--text-primary); background: var(--bg-main); }
+
+.speech-review-bar-quiz {
+  margin-top: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+.speech-review-bar-quiz .speech-review-again { padding: 4px 10px; font-size: 11px; }
+.quiz-text-with-mic-wrap { width: 100%; }
+.quiz-textarea-mic-wrap { position: relative; }
+.speech-review-bar-textarea {
+  margin-top: 8px;
+}
 
 /* AI Settings Dropdown */
 .ai-settings-wrapper { position: relative; }
@@ -5525,6 +5608,71 @@ input, select, textarea { font-family: inherit; }
 .quiz-option-text strong { font-size: 14px; color: var(--text-primary); }
 .quiz-option-text small { font-size: 12px; color: var(--text-muted); }
 .quiz-check { color: var(--accent); flex-shrink: 0; }
+.quiz-other-detail {
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-subtle);
+}
+.quiz-other-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.quiz-other-input {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+.quiz-other-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+.quiz-other-input::placeholder { color: var(--text-muted); }
+.quiz-other-detail .field-hint { display: block; margin-top: 6px; font-size: 12px; color: var(--text-muted); }
+
+.quiz-text-with-mic {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+}
+.quiz-text-with-mic input {
+  flex: 1;
+}
+.quiz-mic-btn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-visible);
+  background: var(--bg-main);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--duration-fast);
+}
+.quiz-mic-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.quiz-mic-btn.listening {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: white;
+}
+.quiz-textarea-wrap {
+  position: relative;
+}
+.quiz-mic-btn-textarea {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+}
+
 .quiz-sublabel {
   font-size: 13px;
   font-weight: 600;
