@@ -9,17 +9,16 @@
  */
 
 import { Capacitor } from '@capacitor/core';
-import { parseNotificationForSuggestion } from './smartSuggestParse';
 
 let listenerCleanup = null;
 
 /**
  * Start listening for notifications when user has enabled the feature.
- * @param {string} userId - For fetching user_settings
+ * @param {string} _userId - For fetching user_settings
  * @param {Function} getEnabled - () => Promise<boolean> - whether notification_suggestions_enabled
- * @param {Function} setPendingText - (text) => void - from sharedSuggestStore
+ * @param {Function} _setPendingText - (text) => void - from sharedSuggestStore (used when plugin exists)
  */
-export async function startNotificationListener(userId, getEnabled, setPendingText) {
+export async function startNotificationListener(_userId, getEnabled, _setPendingText) {
   if (Capacitor.getPlatform() !== 'android') return;
   const enabled = await getEnabled?.();
   if (!enabled) return;

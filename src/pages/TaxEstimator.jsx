@@ -26,6 +26,78 @@ const ONTARIO_BRACKETS = [
 const BASIC_PERSONAL_AMOUNT_FEDERAL = 15705;
 const BASIC_PERSONAL_AMOUNT_ONTARIO = 12399;
 
+// All Canadian provinces
+const CA_PROVINCES = [
+  { value: 'ON', label: 'Ontario' },
+  { value: 'BC', label: 'British Columbia' },
+  { value: 'AB', label: 'Alberta' },
+  { value: 'QC', label: 'Quebec' },
+  { value: 'MB', label: 'Manitoba' },
+  { value: 'SK', label: 'Saskatchewan' },
+  { value: 'NS', label: 'Nova Scotia' },
+  { value: 'NB', label: 'New Brunswick' },
+  { value: 'NL', label: 'Newfoundland and Labrador' },
+  { value: 'PE', label: 'Prince Edward Island' },
+  { value: 'YT', label: 'Yukon' },
+  { value: 'NT', label: 'Northwest Territories' },
+  { value: 'NU', label: 'Nunavut' },
+];
+
+// US states (regions we serve)
+const US_STATES = [
+  { value: 'NY', label: 'New York' },
+  { value: 'CA', label: 'California' },
+  { value: 'TX', label: 'Texas' },
+  { value: 'FL', label: 'Florida' },
+  { value: 'IL', label: 'Illinois' },
+  { value: 'PA', label: 'Pennsylvania' },
+  { value: 'OH', label: 'Ohio' },
+  { value: 'GA', label: 'Georgia' },
+  { value: 'NC', label: 'North Carolina' },
+  { value: 'MI', label: 'Michigan' },
+  { value: 'NJ', label: 'New Jersey' },
+  { value: 'VA', label: 'Virginia' },
+  { value: 'WA', label: 'Washington' },
+  { value: 'AZ', label: 'Arizona' },
+  { value: 'MA', label: 'Massachusetts' },
+  { value: 'TN', label: 'Tennessee' },
+  { value: 'IN', label: 'Indiana' },
+  { value: 'MO', label: 'Missouri' },
+  { value: 'MD', label: 'Maryland' },
+  { value: 'WI', label: 'Wisconsin' },
+  { value: 'CO', label: 'Colorado' },
+  { value: 'MN', label: 'Minnesota' },
+  { value: 'SC', label: 'South Carolina' },
+  { value: 'AL', label: 'Alabama' },
+  { value: 'LA', label: 'Louisiana' },
+  { value: 'KY', label: 'Kentucky' },
+  { value: 'OR', label: 'Oregon' },
+  { value: 'OK', label: 'Oklahoma' },
+  { value: 'CT', label: 'Connecticut' },
+  { value: 'UT', label: 'Utah' },
+  { value: 'NV', label: 'Nevada' },
+  { value: 'IA', label: 'Iowa' },
+  { value: 'AR', label: 'Arkansas' },
+  { value: 'MS', label: 'Mississippi' },
+  { value: 'KS', label: 'Kansas' },
+  { value: 'NM', label: 'New Mexico' },
+  { value: 'NE', label: 'Nebraska' },
+  { value: 'WV', label: 'West Virginia' },
+  { value: 'ID', label: 'Idaho' },
+  { value: 'HI', label: 'Hawaii' },
+  { value: 'NH', label: 'New Hampshire' },
+  { value: 'ME', label: 'Maine' },
+  { value: 'RI', label: 'Rhode Island' },
+  { value: 'MT', label: 'Montana' },
+  { value: 'DE', label: 'Delaware' },
+  { value: 'SD', label: 'South Dakota' },
+  { value: 'ND', label: 'North Dakota' },
+  { value: 'AK', label: 'Alaska' },
+  { value: 'VT', label: 'Vermont' },
+  { value: 'WY', label: 'Wyoming' },
+  { value: 'DC', label: 'District of Columbia' },
+];
+
 function calculateTax(income, brackets) {
   let tax = 0;
   let remaining = income;
@@ -41,8 +113,10 @@ function calculateTax(income, brackets) {
 }
 
 export default function TaxEstimator() {
+  const [region, setRegion] = useState('ca'); // 'ca' | 'us'
   const [income, setIncome] = useState('');
   const [province, setProvince] = useState('ON');
+  const [state, setState] = useState('NY');
   const [rrspContribution, setRrspContribution] = useState('');
   const [deductions, setDeductions] = useState('');
   const [result, setResult] = useState(null);
@@ -60,14 +134,14 @@ export default function TaxEstimator() {
     const federalCredit = BASIC_PERSONAL_AMOUNT_FEDERAL * 0.15;
     const netFederalTax = Math.max(0, federalTax - federalCredit);
 
-    // Provincial tax (Ontario for now)
+    // Provincial/state tax (Ontario brackets as approx for other provinces for now)
     const provincialTax = calculateTax(taxableIncome, ONTARIO_BRACKETS);
     const provincialCredit = BASIC_PERSONAL_AMOUNT_ONTARIO * 0.0505;
     const netProvincialTax = Math.max(0, provincialTax - provincialCredit);
 
-    // CPP & EI (simplified)
-    const cpp = Math.min(grossIncome * 0.0595, 3867.50);
-    const ei = Math.min(grossIncome * 0.0163, 1049.12);
+    // CPP & EI (Canada only)
+    const cpp = region === 'ca' ? Math.min(grossIncome * 0.0595, 3867.50) : 0;
+    const ei = region === 'ca' ? Math.min(grossIncome * 0.0163, 1049.12) : 0;
 
     const totalTax = netFederalTax + netProvincialTax + cpp + ei;
     const afterTax = grossIncome - totalTax;
@@ -86,7 +160,10 @@ export default function TaxEstimator() {
       effectiveRate,
       marginalRate,
       monthlySalary: afterTax / 12,
-      biweeklySalary: afterTax / 26
+      biweeklySalary: afterTax / 26,
+      region,
+      province,
+      state,
     });
   };
 
@@ -122,7 +199,7 @@ export default function TaxEstimator() {
           <div className="tax-header">
             <Calculator size={32} className="tax-icon" />
             <h1>Tax Estimator</h1>
-            <p>Estimate your Canadian income tax for 2024</p>
+            <p>Estimate income tax for 2024. File with one prompt? We&apos;re exploring APIs (SimpleTax, etc.) to make that happen.</p>
           </div>
 
           <div className="tax-form">
@@ -155,15 +232,31 @@ export default function TaxEstimator() {
             </div>
 
             <div className="form-group">
-              <label>Province</label>
-              <select value={province} onChange={(e) => setProvince(e.target.value)}>
-                <option value="ON">Ontario</option>
-                <option value="BC">British Columbia (coming soon)</option>
-                <option value="AB">Alberta (coming soon)</option>
-                <option value="QC">Quebec (coming soon)</option>
+              <label>Region</label>
+              <select value={region} onChange={(e) => { setRegion(e.target.value); setResult(null); }}>
+                <option value="ca">Canada</option>
+                <option value="us">United States</option>
               </select>
             </div>
 
+            {region === 'ca' && (
+              <div className="form-group">
+                <label>Province</label>
+                <select value={province} onChange={(e) => setProvince(e.target.value)}>
+                  {CA_PROVINCES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                </select>
+              </div>
+            )}
+            {region === 'us' && (
+              <div className="form-group">
+                <label>State</label>
+                <select value={state} onChange={(e) => setState(e.target.value)}>
+                  {US_STATES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+              </div>
+            )}
+
+            {region === 'ca' && (
             <div className="form-group">
               <label>RRSP Contribution</label>
               <div className="input-with-icon">
@@ -176,6 +269,7 @@ export default function TaxEstimator() {
                 />
               </div>
             </div>
+            )}
 
             <div className="form-group">
               <label>Other Deductions</label>
@@ -231,9 +325,11 @@ export default function TaxEstimator() {
                   <span>-${result.federalTax.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="breakdown-row">
-                  <span>Provincial Tax (ON)</span>
+                  <span>{result.region === 'ca' ? `Provincial Tax (${result.province})` : `State Tax (${result.state})`}</span>
                   <span>-${result.provincialTax.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</span>
                 </div>
+                {result.region === 'ca' && (
+                <>
                 <div className="breakdown-row">
                   <span>CPP Contributions</span>
                   <span>-${result.cpp.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</span>
@@ -242,6 +338,8 @@ export default function TaxEstimator() {
                   <span>EI Premiums</span>
                   <span>-${result.ei.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</span>
                 </div>
+                </>
+                )}
                 <div className="breakdown-row total">
                   <span>Net Income</span>
                   <span>${result.afterTax.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</span>

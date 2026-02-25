@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { ArrowLeft, Settings as SettingsIcon, Bell, BellOff, Shield, Phone, CheckCircle, Trash2, Globe, RefreshCw, MessageSquarePlus, Mail, Smartphone, User, Package, Building2 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
@@ -42,6 +43,9 @@ export default function Settings() {
   // Suggestion box
   const [showSuggestionBox, setShowSuggestionBox] = useState(false);
 
+  // Notification suggestions (Android)
+  const [notificationSuggestionsEnabled, setNotificationSuggestionsEnabled] = useState(false);
+
   const COUNTRIES = [
     { id: 'ca', name: 'Canada', flag: '\u{1F1E8}\u{1F1E6}' },
     { id: 'us', name: 'United States', flag: '\u{1F1FA}\u{1F1F8}' }
@@ -70,7 +74,7 @@ export default function Settings() {
       // Step 1: Try to read existing settings
       const { data, error: fetchErr } = await supabase
         .from('user_settings')
-        .select('phone_number, phone_verified, country, countries, push_enabled, persona, digest_email_enabled, digest_day')
+        .select('phone_number, phone_verified, country, countries, push_enabled, persona, digest_email_enabled, digest_day, notification_suggestions_enabled')
         .eq('user_id', user.id)
         .single();
 
@@ -101,6 +105,7 @@ export default function Settings() {
         setPersona(data.persona || null);
         setDigestEnabled(!!data.digest_email_enabled);
         setDigestDay(data.digest_day ?? 1);
+        setNotificationSuggestionsEnabled(!!data.notification_suggestions_enabled);
       }
     } catch (err) {
       console.error('[Settings] Fetch settings error:', err);

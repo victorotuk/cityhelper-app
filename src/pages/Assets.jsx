@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { ArrowLeft, Plus, Trash2, Package, Camera, Cpu, MapPin, Navigation } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 import { requestLocationPermission, createMileageTracker } from '../lib/mileageTracking';
+
+const isNative = Capacitor.getPlatform() !== 'web';
 
 const CATEGORIES = [
   { id: 'vehicle', label: 'Vehicle' },
@@ -98,7 +101,7 @@ export default function Assets() {
   };
 
   useEffect(() => {
-    if (!user || !vehicles.length) return;
+    if (!isNative || !user || !vehicles.length) return;
     const useGps = mileagePreference === 'gps_maps' || mileagePreference === 'obd';
     if (!useGps) return;
 
@@ -199,7 +202,7 @@ export default function Assets() {
             <div className="loading">Loading...</div>
           ) : (
             <>
-              {vehicles.length > 0 && (
+              {isNative && vehicles.length > 0 && (
                 <div className="setting-card" style={{ marginBottom: 'var(--space-lg)' }}>
                   <h3 style={{ marginBottom: 'var(--space-sm)', fontSize: '1rem' }}>Mileage tracking</h3>
                   <p className="section-desc" style={{ marginBottom: 'var(--space-md)' }}>
@@ -229,7 +232,7 @@ export default function Assets() {
                 </div>
               )}
 
-              {vehicles.length > 0 && (
+              {isNative && vehicles.length > 0 && (
                 <div className="setting-card" style={{ marginBottom: 'var(--space-lg)' }}>
                   <h3 style={{ marginBottom: 'var(--space-sm)', fontSize: '1rem' }}>Trip log</h3>
                   {trips.length > 0 ? (

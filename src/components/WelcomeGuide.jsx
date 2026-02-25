@@ -326,7 +326,6 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
     }
   };
 
-  const isLastStep = step === 'other_needs';
 
   return (
     <div className="welcome-guide-overlay">

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { APP_CONFIG } from '../lib/config';
 
-export default function BulkEditModal({ selectedIds, itemCount, onClose, onApply }) {
+export default function BulkEditModal({ selectedIds: _selectedIds, itemCount, onClose, onApply }) {
   const [dueDate, setDueDate] = useState('');
   const [category, setCategory] = useState('');
 

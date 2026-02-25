@@ -7,7 +7,7 @@ Updated: 2026-02-01
 - Stack: React + Vite, Capacitor (Android/iOS), Supabase, Tauri (desktop)
 
 ### Recent
-- **Mileage tracking (vehicles)**: GPS + Maps trip detection (no manual). Options: OBD-II (GPS fallback) | GPS+Maps. Uses @capacitor/geolocation, speed threshold >15 mph, Haversine distance. Trip detected → assign to vehicle. Migrations 023–025.
+- **Mileage tracking (vehicles)**: GPS + Maps trip detection (mobile only, disabled on web). Options: OBD-II (GPS fallback) | GPS+Maps. Migrations 023–025.
 - **Trip detection (planned)**: Speed threshold >15 mph = driving vs walk/jog. Snap to Roads (Google) for road vs sidewalk. Note: We cannot read Google/Apple Maps "driving mode" — apps are sandboxed.
 - **Email suggestions**: Connect Gmail or Outlook to scan inbox for trackable items (subscriptions, tickets, renewals, bills). Multi-provider OAuth (email-oauth), AI extraction (fetch-email-suggestions). Migrations 019–021. Configured: Google OAuth, Microsoft Entra.
 - **Merged**: nava-app merged into nava. Single project now contains full React app, Android, iOS, Supabase, stripe-webhook, app.html (Predictably Human).

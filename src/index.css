@@ -5434,6 +5434,44 @@ input, select, textarea { font-family: inherit; }
   animation: spin 0.8s linear infinite;
 }
 
+/* Error boundary fallback */
+.error-boundary-fallback {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-deep);
+  padding: var(--space-lg);
+}
+.error-boundary-content {
+  text-align: center;
+  max-width: 400px;
+}
+.error-boundary-icon {
+  color: var(--warning);
+  margin-bottom: var(--space-md);
+}
+.error-boundary-content h2 {
+  font-size: 1.25rem;
+  margin-bottom: var(--space-sm);
+  color: var(--text-primary);
+}
+.error-boundary-content p {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-lg);
+  font-size: 0.95rem;
+}
+.error-boundary-stack {
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  text-align: left;
+  overflow-x: auto;
+  color: var(--text-muted);
+}
+
 /* ============= SCROLLBAR ============= */
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }

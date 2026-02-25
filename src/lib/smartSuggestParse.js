@@ -79,7 +79,7 @@ function parseMatch(text, match, type) {
       if (/tomorrow/i.test(match[1])) date.setDate(date.getDate() + 1);
       else if (/tonight/i.test(match[1])) date.setHours(19, 0, 0, 0);
     }
-  } catch (_) { /* ignore */ }
+  } catch { /* ignore */ }
 
   if (date && isValid(date)) {
     return date.toISOString().slice(0, 10);

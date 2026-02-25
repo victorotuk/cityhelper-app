@@ -96,6 +96,7 @@ export default function Dashboard() {
     const s = parseTextForSuggestion(pendingText);
     clearPendingText();
     if (s) {
+      /* eslint-disable-next-line react-hooks/set-state-in-effect */
       setSharedInitialValues(s);
       setShowAddModal(true);
       setSelectedCategory(s.category);
@@ -250,7 +251,9 @@ export default function Dashboard() {
       .filter(i => i.last_completed_at)
       .filter(i => {
         const d = new Date(i.last_completed_at);
-        return d > new Date(Date.now() - 30 * 864e5);
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 30);
+        return d > cutoff;
       })
       .sort((a, b) => new Date(b.last_completed_at) - new Date(a.last_completed_at))
       .slice(0, 10),
@@ -805,10 +808,11 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory, a
   // When initialValues changes (e.g. from Share), update form
   useEffect(() => {
     if (initialValues) {
+      /* eslint-disable-next-line react-hooks/set-state-in-effect */
       setName(initialValues.name || '');
       setDueDate(initialValues.due_date || '');
     }
-  }, [initialValues?.name, initialValues?.due_date]);
+  }, [initialValues?.name, initialValues?.due_date]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch documents for linking (when form is shown)
   useEffect(() => {
@@ -1051,7 +1055,7 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory, a
                       setDueDate(s.due_date || '');
                       setSelectedCategory(s.category);
                     }
-                  } catch (_) { /* clipboard denied */ }
+                  } catch { /* clipboard denied */ }
                 }}
               >
                 <Clipboard size={16} /> Paste from clipboard & suggest
@@ -1317,7 +1321,7 @@ function FocusOnThree({ groupedItems, getStatusInfo, onDelete, onRenew, onSnooze
       <h3><Target size={18} /> Focus on these 3</h3>
       <p className="focus-sub">Your most urgent items — knock these out first.</p>
       <div className="focus-cards">
-        {top3.map((item, i) => (
+        {top3.map((item) => (
           <ItemCard
             key={item.id}
             item={item}
