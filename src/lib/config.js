@@ -18,7 +18,14 @@ export const APP_CONFIG = {
   
   // CONTACT
   supportEmail: "support@example.com",
-  
+
+  // MILEAGE TRACKING (OBD-II, GPS + Maps)
+  mileage: {
+    speedThresholdMph: 15,        // Sustained speed above this = likely driving (vs walk/jog)
+    minTripDurationMinutes: 2,   // Ignore very short movements
+    // Google Maps API: set GOOGLE_MAPS_API_KEY in Supabase secrets for Snap to Roads / Directions
+  },
+
   // PRICING (CAD)
   pricing: {
     free: {
