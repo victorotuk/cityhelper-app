@@ -476,9 +476,12 @@ input, select, textarea { font-family: inherit; }
   margin-bottom: var(--space-md);
 }
 
-.auth-oauth-buttons .btn {
+.auth-oauth-buttons .btn,
+.auth-oauth-buttons .auth-oauth-btn {
   width: 100%;
   justify-content: center;
+  min-height: 44px;
+  flex-shrink: 0;
 }
 
 .auth-divider {

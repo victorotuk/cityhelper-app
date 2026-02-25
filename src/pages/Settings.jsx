@@ -358,7 +358,7 @@ export default function Settings() {
                 ? "You haven't completed the personalization quiz yet."
                 : persona?.accountType === 'organization'
                   ? `Organization: ${persona.orgInfo?.name || 'Unnamed'} (${persona.orgInfo?.type || 'other'})`
-                  : `Personal: ${(persona.roles || []).length} roles, ${(persona.struggles || []).length} struggles selected.`}
+                  : `Personal: ${(persona.roles || []).length} roles, ${(persona.focusAreas ?? persona.struggles ?? []).length} focus areas selected.`}
             </p>
             <div className="setting-card">
               <div className="setting-header">

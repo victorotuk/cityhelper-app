@@ -24,10 +24,11 @@ const ROLES = [
   { id: 'volunteer', label: 'Volunteer', icon: '🤲', desc: 'Commitments, training, background checks' },
   { id: 'pet_owner', label: 'Pet Owner', icon: '🐾', desc: 'Vet, vaccinations, licenses, insurance' },
   { id: 'investor', label: 'Investor', icon: '📈', desc: 'Portfolio, tax docs, statements' },
+  { id: 'other', label: 'Other', icon: '🔹', desc: "Something else that describes you" },
 ];
 
-// ── Personal struggles ──
-const STRUGGLES = [
+// ── Personal focus areas ──
+const FOCUS_AREAS = [
   { id: 'deadlines', label: 'Missing deadlines', icon: '⏰' },
   { id: 'tickets', label: 'Traffic tickets, tolls & fines', icon: '🅿️' },
   { id: 'taxes', label: 'Tax filing dates', icon: '💰' },
@@ -52,6 +53,7 @@ const STRUGGLES = [
   { id: 'subscriptions', label: 'Subscriptions & memberships', icon: '🔄' },
   { id: 'pet_care', label: 'Pet care & vet appointments', icon: '🐕' },
   { id: 'moving', label: 'Moving & change of address', icon: '🚚' },
+  { id: 'other', label: 'Other', icon: '🔹' },
 ];
 
 // ── Organization types ──
@@ -70,8 +72,8 @@ const ORG_TYPES = [
   { id: 'other', label: 'Other', icon: '🔹', desc: 'Something else' },
 ];
 
-// ── Organization struggles ──
-const ORG_STRUGGLES = [
+// ── Organization focus areas ──
+const ORG_FOCUS_AREAS = [
   { id: 'employee_compliance', label: 'Employee docs & compliance', icon: '👥' },
   { id: 'licenses_permits', label: 'Licenses & permits expiring', icon: '📋' },
   { id: 'tax_filings', label: 'Tax filings & deadlines', icon: '💰' },
@@ -86,6 +88,7 @@ const ORG_STRUGGLES = [
   { id: 'accreditation', label: 'Accreditation & audits', icon: '✅' },
   { id: 'financial_obligations', label: 'Loans, debts & obligations', icon: '💸' },
   { id: 'data_privacy', label: 'Data & privacy compliance', icon: '🔒' },
+  { id: 'other', label: 'Other', icon: '🔹' },
 ];
 
 // ── Category mappings ──
@@ -109,9 +112,10 @@ const ROLE_CATEGORIES = {
   volunteer: ['important_dates', 'health'],
   pet_owner: ['pet_care', 'health'],
   investor: ['tax', 'retirement_estate', 'trust'],
+  other: ['other'],
 };
 
-const STRUGGLE_CATEGORIES = {
+const FOCUS_AREA_CATEGORIES = {
   deadlines: ['education', 'work_schedule', 'immigration'],
   tickets: ['parking', 'driving'],
   taxes: ['tax', 'business_tax'],
@@ -136,6 +140,7 @@ const STRUGGLE_CATEGORIES = {
   subscriptions: ['subscriptions'],
   pet_care: ['pet_care', 'health'],
   moving: ['moving', 'housing'],
+  other: ['other'],
 };
 
 const ORG_TYPE_CATEGORIES = {
@@ -180,7 +185,7 @@ const LIFE_MOMENT_CATEGORIES = {
   none: [],
 };
 
-const ORG_STRUGGLE_CATEGORIES = {
+const ORG_FOCUS_AREA_CATEGORIES = {
   employee_compliance: ['employees', 'inst_staff'],
   licenses_permits: ['business_license', 'inst_regulatory'],
   tax_filings: ['business_tax'],
@@ -195,11 +200,12 @@ const ORG_STRUGGLE_CATEGORIES = {
   accreditation: ['inst_regulatory'],
   financial_obligations: ['liabilities', 'inst_finance'],
   data_privacy: ['inst_regulatory'],
+  other: ['other'],
 };
 
 // ── Steps ──
-// welcome(0) → accountType(1) → personal: roles(2p) → struggles(3p)
-//                               → org: orgInfo(2o) → orgStruggles(3o)
+// welcome(0) → accountType(1) → personal: roles(2p) → focus_areas(3p)
+//                               → org: orgInfo(2o) → org_focus_areas(3o)
 
 export default function WelcomeGuide({ userId, onComplete, existingPersona, isRetake }) {
   const existingType = existingPersona?.accountType || 'personal';
@@ -210,14 +216,14 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
 
   // Personal flow state
   const [selectedRoles, setSelectedRoles] = useState(existingPersona?.roles || []);
-  const [selectedStruggles, setSelectedStruggles] = useState(existingPersona?.struggles || []);
+  const [selectedFocusAreas, setSelectedFocusAreas] = useState(existingPersona?.focusAreas ?? existingPersona?.struggles ?? []);
   const [lifeMoments, setLifeMoments] = useState(existingPersona?.lifeMoments || []);
   const [otherNeeds, setOtherNeeds] = useState(existingPersona?.otherNeeds || '');
 
   // Org flow state
   const [orgName, setOrgName] = useState(existingPersona?.orgInfo?.name || '');
   const [orgType, setOrgType] = useState(existingPersona?.orgInfo?.type || '');
-  const [orgStruggles, setOrgStruggles] = useState(existingPersona?.orgStruggles || []);
+  const [orgFocusAreas, setOrgFocusAreas] = useState(existingPersona?.orgFocusAreas ?? existingPersona?.orgStruggles ?? []);
   const [orgOtherNeeds, setOrgOtherNeeds] = useState(existingPersona?.orgOtherNeeds || '');
 
   const [saving, setSaving] = useState(false);
@@ -230,11 +236,11 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
     const catSet = new Set();
     if (accountType === 'personal') {
       selectedRoles.forEach(r => (ROLE_CATEGORIES[r] || []).forEach(c => catSet.add(c)));
-      selectedStruggles.forEach(s => (STRUGGLE_CATEGORIES[s] || []).forEach(c => catSet.add(c)));
+      selectedFocusAreas.forEach(s => (FOCUS_AREA_CATEGORIES[s] || []).forEach(c => catSet.add(c)));
       lifeMoments.filter(m => m !== 'none').forEach(m => (LIFE_MOMENT_CATEGORIES[m] || []).forEach(c => catSet.add(c)));
     } else {
       (ORG_TYPE_CATEGORIES[orgType] || []).forEach(c => catSet.add(c));
-      orgStruggles.forEach(s => (ORG_STRUGGLE_CATEGORIES[s] || []).forEach(c => catSet.add(c)));
+      orgFocusAreas.forEach(s => (ORG_FOCUS_AREA_CATEGORIES[s] || []).forEach(c => catSet.add(c)));
     }
     return [...catSet];
   };
@@ -247,8 +253,8 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
       onboardedAt: new Date().toISOString(),
       recommendedCategories: getRecommendedCategories(),
       ...(accountType === 'personal'
-        ? { roles: selectedRoles, struggles: selectedStruggles, lifeMoments: lifeMoments.filter(m => m !== 'none'), otherNeeds: otherNeeds.trim() || null }
-        : { orgInfo: { name: orgName, type: orgType }, orgStruggles, orgOtherNeeds: orgOtherNeeds.trim() || null }),
+        ? { roles: selectedRoles, focusAreas: selectedFocusAreas, lifeMoments: lifeMoments.filter(m => m !== 'none'), otherNeeds: otherNeeds.trim() || null }
+        : { orgInfo: { name: orgName, type: orgType }, orgFocusAreas, orgOtherNeeds: orgOtherNeeds.trim() || null }),
     };
     try {
       await supabase.from('user_settings').upsert({
@@ -275,8 +281,8 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
   };
 
   const stepOrder = accountType === 'personal'
-    ? ['welcome', 'account_type', 'roles', 'struggles', 'life_moments', 'other_needs']
-    : ['welcome', 'account_type', 'org_info', 'org_struggles', 'other_needs'];
+    ? ['welcome', 'account_type', 'roles', 'focus_areas', 'life_moments', 'other_needs']
+    : ['welcome', 'account_type', 'org_info', 'org_focus_areas', 'other_needs'];
 
   const visibleSteps = isRetake ? stepOrder.slice(1) : stepOrder;
   const currentIdx = visibleSteps.indexOf(step);
@@ -285,10 +291,10 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
     switch (step) {
       case 'account_type': return !!accountType;
       case 'roles': return selectedRoles.length > 0;
-      case 'struggles': return selectedStruggles.length > 0;
+      case 'focus_areas': return selectedFocusAreas.length > 0;
       case 'life_moments': return true;
       case 'org_info': return orgName.trim() && orgType;
-      case 'org_struggles': return orgStruggles.length > 0;
+      case 'org_focus_areas': return orgFocusAreas.length > 0;
       case 'other_needs': return true;
       default: return true;
     }
@@ -298,14 +304,14 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
     if (step === 'account_type') {
       setStep(accountType === 'personal' ? 'roles' : 'org_info');
     } else if (step === 'roles') {
-      setStep('struggles');
-    } else if (step === 'struggles') {
+      setStep('focus_areas');
+    } else if (step === 'focus_areas') {
       setStep('life_moments');
     } else if (step === 'life_moments') {
       setStep('other_needs');
     } else if (step === 'org_info') {
-      setStep('org_struggles');
-    } else if (step === 'org_struggles') {
+      setStep('org_focus_areas');
+    } else if (step === 'org_focus_areas') {
       setStep('other_needs');
     }
   };
@@ -313,13 +319,13 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
   const goBack = () => {
     if (step === 'roles' || step === 'org_info') {
       setStep('account_type');
-    } else if (step === 'struggles') {
+    } else if (step === 'focus_areas') {
       setStep('roles');
     } else if (step === 'life_moments') {
-      setStep('struggles');
+      setStep('focus_areas');
     } else if (step === 'other_needs') {
-      setStep(accountType === 'personal' ? 'life_moments' : 'org_struggles');
-    } else if (step === 'org_struggles') {
+      setStep(accountType === 'personal' ? 'life_moments' : 'org_focus_areas');
+    } else if (step === 'org_focus_areas') {
       setStep('org_info');
     } else if (step === 'account_type' && !isRetake) {
       setStep('welcome');
@@ -428,23 +434,23 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
           </>
         )}
 
-        {/* ── Personal: Struggles ── */}
-        {step === 'struggles' && (
+        {/* ── Personal: Focus areas ── */}
+        {step === 'focus_areas' && (
           <>
-            <h2 className="guide-title">What do you struggle with?</h2>
-            <p className="guide-description">Be honest — we'll make sure you never drop the ball on these.</p>
+            <h2 className="guide-title">What do you want to keep on top of?</h2>
+            <p className="guide-description">Pick the areas we'll help you stay on top of.</p>
             <div className="quiz-options grid-2">
-              {STRUGGLES.map(s => (
+              {FOCUS_AREAS.map(s => (
                 <button
                   key={s.id}
-                  className={`quiz-option ${selectedStruggles.includes(s.id) ? 'selected' : ''}`}
-                  onClick={() => toggleItem(setSelectedStruggles)(s.id)}
+                  className={`quiz-option ${selectedFocusAreas.includes(s.id) ? 'selected' : ''}`}
+                  onClick={() => toggleItem(setSelectedFocusAreas)(s.id)}
                 >
                   <span className="quiz-option-icon">{s.icon}</span>
                   <span className="quiz-option-text">
                     <strong>{s.label}</strong>
                   </span>
-                  {selectedStruggles.includes(s.id) && <Check size={16} className="quiz-check" />}
+                  {selectedFocusAreas.includes(s.id) && <Check size={16} className="quiz-check" />}
                 </button>
               ))}
             </div>
@@ -567,23 +573,23 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
           </>
         )}
 
-        {/* ── Org: Struggles ── */}
-        {step === 'org_struggles' && (
+        {/* ── Org: Focus areas ── */}
+        {step === 'org_focus_areas' && (
           <>
-            <h2 className="guide-title">What keeps your team up at night?</h2>
-            <p className="guide-description">Pick the compliance headaches we can solve for {orgName || 'your org'}.</p>
+            <h2 className="guide-title">What does your org need to stay on top of?</h2>
+            <p className="guide-description">Pick the compliance areas we'll help you track for {orgName || 'your org'}.</p>
             <div className="quiz-options grid-2">
-              {ORG_STRUGGLES.map(s => (
+              {ORG_FOCUS_AREAS.map(s => (
                 <button
                   key={s.id}
-                  className={`quiz-option ${orgStruggles.includes(s.id) ? 'selected' : ''}`}
-                  onClick={() => toggleItem(setOrgStruggles)(s.id)}
+                  className={`quiz-option ${orgFocusAreas.includes(s.id) ? 'selected' : ''}`}
+                  onClick={() => toggleItem(setOrgFocusAreas)(s.id)}
                 >
                   <span className="quiz-option-icon">{s.icon}</span>
                   <span className="quiz-option-text">
                     <strong>{s.label}</strong>
                   </span>
-                  {orgStruggles.includes(s.id) && <Check size={16} className="quiz-check" />}
+                  {orgFocusAreas.includes(s.id) && <Check size={16} className="quiz-check" />}
                 </button>
               ))}
             </div>
@@ -600,4 +606,4 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
   );
 }
 
-export { ROLE_CATEGORIES, STRUGGLE_CATEGORIES, ORG_TYPE_CATEGORIES, ORG_STRUGGLE_CATEGORIES };
+export { ROLE_CATEGORIES, FOCUS_AREA_CATEGORIES, ORG_TYPE_CATEGORIES, ORG_FOCUS_AREA_CATEGORIES };
