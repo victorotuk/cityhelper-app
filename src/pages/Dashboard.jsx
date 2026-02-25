@@ -38,7 +38,9 @@ import {
   User,
   Package,
   Building2,
-  History
+  History,
+  Landmark,
+  BookOpen
 } from 'lucide-react';
 import NotificationBell from '../components/NotificationBell';
 import WelcomeGuide from '../components/WelcomeGuide';
@@ -1391,6 +1393,28 @@ function ComplianceHealth({ items, groupedItems }) {
           {warningCount > 0 && <span className="health-stat warning">{warningCount} soon</span>}
           <span className="health-stat ok">{okCount} good</span>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Trust & Wealth Nudge ───
+function TrustWealthNudge({ onAddTrust, onAddEstate }) {
+  return (
+    <div className="trust-nudge">
+      <div className="trust-nudge-content">
+        <Landmark size={24} className="trust-nudge-icon" />
+        <div>
+          <h3 className="trust-nudge-title">Build your legacy</h3>
+          <p className="trust-nudge-desc">Trusts and estate planning protect your wealth and your family. Start tracking — or ask the AI to walk you through it.</p>
+        </div>
+      </div>
+      <div className="trust-nudge-actions">
+        <button className="btn btn-primary btn-sm" onClick={onAddTrust}>Add Trust</button>
+        <button className="btn btn-ghost btn-sm" onClick={onAddEstate}>Add Estate Item</button>
+        <Link to="/wealth-learn" className="btn btn-ghost btn-sm">
+          <BookOpen size={14} /> Learn
+        </Link>
       </div>
     </div>
   );

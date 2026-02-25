@@ -1819,6 +1819,12 @@ input, select, textarea { font-family: inherit; }
   50% { opacity: 0.7; }
 }
 
+.speech-listening-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 .speech-review-bar {
   display: flex;
   flex-wrap: wrap;
@@ -1874,6 +1880,12 @@ input, select, textarea { font-family: inherit; }
 }
 .speech-review-bar-quiz .speech-review-again { padding: 4px 10px; font-size: 11px; }
 .quiz-text-with-mic-wrap { width: 100%; }
+.quiz-speak-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
 .quiz-textarea-mic-wrap { position: relative; }
 .speech-review-bar-textarea {
   margin-top: 8px;
@@ -5640,10 +5652,12 @@ input, select, textarea { font-family: inherit; }
 .quiz-text-with-mic {
   display: flex;
   gap: var(--space-sm);
-  align-items: center;
+  align-items: flex-start;
 }
-.quiz-text-with-mic input {
+.quiz-text-with-mic input,
+.quiz-text-with-mic textarea {
   flex: 1;
+  min-width: 0;
 }
 .quiz-mic-btn {
   flex-shrink: 0;
@@ -5801,6 +5815,28 @@ input, select, textarea { font-family: inherit; }
 .health-stat.ok { color: #16a34a; background: rgba(22, 163, 74, 0.12); }
 
 /* ============= SUGGESTED FOR YOU ============= */
+.trust-nudge {
+  margin-bottom: var(--space-lg);
+  padding: var(--space-lg);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(13, 148, 136, 0.08));
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  border-radius: var(--radius-lg);
+}
+.trust-nudge-content {
+  display: flex;
+  gap: var(--space-md);
+  align-items: flex-start;
+  margin-bottom: var(--space-md);
+}
+.trust-nudge-icon { color: var(--accent); flex-shrink: 0; }
+.trust-nudge-title { font-size: 1rem; margin: 0 0 4px 0; }
+.trust-nudge-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin: 0; }
+.trust-nudge-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
 .suggested-section { margin-bottom: var(--space-lg); }
 .suggested-title {
   font-size: 14px;

@@ -14,7 +14,7 @@ export default function Assistant() {
   const recognitionRef = useRef(null);
   const [messages, setMessages] = useState([{
     role: 'assistant',
-    content: `Hey! 👋 I'm your compliance assistant — you can do everything through me, no clicking needed.\n\n**I can:**\n• **Track** — Add, list, filter, mark done, snooze, share items\n• **Estate** — Add executors, nominees, trustees to your estate plan\n• **Business** — Add corporations, LLCs, locations\n• **Guides** — "How do I apply for a work permit?" or "I want to start a trust and nest a corporation inside it" — I'll give you step-by-step guidance\n• **Applications** — Work permit, study permit, visitor visa, PR card\n\nJust tell me what you need. What can I help you with?`
+    content: `Hey! 👋 I'm your compliance assistant — you can do everything through me, no clicking needed.\n\n**I can:**\n• **Trusts & Estate** — "How do I set up a trust?" "What's a holding company?" — I'll walk you through wealth structures, the Rothschild method, executors, beneficiaries\n• **Business** — Add corporations, LLCs, holding companies, locations\n• **Track** — Add, list, filter, mark done, snooze, share items\n• **Guides** — Work permits, visas, licenses — and anything about building wealth through structure\n• **Applications** — Work permit, study permit, visitor visa, PR card\n\nWant to become an expert in trusts and wealth-building? Just ask. What can I help you with?`
   }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -48,12 +48,12 @@ export default function Assistant() {
       setSpeechPreview(null);
     }
     const recognition = new SpeechRecognition();
-    recognition.continuous = false;
+    recognition.continuous = true;
     recognition.interimResults = false;
     recognition.lang = 'en-US';
     recognition.onresult = (e) => {
-      const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
-      if (transcript.trim()) {
+      const transcript = Array.from(e.results).map(r => r[0].transcript).join(' ').trim();
+      if (transcript) {
         setInput(prev => (replaceAll ? '' : prev ? prev + ' ' : '') + transcript.trim());
         setSpeechPreview(transcript);
       }
@@ -169,7 +169,7 @@ export default function Assistant() {
                   setInput(e.target.value);
                   if (speechPreview) setSpeechPreview(null);
                 }}
-                placeholder="Type, tap mic to speak, or ask anything..."
+                placeholder="Type or speak a whole paragraph..."
                 disabled={loading}
               />
               {SpeechRecognition && (
@@ -178,8 +178,8 @@ export default function Assistant() {
                   className={`chat-mic-btn ${listening ? 'listening' : ''}`}
                   onClick={() => toggleSpeech(false)}
                   disabled={loading}
-                  title={listening ? 'Stop listening' : 'Speak'}
-                  aria-label={listening ? 'Stop listening' : 'Speak'}
+                title={listening ? 'Tap to stop' : 'Speak a paragraph'}
+                aria-label={listening ? 'Tap to stop listening' : 'Speak a paragraph'}
                 >
                   {listening ? <MicOff size={20} /> : <Mic size={20} />}
                 </button>
@@ -188,6 +188,7 @@ export default function Assistant() {
                 <Send size={20} />
               </button>
             </div>
+            {listening && <div className="speech-listening-hint">Speak your whole paragraph, then tap the mic to stop.</div>}
             {speechPreview && (
               <div className="speech-review-bar">
                 <span className="speech-review-text">We heard: &quot;{speechPreview.length > 60 ? speechPreview.slice(0, 60) + '…' : speechPreview}&quot;</span>

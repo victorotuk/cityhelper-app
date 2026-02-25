@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
-import { ArrowLeft, Settings as SettingsIcon, Bell, BellOff, Shield, Phone, CheckCircle, Trash2, Globe, RefreshCw, MessageSquarePlus, Mail, Smartphone, User, Package, Building2 } from 'lucide-react';
+import { ArrowLeft, Settings as SettingsIcon, Bell, BellOff, Shield, Phone, CheckCircle, Trash2, Globe, RefreshCw, MessageSquarePlus, Mail, Smartphone, User, Package, Building2, BookOpen } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 import { APP_CONFIG } from '../lib/config';
@@ -378,9 +378,14 @@ export default function Settings() {
 
           {/* Estate, Assets, Business */}
           <section className="settings-section">
-            <h2>Estate & Business</h2>
-            <p className="section-desc">Manage executors, assets, and business entities.</p>
+            <h2>Wealth & Estate</h2>
+            <p className="section-desc">Build trusts, plan your estate, and manage your wealth structures.</p>
             <div className="setting-card">
+              <Link to="/wealth-learn" className="setting-header link-card">
+                <div className="setting-icon active"><BookOpen size={20} /></div>
+                <div className="setting-info"><h3>Become an Expert</h3><p>Trusts, holding companies, wealth-building — learn the Rothschild method</p></div>
+                <span className="link-arrow">→</span>
+              </Link>
               <Link to="/estate" className="setting-header link-card">
                 <div className="setting-icon muted"><User size={20} /></div>
                 <div className="setting-info"><h3>Estate Executors & Nominees</h3><p>Executors, trustees, power of attorney</p></div>

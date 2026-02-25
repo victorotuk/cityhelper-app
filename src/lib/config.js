@@ -10,7 +10,7 @@ export const APP_CONFIG = {
   name: "Nava",                // In-app display name
   formalName: "Nava",         // Domains, app store, copyright, formal contexts
   tagline: "Never miss a deadline",
-  description: "Track all your compliance — trusts, taxes, licenses, visas, renewals — in one place.",
+  description: "Build wealth, protect your legacy — trusts, estate planning, holding companies, and all your compliance in one place.",
   
   // BRAND VISUALS — Set logoImage when you add public/nava-logo.png
   logo: "N",           // Fallback for brand mark when no image
@@ -48,11 +48,15 @@ export const APP_CONFIG = {
     }
   },
   
-  // COMPLIANCE CATEGORIES — Organized by theme (Personal → Business → Institution)
+  // COMPLIANCE CATEGORIES — Trusts & estate first, then the rest
   categories: [
+    // ── PERSONAL: Wealth & Legacy (lead) ──
+    { id: "trust", name: "Trusts", icon: "Landmark", color: "#7c3aed", group: "personal" },
+    { id: "retirement_estate", name: "Retirement & Estate", icon: "Landmark", color: "#0d9488", group: "personal" },
+
     // ── PERSONAL: Money & Finance ──
     { id: "credit_banking", name: "Banking & Credit", icon: "CreditCard", color: "#6366f1", group: "personal", groups: ["personal", "business"] },
-    { id: "tax", name: "Personal Taxes", icon: "DollarSign", color: "#10b981", group: "personal" },
+    { id: "tax", name: "Taxes", icon: "DollarSign", color: "#10b981", group: "personal" },
     { id: "subscriptions", name: "Subscriptions", icon: "Repeat", color: "#8b5cf6", group: "personal", groups: ["personal", "business"] },
 
     // ── PERSONAL: Health & Life ──
@@ -79,10 +83,6 @@ export const APP_CONFIG = {
     // ── PERSONAL: Legal & Government ──
     { id: "legal_court", name: "Legal & Court", icon: "Scale", color: "#64748b", group: "personal", groups: ["personal", "business"] },
     { id: "government_benefits", name: "Government Benefits", icon: "FileCheck", color: "#0ea5e9", group: "personal" },
-
-    // ── PERSONAL: Estate & Retirement ──
-    { id: "trust", name: "Trusts", icon: "Landmark", color: "#7c3aed", group: "personal" },
-    { id: "retirement_estate", name: "Retirement & Estate", icon: "Landmark", color: "#0d9488", group: "personal" },
 
     // ── PERSONAL: Events & Dates ──
     { id: "important_dates", name: "Important Dates & Events", icon: "CalendarHeart", color: "#ec4899", group: "personal", groups: ["personal", "business"] },

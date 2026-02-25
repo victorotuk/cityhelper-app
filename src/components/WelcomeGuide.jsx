@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 
 const SpeechRecognition = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
 
-function QuizTextInput({ value, onChange, placeholder, maxLength = 200, className = 'quiz-other-input' }) {
+function QuizTextInput({ value, onChange, placeholder, maxLength = 1000, rows = 4, className = 'quiz-other-input' }) {
   const [listening, setListening] = useState(false);
   const [speechPreview, setSpeechPreview] = useState(null);
   const recognitionRef = useRef(null);
@@ -22,13 +22,13 @@ function QuizTextInput({ value, onChange, placeholder, maxLength = 200, classNam
       setSpeechPreview(null);
     }
     const recognition = new SpeechRecognition();
-    recognition.continuous = false;
+    recognition.continuous = true;
     recognition.interimResults = false;
     recognition.lang = 'en-US';
     recognition.onresult = (e) => {
-      const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
-      if (transcript.trim()) {
-        onChange((replaceAll ? '' : value ? value + ' ' : '') + transcript.trim());
+      const transcript = Array.from(e.results).map(r => r[0].transcript).join(' ').trim();
+      if (transcript) {
+        onChange((replaceAll ? '' : value ? value + ' ' : '') + transcript);
         setSpeechPreview(transcript);
       }
     };
@@ -42,8 +42,7 @@ function QuizTextInput({ value, onChange, placeholder, maxLength = 200, classNam
   return (
     <div className="quiz-text-with-mic-wrap">
       <div className="quiz-text-with-mic">
-        <input
-          type="text"
+        <textarea
           value={value}
           onChange={(e) => {
             onChange(e.target.value);
@@ -51,20 +50,23 @@ function QuizTextInput({ value, onChange, placeholder, maxLength = 200, classNam
           }}
           placeholder={placeholder}
           maxLength={maxLength}
+          rows={rows}
           className={className}
+          style={{ resize: 'vertical', minHeight: 80 }}
         />
         {SpeechRecognition && (
           <button
             type="button"
             className={`quiz-mic-btn ${listening ? 'listening' : ''}`}
             onClick={() => toggleSpeech(false)}
-            title={listening ? 'Stop' : 'Speak'}
-            aria-label={listening ? 'Stop listening' : 'Speak'}
+            title={listening ? 'Tap to stop' : 'Speak a paragraph'}
+            aria-label={listening ? 'Tap to stop listening' : 'Speak a paragraph'}
           >
             {listening ? <MicOff size={16} /> : <Mic size={16} />}
           </button>
         )}
       </div>
+      {listening && <small className="quiz-speak-hint">Speak your whole paragraph, then tap the mic to stop.</small>}
       {speechPreview && (
         <div className="speech-review-bar speech-review-bar-quiz">
           <span className="speech-review-text">We heard: &quot;{speechPreview.length > 40 ? speechPreview.slice(0, 40) + '…' : speechPreview}&quot;</span>
@@ -95,13 +97,13 @@ function QuizTextareaMic({ value, onChange }) {
       setSpeechPreview(null);
     }
     const recognition = new SpeechRecognition();
-    recognition.continuous = false;
+    recognition.continuous = true;
     recognition.interimResults = false;
     recognition.lang = 'en-US';
     recognition.onresult = (e) => {
-      const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
-      if (transcript.trim()) {
-        onChange((replaceAll ? '' : value ? value + ' ' : '') + transcript.trim());
+      const transcript = Array.from(e.results).map(r => r[0].transcript).join(' ').trim();
+      if (transcript) {
+        onChange((replaceAll ? '' : value ? value + ' ' : '') + transcript);
         setSpeechPreview(transcript);
       }
     };
@@ -118,11 +120,12 @@ function QuizTextareaMic({ value, onChange }) {
         type="button"
         className={`quiz-mic-btn quiz-mic-btn-textarea ${listening ? 'listening' : ''}`}
         onClick={() => toggleSpeech(false)}
-        title={listening ? 'Stop' : 'Speak'}
-        aria-label={listening ? 'Stop listening' : 'Speak'}
+        title={listening ? 'Tap to stop' : 'Speak a paragraph'}
+        aria-label={listening ? 'Tap to stop listening' : 'Speak a paragraph'}
       >
         {listening ? <MicOff size={16} /> : <Mic size={16} />}
       </button>
+      {listening && <small className="quiz-speak-hint">Speak your whole paragraph, then tap the mic to stop.</small>}
       {speechPreview && (
         <div className="speech-review-bar speech-review-bar-quiz speech-review-bar-textarea">
           <span className="speech-review-text">We heard: &quot;{speechPreview.length > 40 ? speechPreview.slice(0, 40) + '…' : speechPreview}&quot;</span>
@@ -226,26 +229,26 @@ const ORG_FOCUS_AREAS = [
 
 // ── Category mappings ──
 const ROLE_CATEGORIES = {
-  student: ['education', 'tax', 'health', 'immigration'],
-  employee: ['work_schedule', 'tax', 'health', 'driving'],
-  business_owner: ['employees', 'business_tax', 'business_license', 'business_insurance', 'assets', 'liabilities', 'trust'],
-  freelancer: ['tax', 'business_tax', 'professional', 'business_insurance'],
-  newcomer: ['immigration', 'health', 'driving', 'housing', 'tax'],
-  parent: ['health', 'education', 'housing', 'driving', 'trust'],
-  homeowner: ['housing', 'property', 'tax', 'retirement_estate', 'trust'],
-  renter: ['housing', 'tax'],
-  driver: ['driving', 'parking'],
-  landlord: ['property', 'business_tax', 'business_insurance', 'housing', 'trust'],
-  retiree: ['retirement_estate', 'health', 'tax', 'trust'],
-  caregiver: ['health', 'housing'],
-  tradesperson: ['professional', 'business_license', 'business_insurance', 'business_tax'],
-  athlete_coach: ['inst_sports', 'health'],
-  healthcare: ['professional', 'health', 'inst_staff'],
-  fitness: ['fitness', 'health'],
-  volunteer: ['important_dates', 'health'],
-  pet_owner: ['pet_care', 'health'],
-  investor: ['tax', 'retirement_estate', 'trust'],
-  other: ['other'],
+  student: ['education', 'trust', 'retirement_estate', 'health', 'immigration'],
+  employee: ['work_schedule', 'trust', 'retirement_estate', 'health', 'driving'],
+  business_owner: ['trust', 'retirement_estate', 'employees', 'business_tax', 'business_license', 'business_insurance', 'assets', 'liabilities'],
+  freelancer: ['trust', 'retirement_estate', 'business_tax', 'professional', 'business_insurance'],
+  newcomer: ['immigration', 'trust', 'health', 'driving', 'housing'],
+  parent: ['trust', 'retirement_estate', 'health', 'education', 'housing', 'driving'],
+  homeowner: ['trust', 'retirement_estate', 'housing', 'property', 'tax'],
+  renter: ['trust', 'retirement_estate', 'housing'],
+  driver: ['driving', 'parking', 'trust'],
+  landlord: ['trust', 'retirement_estate', 'property', 'business_tax', 'business_insurance', 'housing'],
+  retiree: ['retirement_estate', 'trust', 'health', 'tax'],
+  caregiver: ['trust', 'retirement_estate', 'health', 'housing'],
+  tradesperson: ['trust', 'professional', 'business_license', 'business_insurance', 'business_tax'],
+  athlete_coach: ['inst_sports', 'health', 'trust'],
+  healthcare: ['professional', 'health', 'inst_staff', 'trust'],
+  fitness: ['fitness', 'health', 'trust'],
+  volunteer: ['important_dates', 'health', 'trust'],
+  pet_owner: ['pet_care', 'health', 'trust'],
+  investor: ['trust', 'retirement_estate', 'tax'],
+  other: ['trust', 'retirement_estate', 'other'],
 };
 
 const FOCUS_AREA_CATEGORIES = {
@@ -267,7 +270,7 @@ const FOCUS_AREA_CATEGORIES = {
   kids: ['education', 'health'],
   contracts: ['employees', 'office', 'housing'],
   certifications: ['professional', 'inst_staff'],
-  estate: ['retirement_estate', 'trust'],
+  estate: ['retirement_estate', 'trust'], // estate planning — always recommend trust
   equipment: ['assets'],
   fitness: ['fitness', 'health'],
   subscriptions: ['subscriptions'],
@@ -557,7 +560,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
         {step === 'roles' && (
           <>
             <h2 className="guide-title">What describes you?</h2>
-            <p className="guide-description">Pick from the menu, type, or use the mic to speak — whatever works.</p>
+            <p className="guide-description">Pick from the menu, or type/speak a whole paragraph — whatever works.</p>
             <div className="quiz-options">
               {ROLES.map(r => (
                 <button
@@ -579,7 +582,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
               <QuizTextInput
                 value={otherRoleDetail}
                 onChange={setOtherRoleDetail}
-                placeholder="e.g. Content creator, gig worker, artist..."
+                placeholder="e.g. I'm a student currently looking for a job, and I struggle with keeping track of everything..."
               />
             </div>
             <div className="guide-actions">
@@ -595,7 +598,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
         {step === 'focus_areas' && (
           <>
             <h2 className="guide-title">What do you want to keep on top of?</h2>
-            <p className="guide-description">Pick from the menu, type, or use the mic to speak — whatever works.</p>
+            <p className="guide-description">Pick from the menu, or type/speak a whole paragraph — whatever works.</p>
             <div className="quiz-options grid-2">
               {FOCUS_AREAS.map(s => (
                 <button
@@ -616,7 +619,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
               <QuizTextInput
                 value={otherFocusAreaDetail}
                 onChange={setOtherFocusAreaDetail}
-                placeholder="e.g. Domain renewals, professional dues, court dates..."
+                placeholder="e.g. I struggle with deadlines and only get serious after things go wrong..."
               />
             </div>
             <div className="guide-actions">
@@ -632,7 +635,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
         {step === 'life_moments' && (
           <>
             <h2 className="guide-title">What&apos;s coming up?</h2>
-            <p className="guide-description">Pick from the menu, type, or use the mic to speak — whatever works.</p>
+            <p className="guide-description">Pick from the menu, or type/speak a whole paragraph — whatever works.</p>
             <div className="quiz-options">
               {LIFE_MOMENTS.map(m => (
                 <button
@@ -660,7 +663,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
               <QuizTextInput
                 value={otherLifeMomentDetail}
                 onChange={setOtherLifeMomentDetail}
-                placeholder="e.g. Planning a wedding, managing a lawsuit, starting a side project..."
+                placeholder="e.g. I'm planning a wedding and also dealing with a lawsuit — it's a lot to keep track of..."
               />
             </div>
             <div className="guide-actions">
@@ -678,15 +681,15 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
             <h2 className="guide-title">Anything else?</h2>
             <p className="guide-description">
               {accountType === 'personal'
-                ? "Type, use the mic to speak, or skip — we'll use this to personalize. Optional."
-                : `Type, use the mic to speak, or skip — we'll tailor for ${orgName || 'your org'}. Optional.`}
+                ? "Type or speak a whole paragraph — we'll use it to personalize. Optional."
+                : `Type or speak a whole paragraph — we'll tailor for ${orgName || 'your org'}. Optional.`}
             </p>
             <div className="org-name-field">
               <div className="quiz-text-with-mic quiz-textarea-wrap">
                 <textarea
-                  placeholder={accountType === 'personal'
-                    ? "e.g. I'm planning a wedding, tracking a lawsuit, managing a rental property..."
-                    : "e.g. Fleet maintenance schedules, grant reporting deadlines, accreditation renewals..."}
+              placeholder={accountType === 'personal'
+                  ? "e.g. I'm a student looking for work, I struggle with deadlines, and I only get serious when things go wrong..."
+                  : "e.g. We're a small clinic struggling with accreditation deadlines, grant reporting, and staff certifications..."}
                   value={accountType === 'personal' ? otherNeeds : orgOtherNeeds}
                   onChange={(e) => accountType === 'personal' ? setOtherNeeds(e.target.value) : setOrgOtherNeeds(e.target.value)}
                   rows={4}
@@ -715,7 +718,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
         {step === 'org_info' && (
           <>
             <h2 className="guide-title">Tell us about your organization</h2>
-            <p className="guide-description">Pick from the menu, type, or use the mic to speak — whatever works.</p>
+            <p className="guide-description">Pick from the menu, or type/speak a whole paragraph — whatever works.</p>
             <div className="org-name-field">
               <label htmlFor="org-name">Organization name</label>
               <input
@@ -750,7 +753,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
               <QuizTextInput
                 value={orgTypeOtherDetail}
                 onChange={setOrgTypeOtherDetail}
-                placeholder="e.g. Co-op, franchise, association..."
+                placeholder="e.g. We're a co-op that runs community programs and needs to track grants and compliance..."
               />
             </div>
             <div className="guide-actions">
@@ -766,7 +769,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
         {step === 'org_focus_areas' && (
           <>
             <h2 className="guide-title">What does your org need to stay on top of?</h2>
-            <p className="guide-description">Pick from the menu, type, or use the mic to speak — whatever works.</p>
+            <p className="guide-description">Pick from the menu, or type/speak a whole paragraph — whatever works.</p>
             <div className="quiz-options grid-2">
               {ORG_FOCUS_AREAS.map(s => (
                 <button
@@ -787,7 +790,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
               <QuizTextInput
                 value={orgOtherFocusAreaDetail}
                 onChange={setOrgOtherFocusAreaDetail}
-                placeholder="e.g. Grant reporting, accreditation renewals, fleet maintenance..."
+                placeholder="e.g. We struggle with grant deadlines, accreditation renewals, and keeping fleet maintenance on schedule..."
               />
             </div>
             <div className="guide-actions">

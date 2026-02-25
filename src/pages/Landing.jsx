@@ -45,7 +45,7 @@ export default function Landing() {
               {APP_CONFIG.description}
             </p>
             <p className="hero-body subtle">
-              Track trusts, visas, taxes, licenses, renewals — all encrypted so only you can see them.
+              Build trusts, plan your estate, protect your wealth — plus visas, licenses, renewals. All encrypted so only you can see them.
             </p>
             <div className="hero-actions">
               <Link to="/auth" className="btn btn-primary btn-lg">
@@ -77,6 +77,20 @@ export default function Landing() {
           
           <div className="features-grid">
             <div className="feature-card">
+              <div className="feature-icon">🏛️</div>
+              <h3 className="feature-title">Trusts & Estate Planning</h3>
+              <p className="feature-text">
+                Build trusts, add executors, plan your legacy. Track beneficiaries, POA, and wealth structures.
+              </p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">🏢</div>
+              <h3 className="feature-title">Wealth Structures</h3>
+              <p className="feature-text">
+                Holding companies, parent companies, corporations — structure your wealth like the pros.
+              </p>
+            </div>
+            <div className="feature-card">
               <div className="feature-icon">🔔</div>
               <h3 className="feature-title">Smart Reminders</h3>
               <p className="feature-text">
@@ -84,24 +98,24 @@ export default function Landing() {
               </p>
             </div>
             <div className="feature-card">
+              <div className="feature-icon">🤖</div>
+              <h3 className="feature-title">AI Assistant</h3>
+              <p className="feature-text">
+                Ask about trusts, estate planning, holding companies, visas, licenses — become an expert.
+              </p>
+            </div>
+            <div className="feature-card">
               <div className="feature-icon">📁</div>
               <h3 className="feature-title">Document Vault</h3>
               <p className="feature-text">
-                Store tax slips, licenses, receipts. Everything encrypted client-side.
+                Store trust docs, licenses, receipts. Everything encrypted client-side.
               </p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">🧮</div>
               <h3 className="feature-title">Tax Estimator</h3>
               <p className="feature-text">
-                Know what you'll owe before filing. No surprises in April.
-              </p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">🤖</div>
-              <h3 className="feature-title">AI Assistant</h3>
-              <p className="feature-text">
-                Ask questions about taxes, visas, licenses, and more — in plain English.
+                Know what you'll owe before filing. One tool among many.
               </p>
             </div>
             <div className="feature-card">

@@ -14,6 +14,7 @@ import Apply from './pages/Apply';
 import Estate from './pages/Estate';
 import Assets from './pages/Assets';
 import Business from './pages/Business';
+import WealthLearn from './pages/WealthLearn';
 import ChatBubble from './components/ChatBubble';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -125,6 +126,9 @@ function App() {
       } />
       <Route path="/estate" element={
         <ProtectedRoute><Estate /></ProtectedRoute>
+      } />
+      <Route path="/wealth-learn" element={
+        <ProtectedRoute><WealthLearn /></ProtectedRoute>
       } />
       <Route path="/assets" element={
         <ProtectedRoute><Assets /></ProtectedRoute>
