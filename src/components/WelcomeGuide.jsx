@@ -21,6 +21,9 @@ const ROLES = [
   { id: 'athlete_coach', label: 'Athlete / Coach', icon: '🏆', desc: 'Registrations, certifications, schedules' },
   { id: 'healthcare', label: 'Healthcare Worker', icon: '⚕️', desc: 'Licenses, training, certifications' },
   { id: 'fitness', label: 'Fitness / Active', icon: '💪', desc: 'Workouts, goals, gym, running' },
+  { id: 'volunteer', label: 'Volunteer', icon: '🤲', desc: 'Commitments, training, background checks' },
+  { id: 'pet_owner', label: 'Pet Owner', icon: '🐾', desc: 'Vet, vaccinations, licenses, insurance' },
+  { id: 'investor', label: 'Investor', icon: '📈', desc: 'Portfolio, tax docs, statements' },
 ];
 
 // ── Personal struggles ──
@@ -46,6 +49,9 @@ const STRUGGLES = [
   { id: 'estate', label: 'Estate planning & wills', icon: '📜' },
   { id: 'equipment', label: 'Equipment & asset tracking', icon: '📦' },
   { id: 'fitness', label: 'Workouts & fitness goals', icon: '💪' },
+  { id: 'subscriptions', label: 'Subscriptions & memberships', icon: '🔄' },
+  { id: 'pet_care', label: 'Pet care & vet appointments', icon: '🐕' },
+  { id: 'moving', label: 'Moving & change of address', icon: '🚚' },
 ];
 
 // ── Organization types ──
@@ -100,6 +106,9 @@ const ROLE_CATEGORIES = {
   athlete_coach: ['inst_sports', 'health'],
   healthcare: ['professional', 'health', 'inst_staff'],
   fitness: ['fitness', 'health'],
+  volunteer: ['important_dates', 'health'],
+  pet_owner: ['pet_care', 'health'],
+  investor: ['tax', 'retirement_estate', 'trust'],
 };
 
 const STRUGGLE_CATEGORIES = {
@@ -124,6 +133,9 @@ const STRUGGLE_CATEGORIES = {
   estate: ['retirement_estate', 'trust'],
   equipment: ['assets'],
   fitness: ['fitness', 'health'],
+  subscriptions: ['subscriptions'],
+  pet_care: ['pet_care', 'health'],
+  moving: ['moving', 'housing'],
 };
 
 const ORG_TYPE_CATEGORIES = {
@@ -200,11 +212,13 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
   const [selectedRoles, setSelectedRoles] = useState(existingPersona?.roles || []);
   const [selectedStruggles, setSelectedStruggles] = useState(existingPersona?.struggles || []);
   const [lifeMoments, setLifeMoments] = useState(existingPersona?.lifeMoments || []);
+  const [otherNeeds, setOtherNeeds] = useState(existingPersona?.otherNeeds || '');
 
   // Org flow state
   const [orgName, setOrgName] = useState(existingPersona?.orgInfo?.name || '');
   const [orgType, setOrgType] = useState(existingPersona?.orgInfo?.type || '');
   const [orgStruggles, setOrgStruggles] = useState(existingPersona?.orgStruggles || []);
+  const [orgOtherNeeds, setOrgOtherNeeds] = useState(existingPersona?.orgOtherNeeds || '');
 
   const [saving, setSaving] = useState(false);
 
@@ -233,8 +247,8 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
       onboardedAt: new Date().toISOString(),
       recommendedCategories: getRecommendedCategories(),
       ...(accountType === 'personal'
-        ? { roles: selectedRoles, struggles: selectedStruggles, lifeMoments: lifeMoments.filter(m => m !== 'none') }
-        : { orgInfo: { name: orgName, type: orgType }, orgStruggles }),
+        ? { roles: selectedRoles, struggles: selectedStruggles, lifeMoments: lifeMoments.filter(m => m !== 'none'), otherNeeds: otherNeeds.trim() || null }
+        : { orgInfo: { name: orgName, type: orgType }, orgStruggles, orgOtherNeeds: orgOtherNeeds.trim() || null }),
     };
     try {
       await supabase.from('user_settings').upsert({
@@ -261,8 +275,8 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
   };
 
   const stepOrder = accountType === 'personal'
-    ? ['welcome', 'account_type', 'roles', 'struggles', 'life_moments']
-    : ['welcome', 'account_type', 'org_info', 'org_struggles'];
+    ? ['welcome', 'account_type', 'roles', 'struggles', 'life_moments', 'other_needs']
+    : ['welcome', 'account_type', 'org_info', 'org_struggles', 'other_needs'];
 
   const visibleSteps = isRetake ? stepOrder.slice(1) : stepOrder;
   const currentIdx = visibleSteps.indexOf(step);
@@ -275,6 +289,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
       case 'life_moments': return true;
       case 'org_info': return orgName.trim() && orgType;
       case 'org_struggles': return orgStruggles.length > 0;
+      case 'other_needs': return true;
       default: return true;
     }
   };
@@ -286,8 +301,12 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
       setStep('struggles');
     } else if (step === 'struggles') {
       setStep('life_moments');
+    } else if (step === 'life_moments') {
+      setStep('other_needs');
     } else if (step === 'org_info') {
       setStep('org_struggles');
+    } else if (step === 'org_struggles') {
+      setStep('other_needs');
     }
   };
 
@@ -298,6 +317,8 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
       setStep('roles');
     } else if (step === 'life_moments') {
       setStep('struggles');
+    } else if (step === 'other_needs') {
+      setStep(accountType === 'personal' ? 'life_moments' : 'org_struggles');
     } else if (step === 'org_struggles') {
       setStep('org_info');
     } else if (step === 'account_type' && !isRetake) {
@@ -305,7 +326,7 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
     }
   };
 
-  const isLastStep = step === 'life_moments' || step === 'org_struggles';
+  const isLastStep = step === 'other_needs';
 
   return (
     <div className="welcome-guide-overlay">
@@ -466,6 +487,37 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
             </div>
             <div className="guide-actions">
               <button className="btn btn-ghost" onClick={goBack}>Back</button>
+              <button className="btn btn-primary" onClick={goNext}>
+                Next <ChevronRight size={18} />
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* ── Other needs (personal & org) ── */}
+        {step === 'other_needs' && (
+          <>
+            <h2 className="guide-title">Anything else?</h2>
+            <p className="guide-description">
+              {accountType === 'personal'
+                ? "Other needs, goals, or things you want us to help you track? Optional."
+                : `Any other compliance needs for ${orgName || 'your org'}? Optional.`}
+            </p>
+            <div className="org-name-field">
+              <textarea
+                placeholder={accountType === 'personal'
+                  ? "e.g. I'm planning a wedding, tracking a lawsuit, managing a rental property..."
+                  : "e.g. Fleet maintenance schedules, grant reporting deadlines, accreditation renewals..."}
+                value={accountType === 'personal' ? otherNeeds : orgOtherNeeds}
+                onChange={(e) => accountType === 'personal' ? setOtherNeeds(e.target.value) : setOrgOtherNeeds(e.target.value)}
+                rows={4}
+                maxLength={500}
+                style={{ resize: 'vertical', minHeight: 80 }}
+              />
+              <small className="field-hint">We'll use this to personalize your experience. You can skip.</small>
+            </div>
+            <div className="guide-actions">
+              <button className="btn btn-ghost" onClick={goBack}>Back</button>
               <button className="btn btn-primary" onClick={handleFinish} disabled={saving}>
                 {saving ? 'Saving...' : <><Check size={18} /> Done</>}
               </button>
@@ -538,8 +590,8 @@ export default function WelcomeGuide({ userId, onComplete, existingPersona, isRe
             </div>
             <div className="guide-actions">
               <button className="btn btn-ghost" onClick={goBack}>Back</button>
-              <button className="btn btn-primary" onClick={handleFinish} disabled={saving || !canGoNext()}>
-                {saving ? 'Saving...' : <><Check size={18} /> Done</>}
+              <button className="btn btn-primary" onClick={goNext} disabled={!canGoNext()}>
+                Next <ChevronRight size={18} />
               </button>
             </div>
           </>

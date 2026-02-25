@@ -5553,6 +5553,23 @@ input, select, textarea { font-family: inherit; }
   border-color: var(--accent);
 }
 .org-name-field input::placeholder { color: var(--text-muted); }
+.org-name-field textarea {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-main);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 15px;
+  font-family: inherit;
+  transition: border-color var(--duration-fast);
+}
+.org-name-field textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.org-name-field textarea::placeholder { color: var(--text-muted); }
+.org-name-field .field-hint { display: block; margin-top: 6px; font-size: 12px; color: var(--text-muted); }
 
 /* ============= COMPLIANCE HEALTH ============= */
 .compliance-health {
