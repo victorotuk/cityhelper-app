@@ -1,0 +1,5 @@
+# Nava project rules
+
+- **Git**: Commit after each logical change. Do not batch unrelated edits into one commit.
+- **PROJECT_STATUS.md**: Update when adding features or completing work.
+- **Supabase**: Add migrations to `supabase/migrations/`; note when they need to be applied manually (CLI or Dashboard).
