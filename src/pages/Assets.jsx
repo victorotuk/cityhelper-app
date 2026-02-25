@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Package, Camera, Car, Cpu, MapPin } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Package, Camera, Cpu, MapPin, Navigation } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
+import { requestLocationPermission, createMileageTracker } from '../lib/mileageTracking';
 
 const CATEGORIES = [
   { id: 'vehicle', label: 'Vehicle' },
@@ -14,8 +15,7 @@ const CATEGORIES = [
 ];
 
 const MILEAGE_OPTIONS = [
-  { id: 'manual', label: 'Manual only', desc: 'Enter odometer and trips yourself', icon: Car },
-  { id: 'obd', label: 'OBD-II dongle', desc: 'Auto-read from Bluetooth OBD when in car', icon: Cpu },
+  { id: 'obd', label: 'OBD-II dongle', desc: 'Auto-read from Bluetooth OBD when in car (GPS fallback)', icon: Cpu },
   { id: 'gps_maps', label: 'GPS + Maps', desc: 'Detect trips by speed & road (no dongle)', icon: MapPin },
 ];
 
@@ -23,11 +23,13 @@ export default function Assets() {
   const { user } = useAuthStore();
   const [assets, setAssets] = useState([]);
   const [trips, setTrips] = useState([]);
-  const [mileagePreference, setMileagePreference] = useState('manual');
+  const [mileagePreference, setMileagePreference] = useState('gps_maps');
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [showAddTrip, setShowAddTrip] = useState(false);
-  const [tripForm, setTripForm] = useState({ asset_id: '', distance_km: '', notes: '' });
+  const [trackingActive, setTrackingActive] = useState(false);
+  const [pendingTrip, setPendingTrip] = useState(null);
+  const [assignVehicle, setAssignVehicle] = useState('');
+  const trackerRef = useRef(null);
   const [form, setForm] = useState({ name: '', description: '', category: 'other', value_estimate: '', location: '', notes: '', photo: null, current_mileage: '', last_mileage_update: '' });
 
   const vehicles = assets.filter(a => a.category === 'vehicle');
@@ -41,7 +43,7 @@ export default function Assets() {
     ]).then(([assetsRes, tripsRes, settingsRes]) => {
       setAssets(assetsRes.data || []);
       setTrips(tripsRes.data || []);
-      setMileagePreference(settingsRes?.data?.mileage_preference || 'manual');
+      setMileagePreference(settingsRes?.data?.mileage_preference || 'gps_maps');
     }).finally(() => setLoading(false));
   }, [user]);
 
@@ -95,39 +97,96 @@ export default function Assets() {
     );
   };
 
-  const handleAddTrip = async (e) => {
+  useEffect(() => {
+    if (!user || !vehicles.length) return;
+    const useGps = mileagePreference === 'gps_maps' || mileagePreference === 'obd';
+    if (!useGps) return;
+
+    const tracker = createMileageTracker({
+      onTripEnd: (trip) => setPendingTrip(trip),
+      onError: (e) => console.warn('[Mileage]', e),
+    });
+    trackerRef.current = tracker;
+
+    let mounted = true;
+    requestLocationPermission().then((ok) => {
+      if (!mounted || !ok) return;
+      tracker.start().then(() => setTrackingActive(true));
+    });
+    return () => {
+      mounted = false;
+      tracker.stop().then(() => setTrackingActive(false));
+      trackerRef.current = null;
+    };
+  }, [user, vehicles.length, mileagePreference]);
+
+  const handleAssignTrip = async (e) => {
     e.preventDefault();
-    if (!tripForm.asset_id || !tripForm.distance_km) return;
-    const dist = parseFloat(tripForm.distance_km);
-    if (isNaN(dist) || dist <= 0) return;
+    if (!pendingTrip) return;
+    const assetId = assignVehicle || null;
     const { error } = await supabase.from('mileage_trips').insert({
       user_id: user.id,
-      asset_id: tripForm.asset_id,
-      distance_km: dist,
-      source: 'manual',
-      notes: tripForm.notes?.trim() || null,
+      asset_id: assetId,
+      distance_km: pendingTrip.distance_km,
+      source: mileagePreference === 'obd' ? 'obd' : 'gps_maps',
+      start_time: pendingTrip.start_time,
+      end_time: pendingTrip.end_time,
+      start_lat: pendingTrip.start_lat,
+      start_lng: pendingTrip.start_lng,
+      end_lat: pendingTrip.end_lat,
+      end_lng: pendingTrip.end_lng,
     });
     if (error) {
       alert('Error: ' + error.message);
       return;
     }
-    setTripForm({ asset_id: '', distance_km: '', notes: '' });
-    setShowAddTrip(false);
-    const asset = assets.find(a => a.id === tripForm.asset_id);
-    if (asset && asset.current_mileage != null) {
-      await supabase.from('assets').update({
-        current_mileage: (asset.current_mileage || 0) + Math.round(dist),
-        last_mileage_update: new Date().toISOString().slice(0, 10),
-      }).eq('id', tripForm.asset_id);
+    if (assetId) {
+      const asset = assets.find(a => a.id === assetId);
+      if (asset && asset.current_mileage != null) {
+        await supabase.from('assets').update({
+          current_mileage: (asset.current_mileage || 0) + Math.round(pendingTrip.distance_km),
+          last_mileage_update: new Date().toISOString().slice(0, 10),
+        }).eq('id', assetId);
+      }
     }
+    setPendingTrip(null);
+    setAssignVehicle('');
     const { data } = await supabase.from('mileage_trips').select('*, assets(name)').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50);
     setTrips(data || []);
     const { data: assetsData } = await supabase.from('assets').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
     setAssets(assetsData || []);
   };
 
+  const dismissTrip = () => {
+    setPendingTrip(null);
+    setAssignVehicle('');
+  };
+
   return (
     <div className="settings-page">
+      {pendingTrip && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
+          <div className="setting-card" style={{ maxWidth: 360, width: '100%', padding: 'var(--space-lg)' }}>
+            <h3 style={{ marginBottom: 'var(--space-sm)' }}>Trip detected</h3>
+            <p className="section-desc" style={{ marginBottom: 'var(--space-md)' }}>
+              {pendingTrip.distance_km} km · Assign to vehicle?
+            </p>
+            <form onSubmit={handleAssignTrip}>
+              <div className="form-group">
+                <label>Vehicle</label>
+                <select value={assignVehicle} onChange={e => setAssignVehicle(e.target.value)}>
+                  <option value="">Skip (save without vehicle)</option>
+                  {vehicles.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+                </select>
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn btn-ghost" onClick={dismissTrip}>Dismiss</button>
+                <button type="submit" className="btn btn-primary">Save trip</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       <header className="page-header">
         <Link to="/settings" className="back-btn"><ArrowLeft size={20} /> Back</Link>
         <div className="header-title"><Package size={24} /><span>Asset Inventory</span></div>
@@ -162,8 +221,9 @@ export default function Assets() {
                     })}
                   </div>
                   {(mileagePreference === 'obd' || mileagePreference === 'gps_maps') && (
-                    <p className="section-desc" style={{ marginTop: 'var(--space-md)', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      Auto tracking coming soon. Uses speed (&gt;15 mph = driving) and Snap to Roads to tell road vs sidewalk.
+                    <p className="section-desc" style={{ marginTop: 'var(--space-md)', fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {trackingActive && <Navigation size={14} style={{ color: 'var(--accent)' }} />}
+                      {trackingActive ? 'GPS tracking active. Trips detected by speed (&gt;15 mph).' : 'Allow location to track trips.'}
                     </p>
                   )}
                 </div>
@@ -177,9 +237,9 @@ export default function Assets() {
                       {trips.slice(0, 20).map(t => (
                         <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--space-sm) 0', borderBottom: '1px solid var(--border-subtle)' }}>
                           <div>
-                            <strong>{t.assets?.name || 'Unknown'}</strong>
+                            <strong>{t.assets?.name || 'Unassigned'}</strong>
                             <span style={{ marginLeft: 8, color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                              {t.distance_km} km · {t.source === 'manual' ? 'Manual' : t.source === 'obd' ? 'OBD' : 'GPS'}
+                              {t.distance_km} km · {t.source === 'obd' ? 'OBD' : 'GPS'}
                             </span>
                           </div>
                           <small style={{ color: 'var(--text-muted)' }}>{t.created_at ? new Date(t.created_at).toLocaleDateString() : ''}</small>
@@ -187,34 +247,7 @@ export default function Assets() {
                       ))}
                     </div>
                   ) : (
-                    <p className="section-desc" style={{ padding: 'var(--space-md)' }}>No trips yet.</p>
-                  )}
-                  {showAddTrip ? (
-                    <form onSubmit={handleAddTrip} style={{ marginTop: 'var(--space-md)', paddingTop: 'var(--space-md)', borderTop: '1px solid var(--border-subtle)' }}>
-                      <div className="form-group">
-                        <label>Vehicle</label>
-                        <select value={tripForm.asset_id} onChange={e => setTripForm(f => ({ ...f, asset_id: e.target.value }))} required>
-                          <option value="">Select vehicle</option>
-                          {vehicles.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-                        </select>
-                      </div>
-                      <div className="form-group">
-                        <label>Distance (km)</label>
-                        <input type="number" min="0.1" step="0.1" value={tripForm.distance_km} onChange={e => setTripForm(f => ({ ...f, distance_km: e.target.value }))} placeholder="e.g. 25.5" required />
-                      </div>
-                      <div className="form-group">
-                        <label>Notes (optional)</label>
-                        <input value={tripForm.notes} onChange={e => setTripForm(f => ({ ...f, notes: e.target.value }))} placeholder="e.g. Commute to office" />
-                      </div>
-                      <div className="modal-actions">
-                        <button type="button" className="btn btn-ghost" onClick={() => setShowAddTrip(false)}>Cancel</button>
-                        <button type="submit" className="btn btn-primary">Add trip</button>
-                      </div>
-                    </form>
-                  ) : (
-                    <button type="button" className="btn btn-ghost" style={{ marginTop: 'var(--space-sm)' }} onClick={() => setShowAddTrip(true)}>
-                      <Plus size={16} /> Add trip
-                    </button>
+                    <p className="section-desc" style={{ padding: 'var(--space-md)' }}>No trips yet. Drive with the app open to detect trips.</p>
                   )}
                 </div>
               )}
