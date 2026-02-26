@@ -16,6 +16,7 @@ import Assets from './pages/Assets';
 import Business from './pages/Business';
 import WealthLearn from './pages/WealthLearn';
 import ChatBubble from './components/ChatBubble';
+import ChatOverlay from './components/ChatOverlay';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 
@@ -40,7 +41,7 @@ function ProtectedRoute({ children, showChat = true }) {
   return (
     <>
       {children}
-      {showChat && <ChatBubble />}
+      {showChat && <><ChatBubble /><ChatOverlay /></>}
     </>
   );
 }

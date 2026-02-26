@@ -271,6 +271,19 @@ const TOOLS = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'export_to_calendar',
+      description: 'Export items to calendar (.ics file). Use when user wants to add deadlines to their calendar or export to Google/Apple Calendar.',
+      parameters: {
+        type: 'object',
+        properties: {
+          days_ahead: { type: 'number', description: 'Include items due in this many days (default 90)' },
+        },
+      },
+    },
+  },
 ]
 
 async function callGroq(messages: any[], tools: any[], toolChoice: string) {
@@ -302,11 +315,21 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    const { messages, persona } = await req.json()
+    const { messages, persona, context } = await req.json()
     if (!messages || !Array.isArray(messages)) throw new Error('Messages array is required')
 
     const appName = Deno.env.get('APP_NAME') || 'Nava'
     let personaContext = ''
+    let contextHint = ''
+    if (context && typeof context === 'object') {
+      const parts: string[] = []
+      if (context.page) parts.push(`User is on page: ${context.page}`)
+      if (context.selectedItem) {
+        const si = context.selectedItem
+        parts.push(`User is viewing item: "${si.name || 'Untitled'}" (id: ${si.id}, category: ${si.category || 'unknown'}). They may want to snooze, mark done, renew, or ask about it.`)
+      }
+      if (parts.length) contextHint = `\n\n**CURRENT CONTEXT:** ${parts.join('. ')}. Use this to offer relevant actions (e.g. "Want me to snooze that?" or "I can mark that done.").`
+    }
     if (persona && typeof persona === 'object') {
       const parts: string[] = []
       if (persona.roles?.length) parts.push(`Roles: ${persona.roles.join(', ')}`)
@@ -325,7 +348,7 @@ serve(async (req) => {
     }
 
     const systemPrompt = `You are ${appName} AI, a compliance assistant. Users can do everything via chat — no clicking needed.
-${personaContext}
+${personaContext}${contextHint}
 
 **TOOLS (use when user wants to take action):**
 - add_item, list_items, get_upcoming, filter_items, get_completed
@@ -334,6 +357,7 @@ ${personaContext}
 - add_executor, list_executors (estate: executors, nominees, trustees, POA)
 - add_entity, list_entities, add_location (business: corporations, LLCs, locations)
 - get_application_guide (work permit, study permit, visitor visa, PR card)
+- export_to_calendar (export items to .ics for Google/Apple Calendar)
 
 **GUIDANCE (when user asks HOW to do something — no tool needed):**
 Prioritize wealth-building and legacy: trusts, estate planning, holding companies, parent companies, shell companies. When users ask "how do I" (e.g. "how do I set up a trust", "what's a holding company", "Rothschild method", "how do I structure wealth"), provide clear step-by-step guidance. You have knowledge about Canadian and US structures: living trusts, irrevocable trusts, family trusts, holding companies, subsidiary structures, tax optimization through entities. Help users become experts. Mention Nava features: Estate (executors, trustees), Business (corporations, locations), Settings → Become an Expert (wealth-building guide). Taxes are one tool among many — trusts and structure often save more. For complex legal/tax situations, recommend consulting a professional — never give specific legal or tax advice.
@@ -348,6 +372,7 @@ When user refers to an item by name, use list_items first to find item_id. Categ
     let data = await callGroq(groqMessages, TOOLS, 'auto')
     let msg = data.choices?.[0]?.message
     let iterations = 0
+    let calendarExportIcs: string | null = null
 
     while (msg?.tool_calls?.length && iterations < 5) {
       iterations++
@@ -490,6 +515,24 @@ When user refers to an item by name, use list_items first to find item_id. Categ
               entity_id: args.entity_id || null,
             }).select('id, name, city').single()
             result = JSON.stringify({ success: true, location: d, message: `Added ${args.name}` })
+          } else if (fn === 'export_to_calendar') {
+            const days = Math.min(365, Math.max(7, Number(args.days_ahead) || 90))
+            const today = new Date().toISOString().slice(0, 10)
+            const limit = new Date(Date.now() + days * 864e5).toISOString().slice(0, 10)
+            const { data: items } = await supabase.from('compliance_items')
+              .select('id, name, category, due_date').eq('user_id', user.id).eq('status', 'active')
+              .gte('due_date', today).lte('due_date', limit).order('due_date', { ascending: true })
+            const events = (items || []).filter((i: any) => i.due_date).map((i: any) => ({
+              title: (i.name || 'Deadline').replace(/[^\x20-\x7E]/g, ''),
+              date: i.due_date,
+            }))
+            const icsLines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Nava//Compliance//EN']
+            for (const e of events) {
+              icsLines.push('BEGIN:VEVENT', `DTSTART;VALUE=DATE:${e.date.replace(/-/g, '')}`, `DTEND;VALUE=DATE:${e.date.replace(/-/g, '')}`, `SUMMARY:${e.title}`, 'END:VEVENT')
+            }
+            icsLines.push('END:VCALENDAR')
+            calendarExportIcs = icsLines.join('\r\n')
+            result = JSON.stringify({ success: true, count: events.length, message: `Exported ${events.length} items. User will receive download.` })
           } else result = JSON.stringify({ error: 'Unknown tool' })
         } catch (e) {
           result = JSON.stringify({ error: (e as Error).message })
@@ -501,7 +544,9 @@ When user refers to an item by name, use list_items first to find item_id. Categ
     }
 
     const reply = msg?.content || 'Sorry, I couldn\'t complete that.'
-    return new Response(JSON.stringify({ reply }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    const body: { reply: string; calendarExport?: { ics: string } } = { reply }
+    if (calendarExportIcs) body.calendarExport = { ics: calendarExportIcs }
+    return new Response(JSON.stringify(body), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   } catch (error) {
     console.error('AI Chat error:', error)
     return new Response(JSON.stringify({ error: (error as Error).message }), {

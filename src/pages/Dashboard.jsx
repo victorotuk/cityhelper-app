@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useComplianceStore } from '../stores/complianceStore';
 import { useSharedSuggestStore } from '../stores/sharedSuggestStore';
@@ -54,6 +54,7 @@ import ShareItemModal from '../components/ShareItemModal';
 import BulkEditModal from '../components/BulkEditModal';
 import CalendarImportModal from '../components/CalendarImportModal';
 import AuditModal from '../components/AuditModal';
+import AISuggestionsCard from '../components/AISuggestionsCard';
 import { addToGoogleCalendar, exportAllToCalendar } from '../lib/calendar';
 
 export default function Dashboard() {
@@ -91,6 +92,7 @@ export default function Dashboard() {
     });
   };
   const navigate = useNavigate();
+  const location = useLocation();
 
   // When app was opened via Share (shared text), open Add modal with parsed suggestion
   useEffect(() => {
@@ -265,7 +267,16 @@ export default function Dashboard() {
     <div className="dashboard-page">
       {/* Header */}
       <header className="dashboard-header">
-        <Link to="/dashboard" className="header-brand">
+        <Link
+          to="/dashboard"
+          className="header-brand"
+          onClick={(e) => {
+            if (location.pathname === '/dashboard') {
+              e.preventDefault();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }}
+        >
           {APP_CONFIG.logoImage ? (
             <img src={APP_CONFIG.logoImage} alt="Nava" className="header-logo-img" />
           ) : (
@@ -398,6 +409,9 @@ export default function Dashboard() {
 
         {/* Compliance Health */}
         <ComplianceHealth items={items} groupedItems={groupedItems} />
+
+        {/* AI proactive suggestions */}
+        <AISuggestionsCard />
 
         {/* Focus on these 3 (Mial-style priorities) */}
         {items.length > 0 && (groupedItems.overdue.length > 0 || groupedItems.urgent.length > 0 || groupedItems.warning.length > 0) && (
@@ -645,7 +659,7 @@ function getRenewalUrl(itemName, country) {
   return null;
 }
 
-function ItemCard({ item, getStatusInfo, onDelete, onAddToCalendar, onCopy, onPay, onRenew, userCountry, onMarkDone, onSnooze, onShared, bulkEditMode, bulkSelected, onBulkToggle, onShowHistory }) {
+function ItemCard({ item, getStatusInfo, onDelete, onAddToCalendar, onCopy, onPay, onRenew, userCountry, onMarkDone, onSnooze, onShared, bulkEditMode, bulkSelected, onBulkToggle, onShowHistory, onAskAI }) {
   const [snoozeOpen, setSnoozeOpen] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const statusInfo = getStatusInfo(item.due_date);
