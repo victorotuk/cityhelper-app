@@ -4,7 +4,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
 import { supabase } from './lib/supabase';
 import { startNotificationListener, stopNotificationListener } from './lib/notificationListener';
-import Landing from './pages/Landing';
+import Landing from './pages/landing';
 import Auth from './pages/Auth';
 import TaxEstimator from './pages/TaxEstimator';
 import Assistant from './pages/Assistant';
@@ -15,9 +15,9 @@ import Estate from './pages/Estate';
 import Assets from './pages/Assets';
 import Business from './pages/Business';
 import WealthLearn from './pages/WealthLearn';
-import ChatBubble from './components/ChatBubble';
-import ChatOverlay from './components/ChatOverlay';
-import UnlockScreen from './components/UnlockScreen';
+import ChatBubble from './components/ui/ChatBubble';
+import ChatOverlay from './components/ui/ChatOverlay';
+import UnlockScreen from './components/modals/UnlockScreen';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 

@@ -6,9 +6,25 @@ import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 import { APP_CONFIG } from '../lib/config';
 import { requestPushPermission, disablePush, preloadPushSDK } from '../lib/push';
-import WelcomeGuide from '../components/WelcomeGuide';
-import SuggestionBox from '../components/SuggestionBox';
-import EmailSuggestions from '../components/EmailSuggestions';
+import WelcomeGuide from '../components/welcomeGuide/WelcomeGuide';
+import SuggestionBox from '../components/modals/SuggestionBox';
+import EmailSuggestions from '../components/emailSuggestions/EmailSuggestions';
+import SettingsCountrySection from '../components/settings/SettingsCountrySection';
+import SettingsDataBackupSection from '../components/settings/SettingsDataBackupSection';
+import SettingsAISection from '../components/settings/SettingsAISection';
+import SettingsOpenClawSection from '../components/settings/SettingsOpenClawSection';
+import SettingsRecoverySection from '../components/settings/SettingsRecoverySection';
+import SettingsPersonalizationSection from '../components/settings/SettingsPersonalizationSection';
+import SettingsWealthSection from '../components/settings/SettingsWealthSection';
+import SettingsDangerSection from '../components/settings/SettingsDangerSection';
+import SettingsPushSection from '../components/settings/SettingsPushSection';
+import SettingsDigestSection from '../components/settings/SettingsDigestSection';
+import SettingsPhoneSection from '../components/settings/SettingsPhoneSection';
+import SettingsNotificationSuggestionsSection from '../components/settings/SettingsNotificationSuggestionsSection';
+import SettingsInAppSection from '../components/settings/SettingsInAppSection';
+import SettingsSmartSuggestionsSection from '../components/settings/SettingsSmartSuggestionsSection';
+import SettingsSuggestFeatureSection from '../components/settings/SettingsSuggestFeatureSection';
+import SettingsPrivacySection from '../components/settings/SettingsPrivacySection';
 
 export default function Settings() {
   const { user, signOut } = useAuthStore();
@@ -65,10 +81,6 @@ export default function Settings() {
   const [recoveryConfirm, setRecoveryConfirm] = useState('');
   const [recoveryLoading, setRecoveryLoading] = useState(false);
 
-  const COUNTRIES = [
-    { id: 'ca', name: 'Canada', flag: '\u{1F1E8}\u{1F1E6}' },
-    { id: 'us', name: 'United States', flag: '\u{1F1FA}\u{1F1F8}' }
-  ];
 
   useEffect(() => {
     if (user) {
@@ -281,13 +293,6 @@ export default function Settings() {
     setTimeout(() => setSaved(false), 3000);
   };
 
-  const handleDeleteAccount = async () => {
-    if (!confirm('Are you sure? This will permanently delete your account and all data.')) return;
-    if (!confirm('This action CANNOT be undone. Are you absolutely sure?')) return;
-    alert('Account deletion would be processed. For now, signing out.');
-    signOut();
-  };
-
   if (loading) {
     return (
       <div className="settings-page">
@@ -319,567 +324,109 @@ export default function Settings() {
             </div>
           )}
 
-          {/* Country */}
-          <section className="settings-section">
-            <h2><Globe size={20} /> Country</h2>
-            <p className="section-desc">
-              Select the countries you need to track compliance for. The first one you pick is your primary.
-            </p>
-            <div className="setting-card setting-card-padded">
-              <div className="country-options">
-                {COUNTRIES.map(c => {
-                  const isPrimary = country === c.id;
-                  const isOther = otherCountries.includes(c.id);
-                  const isSelected = isPrimary || isOther;
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      className={`country-option ${isSelected ? 'selected' : ''}`}
-                      onClick={() => {
-                        if (isPrimary) {
-                          // Deselect primary
-                          setCountry('');
-                          saveSettings({ country: null, countries: otherCountries.length ? otherCountries : null });
-                        } else if (isOther) {
-                          // Remove from other
-                          const next = otherCountries.filter(x => x !== c.id);
-                          setOtherCountries(next);
-                          saveSettings({ country, countries: next.length ? next : null });
-                        } else if (!country) {
-                          // No primary yet, set this as primary
-                          handleSelectCountry(c.id);
-                        } else {
-                          // Already have primary, add as other
-                          handleToggleOtherCountry(c.id);
-                        }
-                      }}
-                    >
-                      <span className="country-flag">{c.flag}</span>
-                      <span>{c.name}</span>
-                      {isPrimary && <span className="country-badge">Primary</span>}
-                      {isOther && <span className="country-badge other">Added</span>}
-                    </button>
-                  );
-                })}
-              </div>
-              {!country && (
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>
-                  Tap a country to get started. You can select both.
-                </p>
-              )}
-            </div>
-          </section>
+          <SettingsCountrySection
+            country={country}
+            otherCountries={otherCountries}
+            setCountry={setCountry}
+            setOtherCountries={setOtherCountries}
+            saveSettings={saveSettings}
+            handleSelectCountry={handleSelectCountry}
+            handleToggleOtherCountry={handleToggleOtherCountry}
+          />
 
-          {/* Data & Backup */}
-          <section className="settings-section">
-            <h2><Shield size={20} /> Data & Backup</h2>
-            <p className="section-desc">
-              Export a backup of your compliance items (encrypted). Store it safely — you can restore it later if needed.
-            </p>
-            <div className="setting-card">
-              <button
-                type="button"
-                className="btn-secondary"
-                disabled={backupLoading}
-                onClick={async () => {
-                  setBackupLoading(true);
-                  try {
-                    const { exportBackup } = await import('../lib/localStorage');
-                    const backup = await exportBackup(user.id);
-                    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `nava-backup-${new Date().toISOString().slice(0, 10)}.json`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                    showSaved('Backup downloaded');
-                  } catch (err) {
-                    setError(err?.message || 'Backup failed');
-                  } finally {
-                    setBackupLoading(false);
-                  }
-                }}
-              >
-                <Download size={18} />
-                {backupLoading ? 'Exporting…' : 'Export backup'}
-              </button>
-            </div>
-          </section>
+          <SettingsDataBackupSection
+            backupLoading={backupLoading}
+            setBackupLoading={setBackupLoading}
+            setError={setError}
+            showSaved={showSaved}
+            userId={user?.id}
+          />
 
-          {/* AI / BYOK */}
-          <section className="settings-section">
-            <h2><Key size={20} /> AI — Bring Your Own Key</h2>
-            <p className="section-desc">
-              Use your own Groq API key for AI chat. Your key stays on your device and is only sent when you use AI. Leave blank to use Nava&apos;s key (if configured).
-            </p>
-            <div className="setting-card setting-card-padded">
-              <input
-                type="password"
-                placeholder={groqKeySaved ? '••••••••••••' : 'Paste your Groq API key'}
-                value={groqKey}
-                onChange={(e) => setGroqKey(e.target.value)}
-                className="setting-input"
-              />
-              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                <button
-                  type="button"
-                  className="btn btn-primary btn-sm"
-                  onClick={() => {
-                    if (groqKey.trim()) {
-                      localStorage.setItem(GROQ_KEY, groqKey.trim());
-                      setGroqKeySaved(true);
-                      setGroqKey('');
-                      showSaved('API key saved');
-                    } else {
-                      localStorage.removeItem(GROQ_KEY);
-                      setGroqKeySaved(false);
-                      showSaved('API key removed');
-                    }
-                  }}
-                >
-                  {groqKey.trim() ? 'Save key' : groqKeySaved ? 'Remove key' : 'Save'}
-                </button>
-                {groqKeySaved && (
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => {
-                      localStorage.removeItem(GROQ_KEY);
-                      setGroqKeySaved(false);
-                      showSaved('API key removed');
-                    }}
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-            </div>
-          </section>
+          <SettingsAISection
+            groqKey={groqKey}
+            setGroqKey={setGroqKey}
+            groqKeySaved={groqKeySaved}
+            setGroqKeySaved={setGroqKeySaved}
+            showSaved={showSaved}
+            storageKey={GROQ_KEY}
+          />
 
-          {/* OpenClaw / API */}
-          <section className="settings-section">
-            <h2><ExternalLink size={20} /> OpenClaw & API</h2>
-            <p className="section-desc">
-              Use Nava from messaging apps (WhatsApp, iMessage, etc.) via OpenClaw. Generate an API key and add the Nava plugin to OpenClaw.
-            </p>
-            <div className="setting-card setting-card-padded">
-              <label style={{ fontSize: '13px', display: 'block', marginBottom: '4px' }}>API URL (for OpenClaw config)</label>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <code style={{ flex: 1, minWidth: 200, padding: '8px 10px', background: 'var(--bg-muted)', borderRadius: '6px', fontSize: '12px', wordBreak: 'break-all' }}>
-                  {(import.meta.env.VITE_SUPABASE_URL || 'https://qyisjxfugogimgzhualw.supabase.co').replace(/\/$/, '')}/functions/v1/nava-api
-                </code>
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-sm"
-                  onClick={() => {
-                    const url = `${(import.meta.env.VITE_SUPABASE_URL || 'https://qyisjxfugogimgzhualw.supabase.co').replace(/\/$/, '')}/functions/v1/nava-api`;
-                    navigator.clipboard.writeText(url);
-                    setApiKeyCopied(true);
-                    setTimeout(() => setApiKeyCopied(false), 2000);
-                  }}
-                >
-                  <Copy size={14} /> {apiKeyCopied ? 'Copied!' : 'Copy'}
-                </button>
-              </div>
-              {newApiKey ? (
-                <div style={{ marginTop: '16px', padding: '12px', background: 'var(--bg-muted)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>Your new API key (copy now — it won&apos;t be shown again):</p>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <code style={{ flex: 1, minWidth: 200, padding: '8px 10px', background: 'var(--bg)', borderRadius: '6px', fontSize: '12px', wordBreak: 'break-all' }}>
-                      {newApiKey}
-                    </code>
-                    <button
-                      type="button"
-                      className="btn btn-primary btn-sm"
-                      onClick={() => {
-                        navigator.clipboard.writeText(newApiKey);
-                        setApiKeyCopied(true);
-                        setTimeout(() => setApiKeyCopied(false), 2000);
-                      }}
-                    >
-                      <Copy size={14} /> {apiKeyCopied ? 'Copied!' : 'Copy key'}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => setNewApiKey(null)}
-                    >
-                      Done
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  className="btn btn-primary btn-sm"
-                  style={{ marginTop: '12px' }}
-                  disabled={apiKeyLoading}
-                  onClick={async () => {
-                    setApiKeyLoading(true);
-                    setError(null);
-                    try {
-                      const { data: session } = await supabase.auth.getSession();
-                      if (!session?.session?.access_token) throw new Error('Please sign in again');
-                      const url = `${(import.meta.env.VITE_SUPABASE_URL || 'https://qyisjxfugogimgzhualw.supabase.co').replace(/\/$/, '')}/functions/v1/create-api-key`;
-                      const res = await fetch(url, {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          Authorization: `Bearer ${session.session.access_token}`,
-                        },
-                        body: JSON.stringify({ name: 'OpenClaw' }),
-                      });
-                      const data = await res.json();
-                      if (!res.ok) throw new Error(data.error || 'Failed to create key');
-                      setNewApiKey(data.key);
-                      showSaved('API key created — copy it now!');
-                    } catch (err) {
-                      setError(err?.message || 'Failed to create API key');
-                    } finally {
-                      setApiKeyLoading(false);
-                    }
-                  }}
-                >
-                  {apiKeyLoading ? 'Creating…' : 'Generate API key'}
-                </button>
-              )}
-            </div>
-          </section>
+          <SettingsOpenClawSection
+            apiKeyLoading={apiKeyLoading}
+            setApiKeyLoading={setApiKeyLoading}
+            newApiKey={newApiKey}
+            setNewApiKey={setNewApiKey}
+            apiKeyCopied={apiKeyCopied}
+            setApiKeyCopied={setApiKeyCopied}
+            setError={setError}
+            showSaved={showSaved}
+          />
 
-          {/* Recovery passphrase (OAuth users) */}
           {isOAuthUser && (
-            <section className="settings-section">
-              <h2><Shield size={20} /> Recovery passphrase</h2>
-              <p className="section-desc">
-                Set a passphrase to recover your data on a new device. If you lose access, enter this passphrase to unlock your items.
-              </p>
-              <div className="setting-card setting-card-padded">
-                <input
-                  type="password"
-                  placeholder="New recovery passphrase"
-                  value={recoveryPassphrase}
-                  onChange={(e) => setRecoveryPassphrase(e.target.value)}
-                  className="setting-input"
-                />
-                <input
-                  type="password"
-                  placeholder="Confirm passphrase"
-                  value={recoveryConfirm}
-                  onChange={(e) => setRecoveryConfirm(e.target.value)}
-                  className="setting-input"
-                  style={{ marginTop: '8px' }}
-                />
-                <button
-                  type="button"
-                  className="btn btn-primary btn-sm"
-                  style={{ marginTop: '8px' }}
-                  disabled={recoveryLoading || !recoveryPassphrase || recoveryPassphrase !== recoveryConfirm}
-                  onClick={async () => {
-                    setRecoveryLoading(true);
-                    try {
-                      const { useAuthStore } = await import('../stores/authStore');
-                      await useAuthStore.getState().setRecoveryPassphrase(recoveryPassphrase, user.id);
-                      setRecoveryPassphrase('');
-                      setRecoveryConfirm('');
-                      showSaved('Recovery passphrase set');
-                    } catch (err) {
-                      setError(err?.message || 'Failed');
-                    } finally {
-                      setRecoveryLoading(false);
-                    }
-                  }}
-                >
-                  {recoveryLoading ? 'Setting…' : 'Set recovery passphrase'}
-                </button>
-              </div>
-            </section>
+            <SettingsRecoverySection
+              recoveryPassphrase={recoveryPassphrase}
+              setRecoveryPassphrase={setRecoveryPassphrase}
+              recoveryConfirm={recoveryConfirm}
+              setRecoveryConfirm={setRecoveryConfirm}
+              recoveryLoading={recoveryLoading}
+              setRecoveryLoading={setRecoveryLoading}
+              setError={setError}
+              showSaved={showSaved}
+              userId={user?.id}
+            />
           )}
 
-          {/* Personalization Quiz */}
-          <section className="settings-section">
-            <h2><RefreshCw size={20} /> Personalization</h2>
-            <p className="section-desc">
-              {!persona?.completedOnboarding
-                ? "You haven't completed the personalization quiz yet."
-                : persona?.accountType === 'organization'
-                  ? `Organization: ${persona.orgInfo?.name || 'Unnamed'} (${persona.orgInfo?.type || 'other'})`
-                  : `Personal: ${(persona.roles || []).length} roles, ${(persona.focusAreas ?? persona.struggles ?? []).length} focus areas selected.`}
-            </p>
-            <div className="setting-card">
-              <div className="setting-header">
-                <div className={`setting-icon ${persona?.completedOnboarding ? 'active' : 'muted'}`}>
-                  <RefreshCw size={20} />
-                </div>
-                <div className="setting-info">
-                  <h3>{persona?.completedOnboarding ? 'Update Your Profile' : 'Set Up Your Profile'}</h3>
-                  <p>{persona?.completedOnboarding ? 'Retake the quiz to update your recommendations' : 'Take the quiz so we can personalize your dashboard'}</p>
-                </div>
-                <button className="btn btn-primary btn-sm" onClick={() => setShowQuiz(true)}>
-                  {persona?.completedOnboarding ? 'Retake Quiz' : 'Take Quiz'}
-                </button>
-              </div>
-            </div>
-          </section>
+          <SettingsPersonalizationSection persona={persona} setShowQuiz={setShowQuiz} />
 
-          {/* Estate, Assets, Business */}
-          <section className="settings-section">
-            <h2>Wealth & Estate</h2>
-            <p className="section-desc">Build trusts, plan your estate, and manage your wealth structures.</p>
-            <div className="setting-card">
-              <Link to="/wealth-learn" className="setting-header link-card">
-                <div className="setting-icon active"><BookOpen size={20} /></div>
-                <div className="setting-info"><h3>Become an Expert</h3><p>Trusts, holding companies, wealth-building — learn the Rothschild method</p></div>
-                <span className="link-arrow">→</span>
-              </Link>
-              <Link to="/estate" className="setting-header link-card">
-                <div className="setting-icon muted"><User size={20} /></div>
-                <div className="setting-info"><h3>Estate Executors & Nominees</h3><p>Executors, trustees, power of attorney</p></div>
-                <span className="link-arrow">→</span>
-              </Link>
-              <Link to="/assets" className="setting-header link-card">
-                <div className="setting-icon muted"><Package size={20} /></div>
-                <div className="setting-info"><h3>Asset Inventory</h3><p>Track assets with photos</p></div>
-                <span className="link-arrow">→</span>
-              </Link>
-              <Link to="/business" className="setting-header link-card">
-                <div className="setting-icon muted"><Building2 size={20} /></div>
-                <div className="setting-info"><h3>Business Entities & Locations</h3><p>Corporations, LLCs, addresses</p></div>
-                <span className="link-arrow">→</span>
-              </Link>
-            </div>
-          </section>
+          <SettingsWealthSection />
 
-          {/* Push Notifications */}
-          <section className="settings-section">
-            <h2><Bell size={20} /> Push Notifications</h2>
-            <p className="section-desc">Get reminded about upcoming deadlines on your device.</p>
-            <div className="setting-card">
-              <div className="setting-header">
-                <div className={`setting-icon ${pushEnabled ? 'active' : 'muted'}`}>
-                  {pushEnabled ? <Bell size={20} /> : <BellOff size={20} />}
-                </div>
-                <div className="setting-info">
-                  <h3>{pushEnabled ? 'Notifications On' : 'Notifications Off'}</h3>
-                  <p>{pushEnabled ? "You'll get reminders before deadlines expire" : "Turn on to get deadline reminders"}</p>
-                </div>
-                {pushEnabled ? (
-                  <button className="btn btn-ghost btn-sm" onClick={handleDisablePush} disabled={pushLoading}>
-                    {pushLoading ? 'Turning off...' : 'Turn Off'}
-                  </button>
-                ) : (
-                  <button className="btn btn-primary btn-sm" onClick={handleEnablePush} disabled={pushLoading}>
-                    {pushLoading ? 'Enabling...' : 'Turn On'}
-                  </button>
-                )}
-              </div>
-              {!pushEnabled && !pushLoading && (
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '8px 16px 12px', margin: 0 }}>
-                  Your browser will ask for permission. If you previously blocked notifications,
-                  go to your browser settings &gt; Site Settings &gt; Notifications and allow this site.
-                </p>
-              )}
-            </div>
-          </section>
+          <SettingsPushSection
+            pushEnabled={pushEnabled}
+            pushLoading={pushLoading}
+            onEnable={handleEnablePush}
+            onDisable={handleDisablePush}
+          />
 
-          {/* Weekly Digest Email */}
-          <section className="settings-section">
-            <h2><Mail size={20} /> Weekly Digest</h2>
-            <p className="section-desc">Get a weekly email summary of your upcoming deadlines.</p>
-            <div className="setting-card">
-              <div className="setting-header">
-                <div className={`setting-icon ${digestEnabled ? 'active' : 'muted'}`}>
-                  <Mail size={20} />
-                </div>
-                <div className="setting-info">
-                  <h3>{digestEnabled ? 'Digest On' : 'Digest Off'}</h3>
-                  <p>{digestEnabled ? `Sent every ${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][digestDay]}` : 'Turn on for a weekly summary'}</p>
-                </div>
-                <button
-                  className={`btn btn-sm ${digestEnabled ? 'btn-ghost' : 'btn-primary'}`}
-                  onClick={async () => {
-                    const next = !digestEnabled;
-                    setDigestEnabled(next);
-                    await saveSettings({ digest_email_enabled: next, digest_day: digestDay });
-                  }}
-                >
-                  {digestEnabled ? 'Turn Off' : 'Turn On'}
-                </button>
-              </div>
-              {digestEnabled && (
-                <div className="setting-details" style={{ padding: '12px 16px' }}>
-                  <label style={{ fontSize: '13px', display: 'block', marginBottom: '6px' }}>Send on</label>
-                  <select
-                    value={digestDay}
-                    onChange={async (e) => {
-                      const d = Number(e.target.value);
-                      setDigestDay(d);
-                      await saveSettings({ digest_email_enabled: true, digest_day: d });
-                    }}
-                    style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border)' }}
-                  >
-                    {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, i) => (
-                      <option key={i} value={i}>{day}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </div>
-          </section>
+          <SettingsDigestSection
+            digestEnabled={digestEnabled}
+            digestDay={digestDay}
+            setDigestEnabled={setDigestEnabled}
+            setDigestDay={setDigestDay}
+            saveSettings={saveSettings}
+          />
 
-          {/* Email suggestions (Gmail) */}
           <EmailSuggestions />
 
-          {/* Phone Verification */}
-          <section className="settings-section">
-            <h2><Phone size={20} /> Phone Verification <span className="badge-optional">Optional</span></h2>
-            <p className="section-desc">Add your phone number for extra account security.</p>
-            <div className="setting-card">
-              {phoneVerified ? (
-                <div className="setting-header">
-                  <div className="setting-icon active"><CheckCircle size={20} /></div>
-                  <div className="setting-info"><h3>Phone Verified</h3><p>{phoneNumber}</p></div>
-                  <button className="btn btn-ghost btn-sm" onClick={removePhone}>Remove</button>
-                </div>
-              ) : !showPhoneInput ? (
-                <div className="setting-header">
-                  <div className="setting-icon muted"><Phone size={20} /></div>
-                  <div className="setting-info"><h3>No phone added</h3><p>Add for extra security</p></div>
-                  <button className="btn btn-ghost btn-sm" onClick={() => setShowPhoneInput(true)}>Add Phone</button>
-                </div>
-              ) : (
-                <>
-                  <div className="setting-header">
-                    <div className="setting-icon"><Phone size={20} /></div>
-                    <div className="setting-info">
-                      <h3>{codeSent ? 'Enter Code' : 'Add Phone'}</h3>
-                      <p>{codeSent ? 'Check your phone for the code' : 'Canadian or US number'}</p>
-                    </div>
-                    <button className="btn btn-ghost btn-sm" onClick={() => { setShowPhoneInput(false); setCodeSent(false); setVerificationCode(''); }}>Cancel</button>
-                  </div>
-                  <div className="setting-details">
-                    {!codeSent ? (
-                      <div className="phone-input-row">
-                        <input type="tel" placeholder="(555) 123-4567" value={phoneNumber} onChange={(e) => setPhoneNumber(formatPhone(e.target.value))} maxLength={14} />
-                        <button className="btn btn-primary btn-sm" onClick={sendVerificationCode} disabled={phoneLoading}>{phoneLoading ? 'Sending...' : 'Send Code'}</button>
-                      </div>
-                    ) : (
-                      <div className="phone-input-row">
-                        <input type="text" placeholder="123456" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))} maxLength={6} style={{ letterSpacing: '0.3em', textAlign: 'center' }} />
-                        <button className="btn btn-primary btn-sm" onClick={verifyCode} disabled={phoneLoading}>{phoneLoading ? 'Verifying...' : 'Verify'}</button>
-                      </div>
-                    )}
-                    {codeSent && (
-                      <button className="btn btn-ghost btn-sm" onClick={sendVerificationCode} disabled={phoneLoading} style={{ marginTop: '8px' }}>Resend code</button>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          </section>
+          <SettingsPhoneSection
+            phoneVerified={phoneVerified}
+            phoneNumber={phoneNumber}
+            setPhoneNumber={setPhoneNumber}
+            showPhoneInput={showPhoneInput}
+            setShowPhoneInput={setShowPhoneInput}
+            codeSent={codeSent}
+            setCodeSent={setCodeSent}
+            verificationCode={verificationCode}
+            setVerificationCode={setVerificationCode}
+            phoneLoading={phoneLoading}
+            formatPhone={formatPhone}
+            sendVerificationCode={sendVerificationCode}
+            verifyCode={verifyCode}
+            removePhone={removePhone}
+          />
 
-          {/* Android: Notification Suggestions */}
           {Capacitor.getPlatform() === 'android' && (
-            <section className="settings-section">
-              <h2><Smartphone size={20} /> Notification Suggestions</h2>
-              <p className="section-desc">When enabled, Nava can suggest adding items when it detects relevant dates in your notifications (e.g. parking tickets, renewal reminders). All processing happens on-device.</p>
-              <div className="setting-card">
-                <div className="setting-header">
-                  <div className={`setting-icon ${notificationSuggestionsEnabled ? 'active' : 'muted'}`}>
-                    <Smartphone size={20} />
-                  </div>
-                  <div className="setting-info">
-                    <h3>{notificationSuggestionsEnabled ? 'Suggestions On' : 'Suggestions Off'}</h3>
-                    <p>{notificationSuggestionsEnabled ? 'We&apos;ll suggest tracking when we detect dates in notifications' : 'Turn on to get suggestions from parking, renewals, bills, etc.'}</p>
-                  </div>
-                  <button
-                    className={`btn btn-sm ${notificationSuggestionsEnabled ? 'btn-ghost' : 'btn-primary'}`}
-                    onClick={async () => {
-                      const next = !notificationSuggestionsEnabled;
-                      setNotificationSuggestionsEnabled(next);
-                      await saveSettings({ notification_suggestions_enabled: next });
-                    }}
-                  >
-                    {notificationSuggestionsEnabled ? 'Turn Off' : 'Turn On'}
-                  </button>
-                </div>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '8px 16px 12px', margin: 0 }}>
-                  Requires &quot;Notification access&quot; in Android Settings → Apps → Nava → Notifications. A compatible plugin is needed for full support.
-                </p>
-              </div>
-            </section>
+            <SettingsNotificationSuggestionsSection
+              enabled={notificationSuggestionsEnabled}
+              setEnabled={setNotificationSuggestionsEnabled}
+              saveSettings={saveSettings}
+            />
           )}
 
-          {/* In-App Notifications */}
-          <section className="settings-section">
-            <h2>In-App Notifications</h2>
-            <p className="section-desc">These appear in the notification bell when you open {APP_CONFIG.name}.</p>
-            <div className="info-card">
-              <p>&#10003; Deadline reminders (30, 14, 7 days before)</p>
-              <p>&#10003; Document scan results</p>
-              <p>&#10003; Account security alerts</p>
-            </div>
-          </section>
-
-          {/* Privacy */}
-          {/* Smart Suggestions & Privacy */}
-          <section className="settings-section">
-            <h2>Smart Suggestions</h2>
-            <p className="section-desc">
-              We help you remember what to track — without ever seeing your data.
-            </p>
-            <div className="privacy-note">
-              <strong>Your data stays on your device.</strong> When you paste text, share from another app, or (optionally) use notification suggestions, we process everything locally. We only save what you explicitly choose to add. Nothing is sent to our servers.
-            </div>
-            <ul className="smart-suggest-list">
-              <li><strong>Paste & suggest</strong> — Paste from clipboard in Add Item to auto-detect dates and events</li>
-              <li><strong>Share to Nava</strong> — Share text from Messages, Email, etc. (Android) to suggest tracking</li>
-              <li><strong>Notification suggestions</strong> — (Android, coming soon) Optionally suggest tracking when parking tickets, renewal reminders, etc. appear in notifications</li>
-            </ul>
-          </section>
-
-          {/* Suggestions */}
-          <section className="settings-section">
-            <h2><MessageSquarePlus size={20} /> Suggest a Feature</h2>
-            <p className="section-desc">
-              Have an idea for something new to track? We read every suggestion.
-            </p>
-            <div className="setting-card">
-              <div className="setting-header">
-                <div className="setting-icon muted"><MessageSquarePlus size={20} /></div>
-                <div className="setting-info">
-                  <h3>Suggest something to track</h3>
-                  <p>New categories, templates, or reminders — tell us what you need</p>
-                </div>
-                <button className="btn btn-primary btn-sm" onClick={() => setShowSuggestionBox(true)}>
-                  Open Suggestion Box
-                </button>
-              </div>
-            </div>
-          </section>
-
-          <section className="settings-section privacy">
-            <h2><Shield size={20} /> Your Privacy</h2>
-            <ul>
-              <li>All your data is encrypted with your password</li>
-              <li>We cannot read your documents or compliance details</li>
-              <li>Phone number is only used for verification</li>
-              <li>No spam, ever</li>
-            </ul>
-          </section>
-
-          {/* Danger Zone */}
-          <section className="settings-section danger">
-            <h2>Danger Zone</h2>
-            <div className="setting-card danger">
-              <div className="setting-header">
-                <div className="setting-icon danger"><Trash2 size={20} /></div>
-                <div className="setting-info"><h3>Delete Account</h3><p>Permanently delete your account and all data</p></div>
-                <button className="btn btn-danger btn-sm" onClick={handleDeleteAccount}>Delete</button>
-              </div>
-            </div>
-          </section>
+          <SettingsInAppSection appName={APP_CONFIG.name} />
+          <SettingsSmartSuggestionsSection />
+          <SettingsSuggestFeatureSection onOpenSuggestionBox={() => setShowSuggestionBox(true)} />
+          <SettingsPrivacySection />
+          <SettingsDangerSection signOut={signOut} />
         </div>
       </main>
 

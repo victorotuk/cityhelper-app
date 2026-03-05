@@ -1,0 +1,75 @@
+/**
+ * Constants shared by Dashboard subcomponents (EmptyState, SuggestedForYou, AddItemModal).
+ */
+
+export const BILL_CATEGORIES = ['housing', 'office', 'property', 'subscriptions', 'credit_banking', 'liabilities'];
+
+export const RECURRENCE_OPTIONS = [
+  { value: '', label: 'None' },
+  { value: '1_month', label: 'Every month' },
+  { value: '3_months', label: 'Every 3 months' },
+  { value: '6_months', label: 'Every 6 months' },
+  { value: '1_year', label: 'Every year' },
+];
+
+export const EMPTY_EXAMPLES = {
+  immigration: 'Work permits, visas, PR cards',
+  trust: 'Living trusts, wills, beneficiaries, POA',
+  tax: 'T1 returns, RRSP, property tax',
+  driving: 'License renewals, registration',
+  parking: 'Parking tickets, toll roads (407, E-ZPass), violations',
+  health: 'Health card, dental, prescriptions',
+  fitness: 'Workouts, gym sessions, running, goals, weigh-ins',
+  education: 'Exams, assignments, tuition deadlines',
+  work_schedule: 'Shifts, pay days, contract dates',
+  housing: 'Rent, internet, phone, hydro bills',
+  retirement_estate: 'Wills, insurance, pensions',
+  other: 'Anything else you need to track',
+  employees: 'Onboarding, visas, police checks, payroll',
+  business_tax: 'T2 corporate, HST/GST, payroll remittance',
+  assets: 'Equipment, warranties, software licenses',
+  liabilities: 'Loans, invoices, lease payments',
+  business_license: 'Municipal license, annual returns, WSIB',
+  business_insurance: 'Liability, E&O, cyber, D&O policies',
+  office: 'Leases, utilities, equipment',
+  property: 'Property tax, municipal fees',
+  professional: 'Certifications, designations, CE credits',
+  inst_regulatory: 'Inspections, accreditation, audits',
+  inst_staff: 'Certifications, police checks, first aid',
+  inst_student: 'Report cards, financial aid, visa tracking',
+  inst_finance: 'Funding apps, grants, charitable returns',
+  inst_safety: 'Fire drills, building inspections, AEDs',
+  inst_facilities: 'HVAC, pest control, generator tests',
+  inst_legal: 'Insurance, union agreements, privacy',
+  inst_programs: 'Curriculum review, exam schedules, field trips',
+  inst_sports: 'Registrations, certifications, inspections',
+  subscriptions: 'Netflix, gym, software, domain renewals',
+  pet_care: 'Vet visits, vaccinations, grooming, pet license',
+  kids_family: 'Immunizations, daycare, child tax benefit, custody',
+  personal_insurance: "Auto, home, renter's insurance renewals",
+  credit_banking: 'Credit card, statements, loan payments',
+  travel: 'Flights, travel insurance, Global Entry, NEXUS, points expiry',
+  important_dates: 'Birthdays, anniversaries, weddings, parties, conferences',
+  legal_court: 'Court dates, jury duty, legal filings',
+  moving: 'Change of address, mail forwarding, utility transfer',
+  government_benefits: 'EI, CPP, OAS, disability, tax credits',
+  contracts: 'Client, vendor, NDA renewals',
+  certifications: 'ISO, SOC 2, industry certifications',
+  patents_ip: 'Patent fees, trademark renewals',
+  environmental: 'Permits, waste reporting, audits',
+  data_privacy: 'GDPR, PIPEDA, privacy policy reviews',
+};
+
+export const EMPTY_EMOJIS = {
+  immigration: '✈️', trust: '🏛️', tax: '💰', driving: '🚗', parking: '🅿️', health: '❤️',
+  education: '📚', work_schedule: '⏰', housing: '🏡', retirement_estate: '📜', other: '📌',
+  employees: '👥', business_tax: '💰', assets: '📦', liabilities: '⚠️',
+  business_license: '📋', business_insurance: '🛡️', office: '💼', property: '🏠', professional: '🎓',
+  subscriptions: '🔄', pet_care: '🐕', kids_family: '👶', personal_insurance: '🛡️',
+  credit_banking: '💳', travel: '✈️', important_dates: '📅', legal_court: '⚖️', moving: '🚚', government_benefits: '📋',
+  contracts: '📝', certifications: '🏅', patents_ip: '©️', environmental: '🌿', data_privacy: '🔒',
+  employee_benefits: '🎁',
+  inst_regulatory: '🏛️', inst_staff: '👨‍🏫', inst_student: '🎓', inst_finance: '💰',
+  inst_safety: '🔥', inst_facilities: '🔧', inst_legal: '⚖️', inst_programs: '📖',
+  inst_sports: '🏆',
+};

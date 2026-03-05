@@ -54,6 +54,7 @@ Three ways to run Nava; privacy-first, user chooses control level.
 - Stack: React + Vite, Capacitor (Android/iOS), Supabase, Tauri (desktop)
 
 ### Recent
+- **OpenClaw integration**: Nava as OpenClaw plugin (`openclaw-nava`). Settings → OpenClaw & API (API URL, generate key). Edge functions: `nava-api` (HTTP API), `create-api-key`. Migration 028 (`nava_api_keys`). Setup script `scripts/setup-openclaw.sh`, README docs. Use Nava from WhatsApp, iMessage, etc. via OpenClaw.
 - **Local-first + E2E (Path A)**: compliance_items in IndexedDB, read/write local first, sync encrypted to Supabase. OAuth users get auto-generated encryption key (no passphrase). Email users use password.
 - **Mileage tracking (vehicles)**: GPS + Maps trip detection (mobile only, disabled on web). Options: OBD-II (GPS fallback) | GPS+Maps. Migrations 023–025.
 - **Trip detection (planned)**: Speed threshold >15 mph = driving vs walk/jog. Snap to Roads (Google) for road vs sidewalk. Note: We cannot read Google/Apple Maps "driving mode" — apps are sandboxed.
@@ -78,12 +79,18 @@ Three ways to run Nava; privacy-first, user chooses control level.
 ### What's Left to Do
 | Priority | Item | Status |
 |----------|------|--------|
-| **Low** | OpenClaw integration (Nava as tool plugin or channel) | Deferred |
 | **Low** | user_settings local storage (optional) | Not wired |
+
+**Done:** OpenClaw integration — `openclaw-nava` plugin, nava-api + create-api-key Edge Functions, migration 028 (API keys), Settings → OpenClaw & API, setup script, README.
 
 **Completed (2026-02-01):** Lint fixes, UnlockScreen, Ask AI on items, autobackup, Docker, Supabase configurable, **LLM BYOK** (Settings → AI — Bring Your Own Key), **OAuth recovery passphrase** (Settings → Recovery passphrase for OAuth users).
 
 **Build:** ✅ OK. **Lint:** 0 errors, 3 warnings.
+
+### Codebase refactor (large-file split)
+- **Dashboard.jsx** (was ~1523 lines): Split into `ItemCard`, `AddItemModal`, `ComplianceHealth`, `FocusOnThree`, `EmptyState`, `SuggestedForYou` in `components/` and `components/dashboard/`. Added `lib/renewalPortals.js`, `lib/addItemExtractPrompts.js`, `components/dashboard/constants.js`. Dashboard.jsx now ~646 lines.
+- **Settings.jsx** (was ~906 lines): Extracted section components under `components/settings/`: `SettingsCountrySection`, `SettingsDataBackupSection`, `SettingsAISection`, `SettingsOpenClawSection`, `SettingsRecoverySection`, `SettingsPersonalizationSection`, `SettingsWealthSection`, `SettingsDangerSection`. Settings.jsx reduced accordingly.
+- **WelcomeGuide.jsx** (was ~809 lines): Extracted `QuizTextInput` and `QuizTextareaMic` to `WelcomeGuideQuizInput.jsx`. WelcomeGuide.jsx reduced by ~130 lines.
 
 ### Cursor Crashes (macOS 26+)
 See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated to reduce indexing.
@@ -97,6 +104,11 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
 - If Supabase or other security advisories arrive, address promptly. Privacy is key.
 
 ### Changelog
+- 2026-03-05
+  - **Folder reorganization:** Components grouped into subfolders by concern. `components/ui/`: ErrorBoundary, ChatBubble, ChatOverlay. `components/chat/`: ChatPanel. `components/modals/`: UnlockScreen, ShareItemModal, BulkEditModal, CalendarImportModal, AuditModal, SuggestionBox, PayTicket. `components/common/`: AddressAutocomplete, AISuggestionsCard, NotificationBell, WelcomeGuideQuizInput. Feature folders: `dashboard/` (ItemCard, ComplianceHealth, FocusOnThree, EmptyState, SuggestedForYou, constants), `addItem/` (AddItemModal, AddItemCategoryPicker, AddItemFormFields), `dispute/` (DisputeTicket, DisputeStep1–4), `documents/` (DocumentCard, DocumentViewModal, ScanResultCard), `welcomeGuide/` (WelcomeGuide, quizConfig, WelcomeStep*), `auth/`, `settings/`, `emailSuggestions/` (EmailSuggestions, emailSuggestionsConfig), `scanUpload/` (ScanUpload, ScanUsageBar). Pages: `landing/` now has `index.jsx` (Landing); App imports from `./pages/landing`. All imports updated; build passes.
+  - **Component breakdown (round 3):** WelcomeGuide: `welcomeGuide/quizConfig.js`, step components (WelcomeStepWelcome, AccountType, Roles, FocusAreas, LifeMoments, OtherNeeds, OrgInfo, OrgFocusAreas). TaxEstimator: `taxEstimator/taxConfig.js`, TaxEstimatorForm, TaxEstimatorSummary. Assets: `assets/assetsConfig.js`, AssetForm, AssetList, TripList, TripAssignModal, MileagePreferenceCard. Auth: AuthSocialButtons, AuthForm, AuthModeSwitch. Landing: LandingNav, LandingHero, LandingFeatures, LandingCta, LandingFooter. AddItemModal: AddItemCategoryPicker, AddItemFormFields. EmailSuggestions: `emailSuggestions/emailSuggestionsConfig.js`. ScanUpload: ScanUsageBar. Build passes.
+  - **Large-file refactor (round 2):** Apply.jsx: extracted `src/pages/apply/applyConfig.js`, `ApplyTypeSelect.jsx`, `ApplyFormStep.jsx`, `ApplyReviewStep.jsx`, `ApplyGuideStep.jsx`. Documents.jsx: extracted `src/lib/documentUtils.js`, `src/components/documents/DocumentCard.jsx`, `DocumentViewModal.jsx`, `ScanResultCard.jsx`. DisputeTicket.jsx: extracted `src/components/dispute/DisputeStep1Ticket.jsx`, `DisputeStep2Reason.jsx`, `DisputeStep3Contact.jsx`, `DisputeStep4Review.jsx`. Settings.jsx: extracted `SettingsPushSection`, `SettingsDigestSection`, `SettingsPhoneSection`, `SettingsNotificationSuggestionsSection`, `SettingsInAppSection`, `SettingsSmartSuggestionsSection`, `SettingsSuggestFeatureSection`, `SettingsPrivacySection`. All use components and imports; build and lint pass (0 errors, 3 existing warnings).
+  - **Large-file refactor (round 1):** Split Dashboard.jsx (~1523→646 lines), Settings.jsx (~906→~618 lines), WelcomeGuide.jsx (~809→~678 lines). New: `src/lib/renewalPortals.js`, `src/lib/addItemExtractPrompts.js`, `src/components/dashboard/constants.js`, `src/components/ItemCard.jsx`, `src/components/AddItemModal.jsx`, `src/components/dashboard/ComplianceHealth.jsx`, `FocusOnThree.jsx`, `EmptyState.jsx`, `SuggestedForYou.jsx`, `src/components/settings/*Section.jsx` (8 sections), `src/components/WelcomeGuideQuizInput.jsx`. All imports/references updated; build and lint pass.
 - 2026-02-01
   - **"Do everything" session**: Lint fixes (onAskAI wired, setState in effect → derived state). UnlockScreen for password users. Ask AI button on item cards (opens chat with selectedItem). Autobackup in Settings → Data & Backup. Docker: Dockerfile, docker-compose.yml, nginx.conf, .env.example. Supabase URL/key configurable (VITE_SUPABASE_*).
   - **OAuth auto-encryption**: OAuth users (Google/Azure) get an auto-generated encryption key on first sign-in. No passphrase required. Key stored in localStorage, restored to sessionStorage on return. Encryption works immediately.

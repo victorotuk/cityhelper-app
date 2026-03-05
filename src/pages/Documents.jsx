@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Upload, FileText, Trash2, Download, Eye, X, Folder, Image, File, Camera, Scan, Loader, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Upload, X, Folder, Camera, Scan, Loader } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 import { encrypt, decrypt } from '../lib/crypto';
-import { APP_CONFIG } from '../lib/config';
-import { format } from 'date-fns';
+import DocumentCard from '../components/documents/DocumentCard';
+import DocumentViewModal from '../components/documents/DocumentViewModal';
+import ScanResultCard from '../components/documents/ScanResultCard';
 
 export default function Documents() {
   const { user } = useAuthStore();
@@ -207,19 +208,6 @@ Return ONLY valid JSON, no markdown or explanation.`;
     }
   };
 
-  const getFileIcon = (type) => {
-    if (type?.startsWith('image/')) return <Image size={24} />;
-    if (type?.includes('pdf')) return <FileText size={24} />;
-    return <File size={24} />;
-  };
-
-  const formatSize = (bytes) => {
-    if (!bytes) return '0 B';
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-  };
-
   return (
     <div className="documents-page">
       <header className="page-header">
@@ -271,123 +259,8 @@ Return ONLY valid JSON, no markdown or explanation.`;
             </div>
           )}
 
-          {/* Scan Result */}
           {scanResult && scanResult.success && (
-            <div className="scan-result">
-              <div className="scan-result-header">
-                    <CheckCircle size={20} />
-                    <h3>Document Scanned</h3>
-                    <button onClick={() => setScanResult(null)}><X size={18} /></button>
-                  </div>
-                  <div className="scan-result-content">
-                    <div className="scan-type">
-                      <span className="label">Detected Type:</span>
-                      <span className="value">{scanResult.parsed?.type?.toUpperCase() || 'Unknown'}</span>
-                    </div>
-                
-                {(scanResult.parsed?.type === 'T4' || scanResult.parsed?.type?.toLowerCase() === 't4') && (
-                  <div className="scan-data">
-                    <h4>T4 Data Extracted:</h4>
-                    <div className="data-grid">
-                      {scanResult.parsed.employer && (
-                        <div className="data-item">
-                          <span>Employer</span>
-                          <strong>{scanResult.parsed.employer}</strong>
-                        </div>
-                      )}
-                      {scanResult.parsed.employment_income && (
-                        <div className="data-item">
-                          <span>Employment Income</span>
-                          <strong>${scanResult.parsed.employment_income.toLocaleString()}</strong>
-                        </div>
-                      )}
-                      {scanResult.parsed.income_tax_deducted && (
-                        <div className="data-item">
-                          <span>Tax Deducted</span>
-                          <strong>${scanResult.parsed.income_tax_deducted.toLocaleString()}</strong>
-                        </div>
-                      )}
-                      {scanResult.parsed.cpp_contributions && (
-                        <div className="data-item">
-                          <span>CPP</span>
-                          <strong>${scanResult.parsed.cpp_contributions.toLocaleString()}</strong>
-                        </div>
-                      )}
-                      {scanResult.parsed.ei_premiums && (
-                        <div className="data-item">
-                          <span>EI</span>
-                          <strong>${scanResult.parsed.ei_premiums.toLocaleString()}</strong>
-                        </div>
-                      )}
-                      {scanResult.parsed.year && (
-                        <div className="data-item">
-                          <span>Tax Year</span>
-                          <strong>{scanResult.parsed.year}</strong>
-                        </div>
-                      )}
-                    </div>
-                    <Link to="/tax-estimator" className="btn btn-primary btn-sm">
-                      Use in Tax Estimator →
-                    </Link>
-                  </div>
-                )}
-
-                {(scanResult.parsed?.type === 'id' || scanResult.parsed?.type?.toLowerCase() === 'id' || scanResult.parsed?.type?.toLowerCase()?.includes('license')) && (
-                  <div className="scan-data">
-                    <h4>ID Data Extracted:</h4>
-                    <div className="data-grid">
-                      {scanResult.parsed.name && (
-                        <div className="data-item">
-                          <span>Name</span>
-                          <strong>{scanResult.parsed.name}</strong>
-                        </div>
-                      )}
-                      {scanResult.parsed.id_number && (
-                        <div className="data-item">
-                          <span>ID Number</span>
-                          <strong>{scanResult.parsed.id_number}</strong>
-                        </div>
-                      )}
-                      {scanResult.parsed.expiry_date && (
-                        <div className="data-item highlight">
-                          <span>Expiry Date</span>
-                          <strong>{scanResult.parsed.expiry_date}</strong>
-                        </div>
-                      )}
-                    </div>
-                    <Link to="/dashboard" className="btn btn-primary btn-sm">
-                      Add to Tracker →
-                    </Link>
-                  </div>
-                )}
-
-                {(scanResult.parsed?.type === 'receipt' || scanResult.parsed?.type?.toLowerCase() === 'receipt') && (
-                  <div className="scan-data">
-                    <h4>Receipt Data Extracted:</h4>
-                    <div className="data-grid">
-                      {scanResult.parsed.merchant && (
-                        <div className="data-item">
-                          <span>Merchant</span>
-                          <strong>{scanResult.parsed.merchant}</strong>
-                        </div>
-                      )}
-                      {scanResult.parsed.total && (
-                        <div className="data-item">
-                          <span>Total</span>
-                          <strong>${scanResult.parsed.total.toFixed(2)}</strong>
-                        </div>
-                      )}
-                      {scanResult.parsed.date && (
-                        <div className="data-item">
-                          <span>Date</span>
-                          <strong>{scanResult.parsed.date}</strong>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            <ScanResultCard scanResult={scanResult} onDismiss={() => setScanResult(null)} />
           )}
 
           {loading ? (
@@ -423,65 +296,23 @@ Return ONLY valid JSON, no markdown or explanation.`;
             </div>
           ) : (
             <div className="documents-grid">
-              {documents.map(doc => (
-                <div key={doc.id} className="doc-card">
-                  <div className="doc-icon">
-                    {getFileIcon(doc.type)}
-                  </div>
-                  <div className="doc-info">
-                    <h4>{doc.name}</h4>
-                    <span>{formatSize(doc.size)} • {format(new Date(doc.created_at), 'MMM d, yyyy')}</span>
-                    {doc.is_encrypted && <span className="encrypted-badge">🔐 Encrypted</span>}
-                  </div>
-                  <div className="doc-actions">
-                    {doc.type?.startsWith('image/') && (
-                      <button 
-                        onClick={() => handleScanExisting(doc)} 
-                        title="Scan for data"
-                        disabled={scanning}
-                      >
-                        <Scan size={16} />
-                      </button>
-                    )}
-                    <button onClick={() => handleView(doc)} title="View">
-                      <Eye size={16} />
-                    </button>
-                    <button onClick={() => handleDelete(doc.id)} title="Delete">
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
+              {documents.map((doc) => (
+                <DocumentCard
+                  key={doc.id}
+                  doc={doc}
+                  onView={handleView}
+                  onDelete={handleDelete}
+                  onScan={handleScanExisting}
+                  scanning={scanning}
+                />
               ))}
             </div>
           )}
         </div>
       </main>
 
-      {/* Document Viewer Modal */}
       {selectedDoc && (
-        <div className="modal-overlay" onClick={() => setSelectedDoc(null)}>
-          <div className="doc-viewer" onClick={e => e.stopPropagation()}>
-            <div className="viewer-header">
-              <h3>{selectedDoc.name}</h3>
-              <button onClick={() => setSelectedDoc(null)}><X size={20} /></button>
-            </div>
-            <div className="viewer-content">
-              {selectedDoc.type?.startsWith('image/') ? (
-                <img src={selectedDoc.content} alt={selectedDoc.name} />
-              ) : selectedDoc.type?.includes('pdf') ? (
-                <iframe src={selectedDoc.content} title={selectedDoc.name} />
-              ) : (
-                <div className="text-preview">
-                  <p>Preview not available for this file type.</p>
-                  <a href={selectedDoc.content} download={selectedDoc.name} className="btn btn-primary">
-                    <Download size={18} />
-                    Download
-                  </a>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <DocumentViewModal doc={selectedDoc} onClose={() => setSelectedDoc(null)} />
       )}
     </div>
   );

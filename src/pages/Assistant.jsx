@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Bot } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
-import ChatPanel from '../components/ChatPanel';
+import ChatPanel from '../components/chat/ChatPanel';
 
 export default function Assistant() {
   const location = useLocation();
