@@ -75,6 +75,9 @@ export default function Settings() {
   const [newApiKey, setNewApiKey] = useState(null);
   const [apiKeyCopied, setApiKeyCopied] = useState(false);
 
+  // Show advanced options (API keys, OpenClaw) — default off so non-technical users don't see them
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   // Recovery passphrase (OAuth users only)
   const isOAuthUser = user && !localStorage.getItem(`keyHash_${user.id}`);
   const [recoveryPassphrase, setRecoveryPassphrase] = useState('');
@@ -88,6 +91,7 @@ export default function Settings() {
       preloadPushSDK();
       const k = localStorage.getItem(`nava_groq_key_${user.id}`);
       setGroqKeySaved(!!k);
+      setShowAdvanced(localStorage.getItem(`nava_show_advanced_${user.id}`) === 'true');
     }
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -342,25 +346,57 @@ export default function Settings() {
             userId={user?.id}
           />
 
-          <SettingsAISection
-            groqKey={groqKey}
-            setGroqKey={setGroqKey}
-            groqKeySaved={groqKeySaved}
-            setGroqKeySaved={setGroqKeySaved}
-            showSaved={showSaved}
-            storageKey={GROQ_KEY}
-          />
+          <section className="settings-section">
+            <h2>Advanced options</h2>
+            <p className="section-desc">
+              Show settings for your own AI key, connecting Nava to WhatsApp/iMessage (OpenClaw), and other developer options. Leave off if you just want to use Nava as-is.
+            </p>
+            <div className="setting-card">
+              <div className="setting-header">
+                <div className={`setting-icon ${showAdvanced ? 'active' : 'muted'}`}>
+                  <Key size={20} />
+                </div>
+                <div className="setting-info">
+                  <h3>{showAdvanced ? 'Advanced options on' : 'Advanced options off'}</h3>
+                  <p>{showAdvanced ? 'You see API keys and OpenClaw sections below' : 'Settings stay simple — no API or developer stuff'}</p>
+                </div>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${showAdvanced ? 'btn-ghost' : 'btn-primary'}`}
+                  onClick={() => {
+                    const next = !showAdvanced;
+                    setShowAdvanced(next);
+                    if (user?.id) localStorage.setItem(`nava_show_advanced_${user.id}`, next ? 'true' : 'false');
+                  }}
+                >
+                  {showAdvanced ? 'Hide advanced' : 'Show advanced'}
+                </button>
+              </div>
+            </div>
+          </section>
 
-          <SettingsOpenClawSection
-            apiKeyLoading={apiKeyLoading}
-            setApiKeyLoading={setApiKeyLoading}
-            newApiKey={newApiKey}
-            setNewApiKey={setNewApiKey}
-            apiKeyCopied={apiKeyCopied}
-            setApiKeyCopied={setApiKeyCopied}
-            setError={setError}
-            showSaved={showSaved}
-          />
+          {showAdvanced && (
+            <>
+              <SettingsAISection
+                groqKey={groqKey}
+                setGroqKey={setGroqKey}
+                groqKeySaved={groqKeySaved}
+                setGroqKeySaved={setGroqKeySaved}
+                showSaved={showSaved}
+                storageKey={GROQ_KEY}
+              />
+              <SettingsOpenClawSection
+                apiKeyLoading={apiKeyLoading}
+                setApiKeyLoading={setApiKeyLoading}
+                newApiKey={newApiKey}
+                setNewApiKey={setNewApiKey}
+                apiKeyCopied={apiKeyCopied}
+                setApiKeyCopied={setApiKeyCopied}
+                setError={setError}
+                showSaved={showSaved}
+              />
+            </>
+          )}
 
           {isOAuthUser && (
             <SettingsRecoverySection
