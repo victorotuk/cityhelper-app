@@ -7,10 +7,19 @@ export default function SettingsDataBackupSection({ backupLoading, setBackupLoad
       <p className="section-desc">
         Export a backup of your compliance items (encrypted). Store it safely — you can restore it later if needed.
       </p>
-      <div className="setting-card">
+      <div className="setting-card setting-card-padded settings-backup-card">
+        <div className="settings-backup-header">
+          <div className="setting-icon active">
+            <Download size={22} />
+          </div>
+          <div className="settings-backup-info">
+            <h3>Export backup</h3>
+            <p>Downloads a JSON file with your items. Keep it in a safe place.</p>
+          </div>
+        </div>
         <button
           type="button"
-          className="btn-secondary"
+          className="btn btn-primary"
           disabled={backupLoading}
           onClick={async () => {
             setBackupLoading(true);

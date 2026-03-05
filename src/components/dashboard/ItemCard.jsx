@@ -136,7 +136,7 @@ export default function ItemCard({
             </button>
           )}
           {onAskAI && (
-            <button type="button" className="btn-icon" onClick={() => onAskAI(item)} title="Ask AI about this">
+            <button type="button" className="btn-icon ask-ai-icon" onClick={() => onAskAI(item)} title="Ask AI about this">
               <MessageSquarePlus size={16} />
             </button>
           )}

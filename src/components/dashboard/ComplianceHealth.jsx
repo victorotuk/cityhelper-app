@@ -15,12 +15,6 @@ export default function ComplianceHealth({ items, groupedItems }) {
     100 - (overdueCount * 25) - (urgentCount * 10) - (warningCount * 3)
   ));
 
-  const getScoreColor = (s) => {
-    if (s >= 80) return 'var(--success, #10b981)';
-    if (s >= 50) return 'var(--warning, #f59e0b)';
-    return 'var(--danger, #dc2626)';
-  };
-
   const getMessage = (s) => {
     if (s === 100) return "Everything's in order. You're on top of it.";
     if (s >= 80) return "Looking good. A few things to keep an eye on.";
@@ -29,12 +23,10 @@ export default function ComplianceHealth({ items, groupedItems }) {
     return "You have critical items that need immediate attention.";
   };
 
-  const color = getScoreColor(score);
-
   return (
-    <div className="compliance-health">
-      <div className="health-score" style={{ borderColor: color }}>
-        <span className="health-number" style={{ color }}>{score}</span>
+    <div className="compliance-health compliance-health-gradient">
+      <div className="health-score">
+        <span className="health-number">{score}</span>
         <span className="health-label">Health</span>
       </div>
       <div className="health-details">

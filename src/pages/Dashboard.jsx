@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import { useThemeStore } from '../stores/themeStore';
 import { useComplianceStore } from '../stores/complianceStore';
 import { useChatOverlayStore } from '../stores/chatOverlayStore';
 import { useSharedSuggestStore } from '../stores/sharedSuggestStore';
@@ -41,7 +42,9 @@ import {
   Building2,
   History,
   Landmark,
-  BookOpen
+  BookOpen,
+  Sun,
+  Moon
 } from 'lucide-react';
 import NotificationBell from '../components/common/NotificationBell';
 import WelcomeGuide from '../components/welcomeGuide/WelcomeGuide';
@@ -283,6 +286,9 @@ export default function Dashboard() {
       .slice(0, 10),
   };
 
+  const theme = useThemeStore((s) => s.theme);
+  const toggleTheme = useThemeStore((s) => s.toggleTheme);
+
   return (
     <div className="dashboard-page">
       {/* Header */}
@@ -345,6 +351,15 @@ export default function Dashboard() {
               ? persona.orgInfo.name
               : user?.email}
           </span>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm theme-toggle"
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Switch to light' : 'Switch to dark'}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
           <NotificationBell />
           <Link to="/settings" className="btn btn-ghost btn-sm" title="Settings">
             <Settings size={18} />
