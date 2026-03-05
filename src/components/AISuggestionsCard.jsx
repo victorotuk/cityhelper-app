@@ -22,11 +22,13 @@ export default function AISuggestionsCard() {
         .eq('user_id', user.id)
         .single();
 
+      const apiKey = user?.id ? localStorage.getItem(`nava_groq_key_${user.id}`) || undefined : undefined;
       const { data, error: err } = await supabase.functions.invoke('ai-chat', {
         body: {
           messages: [{ role: 'user', content: 'What should I focus on today? Give me 2-3 very short bullet suggestions based on my items. Be specific and actionable.' }],
           persona: personaData?.persona || undefined,
-          context: { page: '/dashboard' }
+          context: { page: '/dashboard' },
+          apiKey: apiKey || undefined
         }
       });
 

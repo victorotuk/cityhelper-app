@@ -2,6 +2,13 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { encryptObject, decryptObject } from '../lib/crypto';
 import { differenceInDays, parseISO, addMonths, addYears } from 'date-fns';
+import {
+  getLocalItems,
+  setLocalItems,
+  putLocalItem,
+  deleteLocalItem,
+  clearLocalData
+} from '../lib/localStorage';
 
 // Get encryption key from session storage (set at login)
 const getEncryptionKey = () => sessionStorage.getItem('userEncryptionKey');
@@ -21,6 +28,20 @@ const logAudit = async (itemId, userId, action, oldData, newData) => {
   }
 };
 
+// Decrypt items (shared helper)
+async function decryptItems(items, key) {
+  if (!items?.length) return [];
+  return Promise.all(
+    items.map(async (item) => {
+      if (item.encrypted_data && key) {
+        const decrypted = await decryptObject(item.encrypted_data, key);
+        return { ...item, ...decrypted };
+      }
+      return item;
+    })
+  );
+}
+
 export const useComplianceStore = create((set, get) => ({
   items: [],
   loading: false,
@@ -36,11 +57,20 @@ export const useComplianceStore = create((set, get) => ({
     return 'ok';
   },
 
-  // Fetch all items for current user (own + shared with me, decrypted)
+  // Fetch: LOCAL-FIRST. Read IndexedDB first (instant), then merge from Supabase.
   fetchItems: async (userId) => {
     set({ loading: true, error: null });
+    const key = getEncryptionKey();
+
     try {
-      // Own items
+      // 1. Read from local first (instant)
+      const localRaw = await getLocalItems(userId);
+      const localDecrypted = await decryptItems(localRaw, key);
+      if (localDecrypted.length > 0) {
+        set({ items: localDecrypted, loading: false });
+      }
+
+      // 2. Fetch from Supabase (own + shared)
       const { data: ownData, error: ownErr } = await supabase
         .from('compliance_items')
         .select('*')
@@ -49,7 +79,6 @@ export const useComplianceStore = create((set, get) => ({
 
       if (ownErr) throw ownErr;
 
-      // Shared with me
       const { data: shares } = await supabase
         .from('item_shares')
         .select('item_id')
@@ -57,28 +86,26 @@ export const useComplianceStore = create((set, get) => ({
 
       let sharedData = [];
       if (shares?.length) {
-        const ids = shares.map(s => s.item_id);
+        const ids = shares.map((s) => s.item_id);
         const { data } = await supabase
           .from('compliance_items')
           .select('*')
           .in('id', ids);
-        sharedData = (data || []).map(i => ({ ...i, isShared: true }));
+        sharedData = (data || []).map((i) => ({ ...i, isShared: true }));
       }
 
-      const merged = [...(ownData || []).map(i => ({ ...i, isShared: false })), ...sharedData]
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      const merged = [
+        ...(ownData || []).map((i) => ({ ...i, isShared: false })),
+        ...sharedData
+      ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-      // Decrypt sensitive data
-      const key = getEncryptionKey();
-      const decryptedItems = await Promise.all(
-        merged.map(async (item) => {
-          if (item.encrypted_data && key) {
-            const decrypted = await decryptObject(item.encrypted_data, key);
-            return { ...item, ...decrypted };
-          }
-          return item;
-        })
-      );
+      const decryptedItems = await decryptItems(merged, key);
+
+      // 3. Persist raw rows to local (own only; encrypted form for device privacy)
+      const ownRaw = (ownData || []).map((i) => ({ ...i, user_id: userId }));
+      if (ownRaw.length > 0) {
+        await setLocalItems(userId, ownRaw);
+      }
 
       set({ items: decryptedItems, loading: false });
     } catch (error) {
@@ -87,22 +114,20 @@ export const useComplianceStore = create((set, get) => ({
     }
   },
 
-  // Add new item (encrypted)
+  // Add new item: LOCAL-FIRST. Write to IndexedDB, update UI, then sync to Supabase.
   addItem: async (item) => {
     const key = getEncryptionKey();
-    
-    // Separate sensitive data for encryption
     const sensitiveData = {
       name: item.name,
       notes: item.notes || '',
       document_url: item.document_url || ''
     };
-
-    // Encrypt sensitive data
     const encrypted_data = key ? await encryptObject(sensitiveData, key) : null;
 
-    // Store non-sensitive metadata + encrypted blob
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
     const dbItem = {
+      id,
       user_id: item.user_id,
       category: item.category,
       due_date: item.due_date,
@@ -114,77 +139,116 @@ export const useComplianceStore = create((set, get) => ({
       document_id: item.document_id || null,
       recurrence_interval: item.recurrence_interval || null,
       alert_emails: item.alert_emails || null,
-      created_at: new Date().toISOString()
+      country: item.country || null,
+      created_at: now,
+      updated_at: now
     };
 
-    const { data, error } = await supabase
-      .from('compliance_items')
-      .insert([dbItem])
-      .select()
-      .single();
+    const localItem = {
+      ...dbItem,
+      ...sensitiveData,
+      pay_url: item.pay_url || null,
+      pay_phone: item.pay_phone || null,
+      document_id: item.document_id || null,
+      recurrence_interval: item.recurrence_interval || null,
+      alert_emails: item.alert_emails || null,
+      country: item.country || null
+    };
 
-    if (error) throw error;
+    // 1. Write to local first (instant)
+    await putLocalItem({ ...dbItem, user_id: item.user_id });
+    set((state) => ({ items: [localItem, ...state.items] }));
 
-    const localItem = { ...data, ...sensitiveData, pay_url: item.pay_url || null, pay_phone: item.pay_phone || null, document_id: item.document_id || null, recurrence_interval: item.recurrence_interval || null, alert_emails: item.alert_emails || null };
-    set(state => ({ items: [localItem, ...state.items] }));
-    logAudit(localItem.id, item.user_id, 'created', null, { category: item.category, due_date: item.due_date });
+    // 2. Sync to Supabase (background)
+    const { error } = await supabase.from('compliance_items').insert([dbItem]);
+    if (error) console.warn('[Sync] addItem failed:', error);
+
+    logAudit(id, item.user_id, 'created', null, {
+      category: item.category,
+      due_date: item.due_date
+    });
     return localItem;
   },
 
-  // Update item
+  // Update item: LOCAL-FIRST. Update local, then sync to Supabase.
   updateItem: async (id, updates) => {
     const key = getEncryptionKey();
-    const currentItem = get().items.find(i => i.id === id);
-    
-    // If updating sensitive fields, re-encrypt
+    const currentItem = get().items.find((i) => i.id === id);
+    if (!currentItem) return null;
+
+    const patch = { ...updates, updated_at: new Date().toISOString() };
     if (updates.name || updates.notes || updates.document_url) {
       const sensitiveData = {
-        name: updates.name || currentItem?.name || '',
-        notes: updates.notes || currentItem?.notes || '',
-        document_url: updates.document_url || currentItem?.document_url || ''
+        name: updates.name ?? currentItem.name ?? '',
+        notes: updates.notes ?? currentItem.notes ?? '',
+        document_url: updates.document_url ?? currentItem.document_url ?? ''
       };
-      updates.encrypted_data = key ? await encryptObject(sensitiveData, key) : null;
-      updates.name = key ? '[Encrypted]' : updates.name;
+      patch.encrypted_data = key ? await encryptObject(sensitiveData, key) : null;
+      patch.name = key ? '[Encrypted]' : updates.name;
     }
 
-    const { data, error } = await supabase
-      .from('compliance_items')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
+    const localData = {
+      ...currentItem,
+      ...patch,
+      name: patch.name ?? currentItem.name,
+      notes: patch.notes ?? currentItem.notes,
+      document_url: patch.document_url ?? currentItem.document_url
+    };
 
-    if (error) throw error;
-
-    // Decrypt for local state
-    let localData = data;
-    if (data.encrypted_data && key) {
-      const decrypted = await decryptObject(data.encrypted_data, key);
-      localData = { ...data, ...decrypted };
-    }
-
-    set(state => ({
-      items: state.items.map(item => item.id === id ? localData : item)
+    // 1. Update local first
+    await putLocalItem({
+      ...currentItem,
+      ...patch,
+      user_id: currentItem.user_id
+    });
+    set((state) => ({
+      items: state.items.map((item) => (item.id === id ? localData : item))
     }));
-    if (currentItem?.user_id) logAudit(id, currentItem.user_id, 'updated', { due_date: currentItem.due_date, category: currentItem.category }, { due_date: updates.due_date ?? currentItem.due_date, category: updates.category ?? currentItem.category });
+
+    // 2. Sync to Supabase
+    const { error } = await supabase
+      .from('compliance_items')
+      .update(patch)
+      .eq('id', id);
+    if (error) console.warn('[Sync] updateItem failed:', error);
+
+    if (currentItem.user_id) {
+      logAudit(id, currentItem.user_id, 'updated', {
+        due_date: currentItem.due_date,
+        category: currentItem.category
+      }, {
+        due_date: patch.due_date ?? currentItem.due_date,
+        category: patch.category ?? currentItem.category
+      });
+    }
     return localData;
   },
 
-  // Snooze item (skip reminders until date)
+  // Snooze item: LOCAL-FIRST
   snoozeItem: async (id, until) => {
-    const item = get().items.find(i => i.id === id);
-    const { data, error } = await supabase
+    const item = get().items.find((i) => i.id === id);
+    if (!item) return null;
+
+    set((state) => ({
+      items: state.items.map((i) =>
+        i.id === id ? { ...i, snooze_until: until } : i
+      )
+    }));
+    await putLocalItem({
+      ...item,
+      snooze_until: until,
+      user_id: item.user_id
+    });
+
+    const { error } = await supabase
       .from('compliance_items')
       .update({ snooze_until: until })
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
-    set(state => ({
-      items: state.items.map(i => i.id === id ? { ...i, snooze_until: data.snooze_until } : i)
-    }));
-    if (item?.user_id) logAudit(id, item.user_id, 'snoozed', { snooze_until: item.snooze_until }, { snooze_until: until });
-    return data;
+      .eq('id', id);
+    if (error) console.warn('[Sync] snoozeItem failed:', error);
+    if (item.user_id) {
+      logAudit(id, item.user_id, 'snoozed', { snooze_until: item.snooze_until }, { snooze_until: until });
+    }
+    return { snooze_until: until };
   },
 
   // Mark complete / renew (sets last_completed_at, resets due_date if recurring)
@@ -211,21 +275,22 @@ export const useComplianceStore = create((set, get) => ({
     return get().updateItem(id, updates);
   },
 
-  // Delete item
+  // Delete item: LOCAL-FIRST
   deleteItem: async (id) => {
-    const item = get().items.find(i => i.id === id);
-    if (item?.user_id) logAudit(id, item.user_id, 'deleted', { category: item.category, due_date: item.due_date }, null);
-    const { error } = await supabase
-      .from('compliance_items')
-      .delete()
-      .eq('id', id);
+    const item = get().items.find((i) => i.id === id);
+    set((state) => ({ items: state.items.filter((i) => i.id !== id) }));
+    await deleteLocalItem(id);
 
-    if (error) throw error;
-    set(state => ({
-      items: state.items.filter(i => i.id !== id)
-    }));
+    const { error } = await supabase.from('compliance_items').delete().eq('id', id);
+    if (error) console.warn('[Sync] deleteItem failed:', error);
+    if (item?.user_id) {
+      logAudit(id, item.user_id, 'deleted', { category: item.category, due_date: item.due_date }, null);
+    }
   },
 
-  // Clear items (on logout)
-  clearItems: () => set({ items: [], error: null })
+  // Clear items (on logout) — also clear local storage
+  clearItems: async () => {
+    await clearLocalData().catch(() => {});
+    set({ items: [], error: null });
+  }
 }));

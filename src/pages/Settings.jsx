@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
-import { ArrowLeft, Settings as SettingsIcon, Bell, BellOff, Shield, Phone, CheckCircle, Trash2, Globe, RefreshCw, MessageSquarePlus, Mail, Smartphone, User, Package, Building2, BookOpen } from 'lucide-react';
+import { ArrowLeft, Settings as SettingsIcon, Bell, BellOff, Shield, Phone, CheckCircle, Trash2, Globe, RefreshCw, MessageSquarePlus, Mail, Smartphone, User, Package, Building2, BookOpen, Download, Key, Copy, ExternalLink } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 import { APP_CONFIG } from '../lib/config';
@@ -46,6 +46,25 @@ export default function Settings() {
   // Notification suggestions (Android)
   const [notificationSuggestionsEnabled, setNotificationSuggestionsEnabled] = useState(false);
 
+  // Backup
+  const [backupLoading, setBackupLoading] = useState(false);
+
+  // AI / BYOK — Groq API key (stored in localStorage, never sent to our servers except when calling AI)
+  const GROQ_KEY = `nava_groq_key_${user?.id || ''}`;
+  const [groqKey, setGroqKey] = useState('');
+  const [groqKeySaved, setGroqKeySaved] = useState(false);
+
+  // OpenClaw / API key
+  const [apiKeyLoading, setApiKeyLoading] = useState(false);
+  const [newApiKey, setNewApiKey] = useState(null);
+  const [apiKeyCopied, setApiKeyCopied] = useState(false);
+
+  // Recovery passphrase (OAuth users only)
+  const isOAuthUser = user && !localStorage.getItem(`keyHash_${user.id}`);
+  const [recoveryPassphrase, setRecoveryPassphrase] = useState('');
+  const [recoveryConfirm, setRecoveryConfirm] = useState('');
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
+
   const COUNTRIES = [
     { id: 'ca', name: 'Canada', flag: '\u{1F1E8}\u{1F1E6}' },
     { id: 'us', name: 'United States', flag: '\u{1F1FA}\u{1F1F8}' }
@@ -55,6 +74,8 @@ export default function Settings() {
     if (user) {
       fetchSettings();
       preloadPushSDK();
+      const k = localStorage.getItem(`nava_groq_key_${user.id}`);
+      setGroqKeySaved(!!k);
     }
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -349,6 +370,232 @@ export default function Settings() {
               )}
             </div>
           </section>
+
+          {/* Data & Backup */}
+          <section className="settings-section">
+            <h2><Shield size={20} /> Data & Backup</h2>
+            <p className="section-desc">
+              Export a backup of your compliance items (encrypted). Store it safely — you can restore it later if needed.
+            </p>
+            <div className="setting-card">
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={backupLoading}
+                onClick={async () => {
+                  setBackupLoading(true);
+                  try {
+                    const { exportBackup } = await import('../lib/localStorage');
+                    const backup = await exportBackup(user.id);
+                    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `nava-backup-${new Date().toISOString().slice(0, 10)}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    showSaved('Backup downloaded');
+                  } catch (err) {
+                    setError(err?.message || 'Backup failed');
+                  } finally {
+                    setBackupLoading(false);
+                  }
+                }}
+              >
+                <Download size={18} />
+                {backupLoading ? 'Exporting…' : 'Export backup'}
+              </button>
+            </div>
+          </section>
+
+          {/* AI / BYOK */}
+          <section className="settings-section">
+            <h2><Key size={20} /> AI — Bring Your Own Key</h2>
+            <p className="section-desc">
+              Use your own Groq API key for AI chat. Your key stays on your device and is only sent when you use AI. Leave blank to use Nava&apos;s key (if configured).
+            </p>
+            <div className="setting-card setting-card-padded">
+              <input
+                type="password"
+                placeholder={groqKeySaved ? '••••••••••••' : 'Paste your Groq API key'}
+                value={groqKey}
+                onChange={(e) => setGroqKey(e.target.value)}
+                className="setting-input"
+              />
+              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={() => {
+                    if (groqKey.trim()) {
+                      localStorage.setItem(GROQ_KEY, groqKey.trim());
+                      setGroqKeySaved(true);
+                      setGroqKey('');
+                      showSaved('API key saved');
+                    } else {
+                      localStorage.removeItem(GROQ_KEY);
+                      setGroqKeySaved(false);
+                      showSaved('API key removed');
+                    }
+                  }}
+                >
+                  {groqKey.trim() ? 'Save key' : groqKeySaved ? 'Remove key' : 'Save'}
+                </button>
+                {groqKeySaved && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => {
+                      localStorage.removeItem(GROQ_KEY);
+                      setGroqKeySaved(false);
+                      showSaved('API key removed');
+                    }}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* OpenClaw / API */}
+          <section className="settings-section">
+            <h2><ExternalLink size={20} /> OpenClaw & API</h2>
+            <p className="section-desc">
+              Use Nava from messaging apps (WhatsApp, iMessage, etc.) via OpenClaw. Generate an API key and add the Nava plugin to OpenClaw.
+            </p>
+            <div className="setting-card setting-card-padded">
+              <label style={{ fontSize: '13px', display: 'block', marginBottom: '4px' }}>API URL (for OpenClaw config)</label>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <code style={{ flex: 1, minWidth: 200, padding: '8px 10px', background: 'var(--bg-muted)', borderRadius: '6px', fontSize: '12px', wordBreak: 'break-all' }}>
+                  {(import.meta.env.VITE_SUPABASE_URL || 'https://qyisjxfugogimgzhualw.supabase.co').replace(/\/$/, '')}/functions/v1/nava-api
+                </code>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => {
+                    const url = `${(import.meta.env.VITE_SUPABASE_URL || 'https://qyisjxfugogimgzhualw.supabase.co').replace(/\/$/, '')}/functions/v1/nava-api`;
+                    navigator.clipboard.writeText(url);
+                    setApiKeyCopied(true);
+                    setTimeout(() => setApiKeyCopied(false), 2000);
+                  }}
+                >
+                  <Copy size={14} /> {apiKeyCopied ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+              {newApiKey ? (
+                <div style={{ marginTop: '16px', padding: '12px', background: 'var(--bg-muted)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>Your new API key (copy now — it won&apos;t be shown again):</p>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <code style={{ flex: 1, minWidth: 200, padding: '8px 10px', background: 'var(--bg)', borderRadius: '6px', fontSize: '12px', wordBreak: 'break-all' }}>
+                      {newApiKey}
+                    </code>
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(newApiKey);
+                        setApiKeyCopied(true);
+                        setTimeout(() => setApiKeyCopied(false), 2000);
+                      }}
+                    >
+                      <Copy size={14} /> {apiKeyCopied ? 'Copied!' : 'Copy key'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => setNewApiKey(null)}
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  style={{ marginTop: '12px' }}
+                  disabled={apiKeyLoading}
+                  onClick={async () => {
+                    setApiKeyLoading(true);
+                    setError(null);
+                    try {
+                      const { data: session } = await supabase.auth.getSession();
+                      if (!session?.session?.access_token) throw new Error('Please sign in again');
+                      const url = `${(import.meta.env.VITE_SUPABASE_URL || 'https://qyisjxfugogimgzhualw.supabase.co').replace(/\/$/, '')}/functions/v1/create-api-key`;
+                      const res = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          Authorization: `Bearer ${session.session.access_token}`,
+                        },
+                        body: JSON.stringify({ name: 'OpenClaw' }),
+                      });
+                      const data = await res.json();
+                      if (!res.ok) throw new Error(data.error || 'Failed to create key');
+                      setNewApiKey(data.key);
+                      showSaved('API key created — copy it now!');
+                    } catch (err) {
+                      setError(err?.message || 'Failed to create API key');
+                    } finally {
+                      setApiKeyLoading(false);
+                    }
+                  }}
+                >
+                  {apiKeyLoading ? 'Creating…' : 'Generate API key'}
+                </button>
+              )}
+            </div>
+          </section>
+
+          {/* Recovery passphrase (OAuth users) */}
+          {isOAuthUser && (
+            <section className="settings-section">
+              <h2><Shield size={20} /> Recovery passphrase</h2>
+              <p className="section-desc">
+                Set a passphrase to recover your data on a new device. If you lose access, enter this passphrase to unlock your items.
+              </p>
+              <div className="setting-card setting-card-padded">
+                <input
+                  type="password"
+                  placeholder="New recovery passphrase"
+                  value={recoveryPassphrase}
+                  onChange={(e) => setRecoveryPassphrase(e.target.value)}
+                  className="setting-input"
+                />
+                <input
+                  type="password"
+                  placeholder="Confirm passphrase"
+                  value={recoveryConfirm}
+                  onChange={(e) => setRecoveryConfirm(e.target.value)}
+                  className="setting-input"
+                  style={{ marginTop: '8px' }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  style={{ marginTop: '8px' }}
+                  disabled={recoveryLoading || !recoveryPassphrase || recoveryPassphrase !== recoveryConfirm}
+                  onClick={async () => {
+                    setRecoveryLoading(true);
+                    try {
+                      const { useAuthStore } = await import('../stores/authStore');
+                      await useAuthStore.getState().setRecoveryPassphrase(recoveryPassphrase, user.id);
+                      setRecoveryPassphrase('');
+                      setRecoveryConfirm('');
+                      showSaved('Recovery passphrase set');
+                    } catch (err) {
+                      setError(err?.message || 'Failed');
+                    } finally {
+                      setRecoveryLoading(false);
+                    }
+                  }}
+                >
+                  {recoveryLoading ? 'Setting…' : 'Set recovery passphrase'}
+                </button>
+              </div>
+            </section>
+          )}
 
           {/* Personalization Quiz */}
           <section className="settings-section">

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useComplianceStore } from '../stores/complianceStore';
+import { useChatOverlayStore } from '../stores/chatOverlayStore';
 import { useSharedSuggestStore } from '../stores/sharedSuggestStore';
 import { APP_CONFIG } from '../lib/config';
 import { supabase } from '../lib/supabase';
@@ -81,6 +82,16 @@ export default function Dashboard() {
   const [showCalendarImport, setShowCalendarImport] = useState(false);
   const [auditItem, setAuditItem] = useState(null);
   const { pendingText, clearPendingText } = useSharedSuggestStore();
+  const setChatContext = useChatOverlayStore((s) => s.setContext);
+  const openChatOverlay = useChatOverlayStore((s) => s.open);
+
+  useEffect(() => {
+    if (activeCountry) setChatContext({ country: activeCountry });
+  }, [activeCountry, setChatContext]);
+
+  const handleAskAI = (item) => {
+    openChatOverlay({ selectedItem: item, page: '/dashboard' });
+  };
 
   const toggleBulkSelect = (id, isOwned) => {
     if (!isOwned) return;
@@ -246,12 +257,17 @@ export default function Dashboard() {
     return { status: 'ok', label: `${days}d left`, color: '#10b981', days };
   };
 
+  // Filter items by active country (null = legacy, show in all views)
+  const filteredItems = activeCountry
+    ? items.filter(i => !i.country || i.country === activeCountry)
+    : items;
+
   const groupedItems = {
-    overdue: items.filter(i => getStatusInfo(i.due_date).status === 'overdue'),
-    urgent: items.filter(i => getStatusInfo(i.due_date).status === 'urgent'),
-    warning: items.filter(i => getStatusInfo(i.due_date).status === 'warning'),
-    ok: items.filter(i => getStatusInfo(i.due_date).status === 'ok'),
-    completed: items
+    overdue: filteredItems.filter(i => getStatusInfo(i.due_date).status === 'overdue'),
+    urgent: filteredItems.filter(i => getStatusInfo(i.due_date).status === 'urgent'),
+    warning: filteredItems.filter(i => getStatusInfo(i.due_date).status === 'warning'),
+    ok: filteredItems.filter(i => getStatusInfo(i.due_date).status === 'ok'),
+    completed: filteredItems
       .filter(i => i.last_completed_at)
       .filter(i => {
         const d = new Date(i.last_completed_at);
@@ -408,13 +424,13 @@ export default function Dashboard() {
         </div>
 
         {/* Compliance Health */}
-        <ComplianceHealth items={items} groupedItems={groupedItems} />
+        <ComplianceHealth items={filteredItems} groupedItems={groupedItems} />
 
         {/* AI proactive suggestions */}
         <AISuggestionsCard />
 
         {/* Focus on these 3 (Mial-style priorities) */}
-        {items.length > 0 && (groupedItems.overdue.length > 0 || groupedItems.urgent.length > 0 || groupedItems.warning.length > 0) && (
+        {filteredItems.length > 0 && (groupedItems.overdue.length > 0 || groupedItems.urgent.length > 0 || groupedItems.warning.length > 0) && (
           <FocusOnThree
             groupedItems={groupedItems}
             getStatusInfo={getStatusInfo}
@@ -430,6 +446,7 @@ export default function Dashboard() {
             bulkSelectedIds={bulkSelectedIds}
             toggleBulkSelect={toggleBulkSelect}
             onShowHistory={setAuditItem}
+            onAskAI={handleAskAI}
           />
         )}
 
@@ -454,7 +471,7 @@ export default function Dashboard() {
                 <div className="items-section urgent">
                   <h3><AlertTriangle size={18} /> Needs Attention</h3>
                   {[...groupedItems.overdue, ...groupedItems.urgent].map(item => (
-                    <ItemCard key={item.id} item={item} getStatusInfo={getStatusInfo} onDelete={handleDeleteItem} onAddToCalendar={addToGoogleCalendar} onCopy={handleCopyItem} onPay={(i) => i?.category === 'parking' ? () => { setPayInitialValues(parseTicketFromNotes(item.notes)); setShowPayModal(true); } : null} onRenew={(url) => url && window.open(url, '_blank')} userCountry={activeCountry} onMarkDone={() => renewItem(item.id)} onSnooze={(days) => snoozeItem(item.id, addDays(new Date(), days).toISOString())} onShared={() => fetchItems(user.id)} bulkEditMode={bulkEditMode} bulkSelected={bulkSelectedIds.has(item.id)} onBulkToggle={() => toggleBulkSelect(item.id, !item.isShared)} onShowHistory={(i) => setAuditItem(i)} />
+                    <ItemCard key={item.id} item={item} getStatusInfo={getStatusInfo} onDelete={handleDeleteItem} onAddToCalendar={addToGoogleCalendar} onCopy={handleCopyItem} onPay={(i) => i?.category === 'parking' ? () => { setPayInitialValues(parseTicketFromNotes(item.notes)); setShowPayModal(true); } : null} onRenew={(url) => url && window.open(url, '_blank')} userCountry={activeCountry} onMarkDone={() => renewItem(item.id)} onSnooze={(days) => snoozeItem(item.id, addDays(new Date(), days).toISOString())} onShared={() => fetchItems(user.id)} bulkEditMode={bulkEditMode} bulkSelected={bulkSelectedIds.has(item.id)} onBulkToggle={() => toggleBulkSelect(item.id, !item.isShared)} onShowHistory={(i) => setAuditItem(i)} onAskAI={handleAskAI} />
                   ))}
                 </div>
               )}
@@ -463,7 +480,7 @@ export default function Dashboard() {
                 <div className="items-section warning">
                   <h3><Clock size={18} /> Coming Up (30 days)</h3>
                   {groupedItems.warning.map(item => (
-                    <ItemCard key={item.id} item={item} getStatusInfo={getStatusInfo} onDelete={handleDeleteItem} onAddToCalendar={addToGoogleCalendar} onCopy={handleCopyItem} onPay={(i) => i?.category === 'parking' ? () => { setPayInitialValues(parseTicketFromNotes(item.notes)); setShowPayModal(true); } : null} onRenew={(url) => url && window.open(url, '_blank')} userCountry={activeCountry} onMarkDone={() => renewItem(item.id)} onSnooze={(days) => snoozeItem(item.id, addDays(new Date(), days).toISOString())} onShared={() => fetchItems(user.id)} bulkEditMode={bulkEditMode} bulkSelected={bulkSelectedIds.has(item.id)} onBulkToggle={() => toggleBulkSelect(item.id, !item.isShared)} onShowHistory={(i) => setAuditItem(i)} />
+                    <ItemCard key={item.id} item={item} getStatusInfo={getStatusInfo} onDelete={handleDeleteItem} onAddToCalendar={addToGoogleCalendar} onCopy={handleCopyItem} onPay={(i) => i?.category === 'parking' ? () => { setPayInitialValues(parseTicketFromNotes(item.notes)); setShowPayModal(true); } : null} onRenew={(url) => url && window.open(url, '_blank')} userCountry={activeCountry} onMarkDone={() => renewItem(item.id)} onSnooze={(days) => snoozeItem(item.id, addDays(new Date(), days).toISOString())} onShared={() => fetchItems(user.id)} bulkEditMode={bulkEditMode} bulkSelected={bulkSelectedIds.has(item.id)} onBulkToggle={() => toggleBulkSelect(item.id, !item.isShared)} onShowHistory={(i) => setAuditItem(i)} onAskAI={handleAskAI} />
                   ))}
                 </div>
               )}
@@ -472,7 +489,7 @@ export default function Dashboard() {
                 <div className="items-section ok">
                   <h3><CheckCircle size={18} /> All Good</h3>
                   {groupedItems.ok.map(item => (
-                    <ItemCard key={item.id} item={item} getStatusInfo={getStatusInfo} onDelete={handleDeleteItem} onAddToCalendar={addToGoogleCalendar} onCopy={handleCopyItem} onPay={(i) => i?.category === 'parking' ? () => { setPayInitialValues(parseTicketFromNotes(item.notes)); setShowPayModal(true); } : null} onRenew={(url) => url && window.open(url, '_blank')} userCountry={activeCountry} onMarkDone={() => renewItem(item.id)} onSnooze={(days) => snoozeItem(item.id, addDays(new Date(), days).toISOString())} onShared={() => fetchItems(user.id)} bulkEditMode={bulkEditMode} bulkSelected={bulkSelectedIds.has(item.id)} onBulkToggle={() => toggleBulkSelect(item.id, !item.isShared)} onShowHistory={setAuditItem} />
+                    <ItemCard key={item.id} item={item} getStatusInfo={getStatusInfo} onDelete={handleDeleteItem} onAddToCalendar={addToGoogleCalendar} onCopy={handleCopyItem} onPay={(i) => i?.category === 'parking' ? () => { setPayInitialValues(parseTicketFromNotes(item.notes)); setShowPayModal(true); } : null} onRenew={(url) => url && window.open(url, '_blank')} userCountry={activeCountry} onMarkDone={() => renewItem(item.id)} onSnooze={(days) => snoozeItem(item.id, addDays(new Date(), days).toISOString())} onShared={() => fetchItems(user.id)} bulkEditMode={bulkEditMode} bulkSelected={bulkSelectedIds.has(item.id)} onBulkToggle={() => toggleBulkSelect(item.id, !item.isShared)} onShowHistory={setAuditItem} onAskAI={handleAskAI} />
                   ))}
                 </div>
               )}
@@ -482,7 +499,7 @@ export default function Dashboard() {
                   <h3><CheckCircle size={18} /> Recently Completed</h3>
                   <p className="section-desc" style={{ marginBottom: 'var(--space-sm)' }}>Items you marked done in the last 30 days</p>
                   {groupedItems.completed.map(item => (
-                    <ItemCard key={item.id} item={item} getStatusInfo={getStatusInfo} onDelete={handleDeleteItem} onAddToCalendar={addToGoogleCalendar} onCopy={handleCopyItem} onPay={(i) => i?.category === 'parking' ? () => { setPayInitialValues(parseTicketFromNotes(item.notes)); setShowPayModal(true); } : null} onRenew={(url) => url && window.open(url, '_blank')} userCountry={activeCountry} onMarkDone={() => renewItem(item.id)} onSnooze={(days) => snoozeItem(item.id, addDays(new Date(), days).toISOString())} onShared={() => fetchItems(user.id)} bulkEditMode={bulkEditMode} bulkSelected={bulkSelectedIds.has(item.id)} onBulkToggle={() => toggleBulkSelect(item.id, !item.isShared)} onShowHistory={setAuditItem} />
+                    <ItemCard key={item.id} item={item} getStatusInfo={getStatusInfo} onDelete={handleDeleteItem} onAddToCalendar={addToGoogleCalendar} onCopy={handleCopyItem} onPay={(i) => i?.category === 'parking' ? () => { setPayInitialValues(parseTicketFromNotes(item.notes)); setShowPayModal(true); } : null} onRenew={(url) => url && window.open(url, '_blank')} userCountry={activeCountry} onMarkDone={() => renewItem(item.id)} onSnooze={(days) => snoozeItem(item.id, addDays(new Date(), days).toISOString())} onShared={() => fetchItems(user.id)} bulkEditMode={bulkEditMode} bulkSelected={bulkSelectedIds.has(item.id)} onBulkToggle={() => toggleBulkSelect(item.id, !item.isShared)} onShowHistory={setAuditItem} onAskAI={handleAskAI} />
                   ))}
                 </div>
               )}
@@ -552,6 +569,8 @@ export default function Dashboard() {
           onSuggest={() => { setShowAddModal(false); setShowSuggestionBox(true); }}
           initialValues={sharedInitialValues}
           userId={user?.id}
+          activeCountry={activeCountry}
+          userCountries={userCountries}
         />
       )}
 
@@ -607,6 +626,7 @@ export default function Dashboard() {
           itemCount={bulkSelectedIds.size}
           onClose={() => setShowBulkEditModal(false)}
           onApply={handleBulkApply}
+          userCountries={userCountries}
         />
       )}
 
@@ -767,6 +787,11 @@ function ItemCard({ item, getStatusInfo, onDelete, onAddToCalendar, onCopy, onPa
               <History size={16} />
             </button>
           )}
+          {onAskAI && (
+            <button className="btn-icon" onClick={() => onAskAI(item)} title="Ask AI about this">
+              <MessageSquarePlus size={16} />
+            </button>
+          )}
           <button 
             className="btn-icon" 
             onClick={() => onCopy(item)} 
@@ -809,7 +834,7 @@ const RECURRENCE_OPTIONS = [
   { value: '1_year', label: 'Every year' },
 ];
 
-function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory, accountType, onSuggest, initialValues, userId }) {
+function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory, accountType, onSuggest, initialValues, userId, activeCountry, userCountries }) {
   const [name, setName] = useState(initialValues?.name || '');
   const [dueDate, setDueDate] = useState(initialValues?.due_date || '');
   const [notes, setNotes] = useState('');
@@ -820,6 +845,8 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory, a
   const [documents, setDocuments] = useState([]);
   const [alertEmails, setAlertEmails] = useState('');
   const [activeGroup, setActiveGroup] = useState(accountType === 'organization' ? 'business' : 'personal');
+  const [countryOverride, setCountryOverride] = useState(null);
+  const itemCountry = countryOverride ?? activeCountry ?? '';
 
   // When initialValues changes (e.g. from Share), update form
   useEffect(() => {
@@ -827,8 +854,9 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory, a
       /* eslint-disable-next-line react-hooks/set-state-in-effect */
       setName(initialValues.name || '');
       setDueDate(initialValues.due_date || '');
+      setCountryOverride(initialValues.country || null);
     }
-  }, [initialValues?.name, initialValues?.due_date]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [initialValues?.name, initialValues?.due_date, initialValues?.country]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch documents for linking (when form is shown)
   useEffect(() => {
@@ -851,7 +879,8 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory, a
       pay_phone: payPhone.trim() || null,
       recurrence_interval: recurrenceInterval || null,
       document_id: documentId || null,
-      alert_emails: emails.length ? emails : null
+      alert_emails: emails.length ? emails : null,
+      country: itemCountry || activeCountry || null
     });
   };
 
@@ -1122,6 +1151,27 @@ function AddItemModal({ onClose, onAdd, selectedCategory, setSelectedCategory, a
               />
             </div>
 
+            {userCountries?.length >= 2 && (
+              <div className="form-group">
+                <label>Country</label>
+                <div className="country-picker-inline">
+                  {[{ id: 'ca', name: 'Canada', flag: '🇨🇦' }, { id: 'us', name: 'United States', flag: '🇺🇸' }]
+                    .filter(c => userCountries.includes(c.id))
+                    .map(c => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className={`country-pick-btn ${itemCountry === c.id ? 'selected' : ''}`}
+                        onClick={() => setCountryOverride(c.id)}
+                      >
+                        <span className="country-pick-flag">{c.flag}</span>
+                        <span className="country-pick-name">{c.name}</span>
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
+
             <div className="form-group">
               <label>Due/Expiry Date</label>
               <input
@@ -1324,7 +1374,7 @@ function EmptyState({ requireCountryForTracking, setShowAddModal, setSelectedCat
 }
 
 // ─── Focus on These 3 (Mial-style priorities) ───
-function FocusOnThree({ groupedItems, getStatusInfo, onDelete, onRenew, onSnooze, onAddToCalendar, onCopy, onPay, userCountry, onShared, bulkEditMode, bulkSelectedIds, toggleBulkSelect, onShowHistory }) {
+function FocusOnThree({ groupedItems, getStatusInfo, onDelete, onRenew, onSnooze, onAddToCalendar, onCopy, onPay, userCountry, onShared, bulkEditMode, bulkSelectedIds, toggleBulkSelect, onShowHistory, onAskAI }) {
   const top3 = [
     ...groupedItems.overdue,
     ...groupedItems.urgent,
@@ -1355,6 +1405,7 @@ function FocusOnThree({ groupedItems, getStatusInfo, onDelete, onRenew, onSnooze
             bulkSelected={bulkSelectedIds?.has(item.id)}
             onBulkToggle={() => toggleBulkSelect?.(item.id, !item.isShared)}
             onShowHistory={onShowHistory}
+            onAskAI={onAskAI}
           />
         ))}
       </div>

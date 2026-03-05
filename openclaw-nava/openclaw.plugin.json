@@ -1,0 +1,32 @@
+{
+  "id": "nava",
+  "name": "Nava",
+  "version": "1.0.0",
+  "description": "Compliance assistant — track renewals, deadlines, subscriptions. Use from WhatsApp, iMessage, etc.",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "api_url": {
+        "type": "string",
+        "description": "Nava API URL (e.g. https://your-project.supabase.co/functions/v1/nava-api)"
+      },
+      "api_key": {
+        "type": "string",
+        "description": "Your Nava API key from Settings → OpenClaw & API"
+      }
+    },
+    "required": ["api_url", "api_key"]
+  },
+  "uiHints": {
+    "api_url": {
+      "label": "API URL",
+      "placeholder": "https://xxx.supabase.co/functions/v1/nava-api"
+    },
+    "api_key": {
+      "label": "API Key",
+      "sensitive": true,
+      "placeholder": "nava_xxxx..."
+    }
+  }
+}

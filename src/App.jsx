@@ -17,11 +17,12 @@ import Business from './pages/Business';
 import WealthLearn from './pages/WealthLearn';
 import ChatBubble from './components/ChatBubble';
 import ChatOverlay from './components/ChatOverlay';
+import UnlockScreen from './components/UnlockScreen';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 
 function ProtectedRoute({ children, showChat = true }) {
-  const { user, loading } = useAuthStore();
+  const { user, loading, needsUnlock } = useAuthStore();
 
   if (loading) {
     return (
@@ -36,6 +37,10 @@ function ProtectedRoute({ children, showChat = true }) {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  if (needsUnlock) {
+    return <UnlockScreen />;
   }
 
   return (

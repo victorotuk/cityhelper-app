@@ -1,0 +1,9 @@
+{
+  "name": "@openclaw/nava",
+  "version": "1.0.0",
+  "description": "Nava compliance assistant plugin for OpenClaw",
+  "main": "index.ts",
+  "openclaw": {
+    "extensions": ["./index.ts"]
+  }
+}

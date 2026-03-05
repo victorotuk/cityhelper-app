@@ -60,6 +60,7 @@ const TOOLS = [
           due_date: { type: 'string', description: 'YYYY-MM-DD or null' },
           notes: { type: 'string', description: 'Optional extra info' },
           recurrence_interval: { type: 'string', enum: ['1_month', '3_months', '6_months', '1_year'], description: 'Make recurring (e.g. oil change every 6 months)' },
+          country: { type: 'string', enum: ['ca', 'us'], description: 'Country this item belongs to (for multi-country users)' },
         },
         required: ['name', 'category'],
       },
@@ -286,9 +287,9 @@ const TOOLS = [
   },
 ]
 
-async function callGroq(messages: any[], tools: any[], toolChoice: string) {
-  const key = Deno.env.get('GROQ_API_KEY')
-  if (!key) throw new Error('AI service not configured')
+async function callGroq(messages: any[], tools: any[], toolChoice: string, userApiKey?: string) {
+  const key = userApiKey || Deno.env.get('GROQ_API_KEY')
+  if (!key) throw new Error('AI service not configured. Add your Groq API key in Settings → AI.')
   const body: any = { model: 'llama-3.1-8b-instant', messages, temperature: 0.7, max_tokens: 1024 }
   if (tools?.length) { body.tools = tools; body.tool_choice = toolChoice }
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -315,7 +316,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    const { messages, persona, context } = await req.json()
+    const { messages, persona, context, apiKey: userApiKey } = await req.json()
     if (!messages || !Array.isArray(messages)) throw new Error('Messages array is required')
 
     const appName = Deno.env.get('APP_NAME') || 'Nava'
@@ -385,11 +386,12 @@ When user refers to an item by name, use list_items first to find item_id. Categ
         let result: string
         try {
           if (fn === 'add_item') {
+            const itemCountry = args.country || (context?.country && ['ca', 'us'].includes(context.country) ? context.country : null)
             const { data: d } = await supabase.from('compliance_items').insert({
               user_id: user.id, name: args.name || 'Untitled', category: args.category || 'other',
               due_date: args.due_date || null, notes: args.notes || null, recurrence_interval: args.recurrence_interval || null, status: 'active',
-              encrypted_data: null, created_at: new Date().toISOString(),
-            }).select('id, name, category, due_date').single()
+              country: itemCountry, encrypted_data: null, created_at: new Date().toISOString(),
+            }).select('id, name, category, due_date, country').single()
             result = JSON.stringify({ success: true, item: d, message: `Added "${d?.name}"` })
           } else if (fn === 'list_items') {
             const { data: items } = await supabase.from('compliance_items')

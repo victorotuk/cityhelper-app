@@ -1,6 +1,28 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
-import { hashPassword } from '../lib/crypto';
+import { hashPassword, generateUserKey } from '../lib/crypto';
+
+const OAUTH_KEY_PREFIX = 'navaEncryptionKey_';
+
+function ensureEncryptionKey(session) {
+  if (!session?.user) return;
+  const userId = session.user.id;
+  let key = sessionStorage.getItem('userEncryptionKey');
+  if (key) return;
+
+  const storedKeyHash = localStorage.getItem(`keyHash_${userId}`);
+  if (storedKeyHash) {
+    return; // Password user — needs unlock, key not in session
+  }
+
+  // OAuth user: get or create auto-generated key
+  let oauthKey = localStorage.getItem(OAUTH_KEY_PREFIX + userId);
+  if (!oauthKey) {
+    oauthKey = generateUserKey();
+    localStorage.setItem(OAUTH_KEY_PREFIX + userId, oauthKey);
+  }
+  sessionStorage.setItem('userEncryptionKey', oauthKey);
+}
 
 export const useAuthStore = create((set, get) => ({
   user: null,
@@ -10,34 +32,39 @@ export const useAuthStore = create((set, get) => ({
   initialize: async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-    
-    if (session?.user) {
-      // Restore encryption key if exists
-      const storedKeyHash = localStorage.getItem(`keyHash_${session.user.id}`);
-      if (storedKeyHash) {
-        // Key will be set when user "unlocks" with password
-        // For now, check if already in session
+
+      if (session?.user) {
+        const storedKeyHash = localStorage.getItem(`keyHash_${session.user.id}`);
         const sessionKey = sessionStorage.getItem('userEncryptionKey');
-        if (!sessionKey) {
-          // User needs to enter password to unlock
+
+        if (storedKeyHash && !sessionKey) {
           set({ session, user: session.user, loading: false, needsUnlock: true });
           return;
         }
-      }
-    }
-    
-    set({ 
-      session, 
-      user: session?.user ?? null, 
-      loading: false 
-    });
 
-    supabase.auth.onAuthStateChange((_event, session) => {
-      set({ 
-        session, 
-        user: session?.user ?? null 
+        // OAuth user: no key locally, but has recovery_key in metadata → needs recovery passphrase
+        const recoveryKey = session.user?.user_metadata?.recovery_key;
+        if (!storedKeyHash && !sessionKey && recoveryKey) {
+          set({ session, user: session.user, loading: false, needsUnlock: true, needsRecovery: true });
+          return;
+        }
+
+        ensureEncryptionKey(session);
+      }
+
+      set({
+        session,
+        user: session?.user ?? null,
+        loading: false
       });
-    });
+
+      supabase.auth.onAuthStateChange((_event, session) => {
+        if (session?.user) ensureEncryptionKey(session);
+        set({
+          session,
+          user: session?.user ?? null
+        });
+      });
     } catch (err) {
       console.error('[Auth] Initialize failed:', err);
       set({ session: null, user: null, loading: false });
@@ -66,7 +93,32 @@ export const useAuthStore = create((set, get) => ({
     }
     
     sessionStorage.setItem('userEncryptionKey', password);
-    set({ needsUnlock: false });
+    set({ needsUnlock: false, needsRecovery: false });
+    return true;
+  },
+
+  // Recover with passphrase (OAuth users who set recovery passphrase)
+  recoverWithPassphrase: async (passphrase, userId) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    const recoveryKey = user?.user_metadata?.recovery_key;
+    if (!recoveryKey) throw new Error('No recovery key found');
+    const { decrypt } = await import('../lib/crypto');
+    const key = await decrypt(recoveryKey, passphrase);
+    if (!key) throw new Error('Incorrect passphrase');
+    localStorage.setItem(OAUTH_KEY_PREFIX + userId, key);
+    sessionStorage.setItem('userEncryptionKey', key);
+    set({ needsUnlock: false, needsRecovery: false });
+    return true;
+  },
+
+  // Set recovery passphrase (OAuth users — backs up key to user_metadata)
+  setRecoveryPassphrase: async (passphrase, userId) => {
+    const oauthKey = localStorage.getItem(OAUTH_KEY_PREFIX + userId);
+    if (!oauthKey) throw new Error('No encryption key found');
+    const { encrypt } = await import('../lib/crypto');
+    const encrypted = await encrypt(oauthKey, passphrase);
+    const { error } = await supabase.auth.updateUser({ data: { recovery_key: encrypted } });
+    if (error) throw error;
     return true;
   },
 
@@ -119,11 +171,12 @@ export const useAuthStore = create((set, get) => ({
   },
 
   signOut: async () => {
-    // Clear encryption key
     sessionStorage.removeItem('userEncryptionKey');
-    
+    set({ needsRecovery: false });
+    const { useComplianceStore } = await import('./complianceStore');
+    await useComplianceStore.getState().clearItems();
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
-    set({ user: null, session: null, needsUnlock: false });
+    set({ user: null, session: null, needsUnlock: false, needsRecovery: false });
   }
 }));

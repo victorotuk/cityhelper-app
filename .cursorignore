@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+android/build
+ios/build
+*.log
+
+android/app/build
+android/app/src/main/assets/public
+ios/App/App/public
+package-lock.json
+cursor-crash-report-*.txt

@@ -1,0 +1,17 @@
+# Nava — Self-hosted
+# Usage:
+#   1. Create a Supabase project at https://supabase.com (or use your own)
+#   2. Run migrations: supabase db push (from project root)
+#   3. Set env vars below, then: docker-compose up -d
+#   4. Open http://localhost:8080
+
+services:
+  nava:
+    build:
+      context: .
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+    ports:
+      - "8080:80"
+    restart: unless-stopped

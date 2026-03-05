@@ -1,0 +1,8 @@
+# Add these lines to .cursorignore to reduce indexing and improve Cursor performance
+# Copy-paste or: cat .cursorignore.suggested >> .cursorignore
+
+package-lock.json
+cursor-crash-report-*.txt
+android/app/build
+android/app/src/main/assets/public
+ios/App/App/public

@@ -81,11 +81,13 @@ export default function ChatPanel({ context, compact = false, onClose }) {
 
     try {
       const chatMessages = newMessages.slice(-10).map(m => ({ role: m.role, content: m.content }));
+      const apiKey = user?.id ? localStorage.getItem(`nava_groq_key_${user.id}`) || undefined : undefined;
       const { data, error } = await supabase.functions.invoke('ai-chat', {
         body: {
           messages: chatMessages,
           persona: persona || undefined,
-          context: context || undefined
+          context: context || undefined,
+          apiKey: apiKey || undefined
         }
       });
 
