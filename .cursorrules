@@ -2,4 +2,4 @@
 
 - **Git**: Commit after each logical change. Do not batch unrelated edits into one commit.
 - **PROJECT_STATUS.md**: Update when adding features or completing work.
-- **Supabase**: Add migrations to `supabase/migrations/`; note when they need to be applied manually (CLI or Dashboard).
+- **Supabase**: Add migrations to `supabase/migrations/`. Always push migrations to Supabase: run `supabase db push` (or apply via Dashboard if CLI not linked) when adding/changing migrations or when saving/committing everything.

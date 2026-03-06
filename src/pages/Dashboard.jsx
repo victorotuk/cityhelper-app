@@ -6,6 +6,7 @@ import { useComplianceStore } from '../stores/complianceStore';
 import { useChatOverlayStore } from '../stores/chatOverlayStore';
 import { useSharedSuggestStore } from '../stores/sharedSuggestStore';
 import { APP_CONFIG } from '../lib/config';
+import LogoImg from '../components/ui/LogoImg';
 import { supabase } from '../lib/supabase';
 import { format, differenceInDays, parseISO, addDays } from 'date-fns';
 import { 
@@ -314,8 +315,8 @@ export default function Dashboard() {
             }
           }}
         >
-          {APP_CONFIG.logoImage ? (
-            <img src={APP_CONFIG.logoImage} alt="Nava" className="header-logo-img" />
+          {(APP_CONFIG.logoImage || APP_CONFIG.logoImageDark || APP_CONFIG.logoImageLight) ? (
+            <LogoImg alt="Nava" className="header-logo-img" />
           ) : (
             <span className="header-logo">{APP_CONFIG.logo}</span>
           )}

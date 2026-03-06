@@ -12,9 +12,11 @@ export const APP_CONFIG = {
   tagline: "Never miss a deadline",
   description: "Build wealth, protect your legacy — trusts, estate planning, holding companies, and all your compliance in one place.",
   
-  // BRAND VISUALS — Set logoImage when you add public/nava-logo.png
+  // BRAND VISUALS — 3 waves, large sphere. Dark for dark theme, light (transparent) for light theme.
   logo: "N",           // Fallback for brand mark when no image
-  logoImage: "/nava-logo.png",
+  logoImage: "/nava-logo.png",           // Fallback (same as dark)
+  logoImageDark: "/nava-logo-dark.png",  // Dark backgrounds
+  logoImageLight: "/nava-logo-light.png", // Light backgrounds (transparent)
   
   // CONTACT
   supportEmail: "support@example.com",

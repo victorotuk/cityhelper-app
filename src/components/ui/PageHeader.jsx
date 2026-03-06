@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { APP_CONFIG } from '../../lib/config';
+import LogoImg from './LogoImg';
 
 /**
  * Shared page header: home/logo (left, one tap to dashboard), title (center), back + optional actions (right).
@@ -24,8 +25,8 @@ export default function PageHeader({
             title="Home"
             aria-label="Go to dashboard"
           >
-            {APP_CONFIG.logoImage ? (
-              <img src={APP_CONFIG.logoImage} alt="" className="header-home-logo-img" />
+            {APP_CONFIG.logoImage || APP_CONFIG.logoImageDark || APP_CONFIG.logoImageLight ? (
+              <LogoImg alt="" className="header-home-logo-img" />
             ) : (
               <span className="header-home-logo">{APP_CONFIG.logo}</span>
             )}

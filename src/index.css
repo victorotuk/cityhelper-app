@@ -270,7 +270,7 @@ input, select, textarea { font-family: inherit; }
   opacity: 0.9;
 }
 
-/* Logo: circle ~20% larger display; for circle/waves ratio in the graphic, update nava-logo.png */
+/* Logo: nava-logo-dark.png (dark theme) / nava-logo-light.png (light); 3 waves, large sphere */
 .brand-mark {
   width: 62px;
   height: 62px;
@@ -513,6 +513,13 @@ input, select, textarea { font-family: inherit; }
 .auth-logo {
   font-size: 32px;
   margin-bottom: var(--space-md);
+}
+.auth-logo-img {
+  height: 48px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
 }
 
 .auth-title {

@@ -3,6 +3,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 import { APP_CONFIG } from '../lib/config';
+import LogoImg from '../components/ui/LogoImg';
 import AuthSocialButtons from '../components/auth/AuthSocialButtons';
 import AuthForm from '../components/auth/AuthForm';
 import AuthModeSwitch from '../components/auth/AuthModeSwitch';
@@ -103,7 +104,13 @@ export default function Auth() {
     <div className="auth-page">
       <div className="auth-container">
         <div className="auth-header">
-          <div className="auth-logo">{APP_CONFIG.logo}</div>
+          <div className="auth-logo">
+          {(APP_CONFIG.logoImage || APP_CONFIG.logoImageDark || APP_CONFIG.logoImageLight) ? (
+            <LogoImg alt="Nava" className="auth-logo-img" />
+          ) : (
+            APP_CONFIG.logo
+          )}
+        </div>
           <h1 className="auth-title">{getTitle()}</h1>
           <p className="auth-subtitle">{getSubtitle()}</p>
         </div>
