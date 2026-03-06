@@ -88,10 +88,6 @@ export default function WealthLearn() {
     e.dataTransfer.effectAllowed = 'copy';
   };
 
-  const handleTrackTrust = () => {
-    navigate('/dashboard', { state: { openAddModalWithCategory: 'trust' } });
-  };
-
   return (
     <div className="settings-page wealth-learn-page">
       <PageHeader backTo="/settings" title="Become an Expert" icon={<BookOpen size={24} />} />

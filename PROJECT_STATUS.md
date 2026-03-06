@@ -88,6 +88,8 @@ Three ways to run Nava; privacy-first, user chooses control level.
 
 **Already in place:** Tauri 2 config (`src-tauri/`), `npm run tauri:dev` / `npm run tauri:build`, app name “Nava”, default window 1280×840 (desktop-app feel). Window is fully resizable (min 320×400); layout adjusts with flex/fluid CSS. Desktop uses same code as web; IndexedDB, auth, and API work unchanged.
 
+**In-place updates:** Tauri updater plugin enabled. Users use **Settings → Check for updates** to get new versions without reinstalling. One-time: run `tauri signer generate`, put public key in `tauri.conf.json`, then build with `TAURI_SIGNING_PRIVATE_KEY` set. See **docs/TAURI_UPDATES.md** for key setup and release workflow (GitHub Releases + `latest.json`).
+
 ### What's Left to Do
 | Priority | Item | Status |
 |----------|------|--------|
@@ -118,6 +120,9 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
 ### Changelog
 - 2026-03-06
   - **New Nava logo (3 waves, large sphere):** Dark (`nava-logo-dark.png`) and light (`nava-logo-light.png`) versions in `public/`. Theme-aware `LogoImg` component; Dashboard, PageHeader, LandingNav, Auth use it. Favicon and Tauri app icons regenerated from dark logo. Config: `logoImageDark`, `logoImageLight`.
+  - **Tauri in-place updates:** Updater plugin + process plugin; Settings → “Check for updates” (desktop only). `createUpdaterArtifacts: true`, endpoints for GitHub Releases; `docs/TAURI_UPDATES.md` for key generation and release workflow.
+  - **Desktop-only layout fix:** `tauri-desktop` class on `<html>` when `window.__TAURI__`; CSS so landing/dashboard headers are solid and content doesn’t overlap the window bar; scroll behavior improved in Tauri window only (web unchanged).
+  - **Lint:** ChatBubble catch, WealthLearn unused handler, Dashboard `requireCountryForTracking` order + useCallback + deferred setState; 0 errors, 3 warnings. npm audit fix.
 - 2026-03-05
   - **Generic Item Setup Wizard:** One step-by-step flow for all compliance categories at `/setup` and `/setup/:category`. Step 0: pick category. Step 1: name (+ trust type for trust, or template quick-picks). Step 2: details (trustee/beneficiaries for trust, notes for others). Step 3: due date + optional document. Step 4: review & add. No AI chat. Dashboard: "Set up (step-by-step)" quick action; EmptyState: "Set up an item step-by-step" link. Wealth Learn: "Set up a trust" → `/setup/trust`; other topics: "Set up an item" → `/setup`. `/trust-setup` redirects to `/setup/trust`. Replaces previous trust-only flow: step-by-step form (trust type + name → trustee & beneficiaries → review date + optional document link → add to dashboard). No AI chat; users fill fields, optionally link a doc from Document Vault, and click through. Wealth Learn: removed “Ask the AI” / “Get step-by-step guidance” for trust setup; primary CTA is “Set up a trust” (→ `/trust-setup`) and “I already have one — track it” (→ dashboard Add Item). Workflow copy updated to describe the form flow.
   - **Advanced options toggle:** Settings now show an “Advanced options” section (on by default: off). When off, AI (BYOK) and OpenClaw sections are hidden so non-technical users never see API/key wording. Toggle stored in `localStorage` per user (`nava_show_advanced_<user_id>`). Users who want their own AI key or WhatsApp/iMessage setup can turn “Show advanced” on to see those sections.

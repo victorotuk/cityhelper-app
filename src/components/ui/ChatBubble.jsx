@@ -31,8 +31,8 @@ export default function ChatBubble() {
     try {
       const { prompt } = JSON.parse(raw);
       if (prompt) open({ page: location.pathname, initialPrompt: prompt });
-    } catch (_) {
-      // ignore
+    } catch {
+      // ignore parse errors
     }
   };
 

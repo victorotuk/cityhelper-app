@@ -251,6 +251,35 @@ input, select, textarea { font-family: inherit; }
   border-bottom: 1px solid var(--border-subtle);
 }
 
+/* ============= TAURI DESKTOP: nav/header above content, no text overlap ============= */
+.tauri-desktop .landing-nav {
+  background: var(--bg-deep);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  isolation: isolate;
+  transform: translateZ(0);
+  box-shadow: 0 1px 0 var(--border-subtle);
+}
+.tauri-desktop .landing-main {
+  padding-top: var(--space-xl);
+}
+.tauri-desktop .page-header,
+.tauri-desktop .dashboard-header {
+  background: var(--bg-deep);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  isolation: isolate;
+  transform: translateZ(0);
+  box-shadow: 0 1px 0 var(--border-subtle);
+}
+.tauri-desktop .dashboard-page {
+  overflow-x: hidden;
+}
+.tauri-desktop .settings-main,
+.tauri-desktop .landing-page {
+  -webkit-overflow-scrolling: touch;
+}
+
 .brand {
   display: flex;
   align-items: center;

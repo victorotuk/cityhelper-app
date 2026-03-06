@@ -7,6 +7,10 @@ import ErrorBoundary from './components/ui/ErrorBoundary.jsx'
 import './stores/themeStore'
 import './index.css'
 
+if (typeof window !== 'undefined' && window.__TAURI__) {
+  document.documentElement.classList.add('tauri-desktop')
+}
+
 const queryClient = new QueryClient()
 
 createRoot(document.getElementById('root')).render(

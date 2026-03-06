@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useThemeStore } from '../stores/themeStore';
@@ -126,16 +126,26 @@ export default function Dashboard() {
     }
   }, [pendingText, user, clearPendingText]);
 
+  const requireCountryForTracking = useCallback((then) => {
+    if (!userCountry) {
+      setShowCountryRequired(true);
+      return;
+    }
+    then();
+  }, [userCountry]);
+
   // Deep link from Wealth Learn (e.g. "Track a trust") — open Add modal with category
   useEffect(() => {
     const category = location.state?.openAddModalWithCategory;
     if (!category || !user) return;
-    requireCountryForTracking(() => {
-      setSelectedCategory(category);
-      setShowAddModal(true);
-    });
     navigate(location.pathname, { replace: true, state: {} });
-  }, [location.state, user, navigate, location.pathname]);
+    queueMicrotask(() => {
+      requireCountryForTracking(() => {
+        setSelectedCategory(category);
+        setShowAddModal(true);
+      });
+    });
+  }, [location.state, user, navigate, location.pathname, requireCountryForTracking]);
 
   const COUNTRY_LABELS = { ca: 'Canada', us: 'United States' };
   const COUNTRY_FLAGS = { ca: '🇨🇦', us: '🇺🇸' };
@@ -228,14 +238,6 @@ export default function Dashboard() {
     if (confirm('Delete this item?')) {
       await deleteItem(id);
     }
-  };
-
-  const requireCountryForTracking = (then) => {
-    if (!userCountry) {
-      setShowCountryRequired(true);
-      return;
-    }
-    then();
   };
 
   const handleOpenAddModal = () => requireCountryForTracking(() => setShowAddModal(true));
