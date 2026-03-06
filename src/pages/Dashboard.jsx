@@ -125,6 +125,17 @@ export default function Dashboard() {
     }
   }, [pendingText, user, clearPendingText]);
 
+  // Deep link from Wealth Learn (e.g. "Track a trust") — open Add modal with category
+  useEffect(() => {
+    const category = location.state?.openAddModalWithCategory;
+    if (!category || !user) return;
+    requireCountryForTracking(() => {
+      setSelectedCategory(category);
+      setShowAddModal(true);
+    });
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.state, user, navigate, location.pathname]);
+
   const COUNTRY_LABELS = { ca: 'Canada', us: 'United States' };
   const COUNTRY_FLAGS = { ca: '🇨🇦', us: '🇺🇸' };
 
@@ -411,6 +422,10 @@ export default function Dashboard() {
             <Plus size={20} />
             <span>Track Item</span>
           </button>
+          <Link to="/setup" className="quick-action" title="Step-by-step: pick category, fill details, add document">
+            <Plus size={20} />
+            <span>Set up (step-by-step)</span>
+          </Link>
           <Link to="/documents" className="quick-action">
             <Folder size={20} />
             <span>Documents</span>

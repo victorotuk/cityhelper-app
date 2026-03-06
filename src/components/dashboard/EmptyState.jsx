@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Calendar } from 'lucide-react';
 import { APP_CONFIG } from '../../lib/config';
 import { EMPTY_EMOJIS, EMPTY_EXAMPLES } from './constants.js';
@@ -62,6 +63,9 @@ export default function EmptyState({
           </button>
         ))}
       </div>
+      <p className="empty-state-wizard-link">
+        Prefer a guided flow? <Link to="/setup">Set up an item step-by-step</Link>.
+      </p>
     </div>
   );
 }

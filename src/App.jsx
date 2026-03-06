@@ -15,6 +15,7 @@ import Estate from './pages/Estate';
 import Assets from './pages/Assets';
 import Business from './pages/Business';
 import WealthLearn from './pages/WealthLearn';
+import ItemSetupWizard from './pages/ItemSetupWizard';
 import ChatBubble from './components/ui/ChatBubble';
 import ChatOverlay from './components/ui/ChatOverlay';
 import UnlockScreen from './components/modals/UnlockScreen';
@@ -136,6 +137,13 @@ function App() {
       <Route path="/wealth-learn" element={
         <ProtectedRoute><WealthLearn /></ProtectedRoute>
       } />
+      <Route path="/setup" element={
+        <ProtectedRoute><ItemSetupWizard /></ProtectedRoute>
+      } />
+      <Route path="/setup/:category" element={
+        <ProtectedRoute><ItemSetupWizard /></ProtectedRoute>
+      } />
+      <Route path="/trust-setup" element={<Navigate to="/setup/trust" replace />} />
       <Route path="/assets" element={
         <ProtectedRoute><Assets /></ProtectedRoute>
       } />

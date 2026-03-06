@@ -8,7 +8,7 @@ import { useChatStore } from '../../stores/chatStore';
 
 const SpeechRecognition = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
 
-export default function ChatPanel({ context, compact = false, onClose }) {
+export default function ChatPanel({ context, compact = false, onClose, initialPrompt = '' }) {
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const { messages, loading, addMessage, setMessages, removeMessage, clearMessages, setLoading, init } = useChatStore();
@@ -22,6 +22,10 @@ export default function ChatPanel({ context, compact = false, onClose }) {
   useEffect(() => {
     if (user?.id) init(user.id);
   }, [user?.id, init]);
+
+  useEffect(() => {
+    if (initialPrompt && initialPrompt.trim()) setInput(initialPrompt.trim());
+  }, [initialPrompt]);
 
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   useEffect(() => { scrollToBottom(); }, [messages]);

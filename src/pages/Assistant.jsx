@@ -6,6 +6,7 @@ import ChatPanel from '../components/chat/ChatPanel';
 export default function Assistant() {
   const location = useLocation();
   const context = { page: location.pathname };
+  const initialPrompt = location.state?.initialPrompt || '';
 
   return (
     <div className="assistant-page">
@@ -22,7 +23,7 @@ export default function Assistant() {
       </header>
 
       <main className="assistant-main">
-        <ChatPanel context={context} />
+        <ChatPanel context={context} initialPrompt={initialPrompt} />
       </main>
     </div>
   );

@@ -13,6 +13,29 @@ export default function ChatBubble() {
     open({ page: location.pathname });
   };
 
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    e.currentTarget.classList.add('chat-bubble-drag-over');
+  };
+
+  const handleDragLeave = (e) => {
+    e.currentTarget.classList.remove('chat-bubble-drag-over');
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.currentTarget.classList.remove('chat-bubble-drag-over');
+    const raw = e.dataTransfer.getData('application/json');
+    if (!raw) return;
+    try {
+      const { prompt } = JSON.parse(raw);
+      if (prompt) open({ page: location.pathname, initialPrompt: prompt });
+    } catch (_) {
+      // ignore
+    }
+  };
+
   return (
     <div className="chat-bubble-container">
       {showTooltip && (
@@ -24,18 +47,25 @@ export default function ChatBubble() {
           >
             <X size={12} />
           </button>
-          <span>Need help? Ask me anything!</span>
+          <span>Need help? Drag a card here or ask me anything!</span>
         </div>
       )}
-      <button
-        type="button"
-        className="chat-bubble"
-        onClick={handleClick}
-        aria-label="Open AI help"
+      <div
+        className="chat-bubble-drop-zone"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
       >
-        <MessageCircle size={24} />
-        <span className="chat-bubble-label">AI Help</span>
-      </button>
+        <button
+          type="button"
+          className="chat-bubble"
+          onClick={handleClick}
+          aria-label="Open AI help"
+        >
+          <MessageCircle size={24} />
+          <span className="chat-bubble-label">AI Help</span>
+        </button>
+      </div>
     </div>
   );
 }

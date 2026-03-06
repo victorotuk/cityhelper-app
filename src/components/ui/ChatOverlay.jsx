@@ -38,6 +38,7 @@ export default function ChatOverlay() {
           context={chatContext}
           compact
           onClose={close}
+          initialPrompt={chatContext?.initialPrompt ?? ''}
         />
       </div>
     </div>
