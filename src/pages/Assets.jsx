@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
-import { ArrowLeft, Plus, Package } from 'lucide-react';
+import { Plus, Package } from 'lucide-react';
+import PageHeader from '../components/ui/PageHeader';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 import { requestLocationPermission, createMileageTracker } from '../lib/mileageTracking';
@@ -179,11 +180,7 @@ export default function Assets() {
         onDismiss={() => { setPendingTrip(null); setAssignVehicle(''); }}
       />
 
-      <header className="page-header">
-        <Link to="/settings" className="back-btn"><ArrowLeft size={20} /> Back</Link>
-        <div className="header-title"><Package size={24} /><span>Asset Inventory</span></div>
-        <div style={{ width: 80 }} />
-      </header>
+      <PageHeader backTo="/settings" title="Asset Inventory" icon={<Package size={24} />} />
 
       <main className="settings-main">
         <div className="settings-container">

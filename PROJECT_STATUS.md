@@ -76,6 +76,18 @@ Three ways to run Nava; privacy-first, user chooses control level.
 - Android: Set up app signing keys for Play Store when ready.
 - iOS: When Xcode available, create provisioning profile and test build.
 
+### Desktop (Tauri) — all desktops, not just Mac
+**Tauri** builds one codebase into native desktop apps for **Windows, macOS, and Linux**. Anyone with any of those computers can use the Nava desktop app; it's not Mac-only. Run `tauri build` (per platform or in CI) to get: macOS `.app`/`.dmg`, Windows `.exe`/installer, Linux binary/`.AppImage`/`.deb`.
+
+### Before desktop build (Tauri) — completed
+| Step | Status |
+|------|--------|
+| 1. **App icons** | Done — `npx tauri icon public/nava-logo.png` generated `src-tauri/icons/` (PNG, .icns, .ico). |
+| 2. **Web build** | OK — `npm run build` passes; desktop uses `dist/`. |
+| 3. **Bundle identifier** | `npm run tauri:dev` — opens desktop window; app runs as “web” (Capacitor.getPlatform() === 'web'), so no mobile-only features. |
+
+**Already in place:** Tauri 2 config (`src-tauri/`), `npm run tauri:dev` / `npm run tauri:build`, app name “Nava”, default window 1280×840 (desktop-app feel). Window is fully resizable (min 320×400); layout adjusts with flex/fluid CSS. Desktop uses same code as web; IndexedDB, auth, and API work unchanged.
+
 ### What's Left to Do
 | Priority | Item | Status |
 |----------|------|--------|

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Calculator } from 'lucide-react';
-import { APP_CONFIG } from '../lib/config';
+import { Calculator } from 'lucide-react';
+import PageHeader from '../components/ui/PageHeader';
 import {
   FEDERAL_BRACKETS,
   ONTARIO_BRACKETS,
@@ -65,16 +65,7 @@ export default function TaxEstimator() {
 
   return (
     <div className="tax-page">
-      <header className="page-header">
-        <Link to="/dashboard" className="back-btn">
-          <ArrowLeft size={20} />
-          Back to Dashboard
-        </Link>
-        <Link to="/dashboard" className="header-brand">
-          <span>{APP_CONFIG.logo}</span>
-          <span>{APP_CONFIG.name}</span>
-        </Link>
-      </header>
+      <PageHeader backTo="/dashboard" title="Tax Estimator" icon={<Calculator size={24} />} />
 
       <main className="tax-main">
         <div className="tax-container">

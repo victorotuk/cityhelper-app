@@ -1,6 +1,7 @@
 /* =========================================
    NAVA — Serene horizon, calm waters
    Warm gold, soft blues, contemplative
+   Single source for web + desktop (Tauri): theme and cleanliness stay in sync.
    ========================================= */
 
 /* Fonts loaded via link in index.html for faster first paint */
@@ -37,7 +38,7 @@
   /* Borders */
   --border-subtle: rgba(255, 255, 255, 0.06);
   --border-visible: rgba(255, 255, 255, 0.12);
-  --header-bg: rgba(10, 10, 12, 0.9);
+  --header-bg: rgba(10, 10, 12, 0.75);
   
   /* Typography */
   --font-display: 'Instrument Serif', Georgia, serif;
@@ -82,7 +83,7 @@
 }
 
 [data-theme="light"] {
-  --header-bg: rgba(255, 255, 255, 0.92);
+  --header-bg: rgba(255, 255, 255, 0.82);
 }
 
 /* ============= THEME: Track Item style (unified cards & forms) ============= */
@@ -98,9 +99,9 @@
   content: '';
   position: absolute;
   left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
+  top: -1px;
+  bottom: -1px;
+  width: 5px;
   background: var(--accent-gradient);
   border-radius: var(--radius-lg) 0 0 var(--radius-lg);
   pointer-events: none;
@@ -149,6 +150,7 @@ textarea:focus,
 html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
+  height: 100%;
 }
 
 body {
@@ -158,6 +160,13 @@ body {
   color: var(--text-primary);
   background: var(--bg-deep);
   min-height: 100vh;
+  width: 100%;
+  margin: 0;
+}
+
+#root {
+  width: 100%;
+  min-height: 100%;
 }
 
 /* Grain overlay */
@@ -261,13 +270,14 @@ input, select, textarea { font-family: inherit; }
   opacity: 0.9;
 }
 
+/* Logo: circle ~20% larger display; for circle/waves ratio in the graphic, update nava-logo.png */
 .brand-mark {
-  width: 52px;
-  height: 52px;
+  width: 62px;
+  height: 62px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 26px;
   background: var(--bg-card);
   border-radius: var(--radius-full);
   border: 1px solid var(--border-visible);
@@ -389,9 +399,9 @@ input, select, textarea { font-family: inherit; }
   content: '';
   position: absolute;
   left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
+  top: -1px;
+  bottom: -1px;
+  width: 5px;
   background: var(--accent-gradient);
   border-radius: var(--radius-lg) 0 0 var(--radius-lg);
   pointer-events: none;
@@ -758,11 +768,12 @@ input, select, textarea { font-family: inherit; }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--space-md) var(--space-lg);
+  padding: var(--space-sm) var(--space-lg);
   background: var(--header-bg);
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-subtle);
-  min-height: 56px;
+  min-height: 48px;
   box-sizing: border-box;
 }
 
@@ -783,14 +794,14 @@ input, select, textarea { font-family: inherit; }
 }
 
 .header-logo-img {
-  height: 48px;
+  height: 44px;
   width: auto;
   object-fit: contain;
   display: block;
 }
 
 @media (min-width: 480px) {
-  .header-logo-img { height: 56px; }
+  .header-logo-img { height: 48px; }
   .header-name { font-size: 1.35rem; }
 }
 
@@ -1003,15 +1014,16 @@ input, select, textarea { font-family: inherit; }
   border: 1px solid var(--border-visible);
   border-radius: var(--radius-lg);
   transition: all var(--duration-normal) var(--ease-out);
+  overflow: hidden;
 }
 
 .item-card::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
+  top: -1px;
+  bottom: -1px;
+  width: 5px;
   background: var(--accent-gradient);
   border-radius: var(--radius-lg) 0 0 var(--radius-lg);
   pointer-events: none;
@@ -1063,14 +1075,15 @@ input, select, textarea { font-family: inherit; }
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   z-index: 100;
+  overflow: hidden;
 }
 .bulk-edit-bar::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
+  top: -1px;
+  bottom: -1px;
+  width: 5px;
   background: var(--accent-gradient);
   border-radius: var(--radius-lg) 0 0 var(--radius-lg);
   pointer-events: none;
@@ -1613,15 +1626,65 @@ input, select, textarea { font-family: inherit; }
 
 .page-header {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
-  padding: var(--space-md) var(--space-lg);
+  min-height: 48px;
+  padding: 0 var(--space-lg);
   background: var(--header-bg);
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-subtle);
   position: sticky;
   top: 0;
   z-index: 100;
+  gap: var(--space-md);
+}
+
+.page-header-left {
+  flex-shrink: 0;
+  min-width: 80px;
+  display: flex;
+  align-items: stretch;
+}
+
+.page-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-shrink: 0;
+  min-width: 80px;
+  justify-content: flex-end;
+}
+
+.header-home-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 48px;
+  padding: 0 8px;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  transition: color var(--duration-fast), background var(--duration-fast);
+}
+.header-home-btn:hover {
+  color: var(--accent);
+  background: var(--bg-hover);
+}
+.header-home-logo-img {
+  height: 100%;
+  width: auto;
+  max-height: 56px;
+  object-fit: contain;
+}
+.header-home-logo {
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 600;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .back-btn {
@@ -1641,6 +1704,9 @@ input, select, textarea { font-family: inherit; }
   gap: var(--space-sm);
   font-size: 15px;
   font-weight: 500;
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
 }
 
 .header-title svg { color: var(--accent); }
@@ -4930,9 +4996,9 @@ input, select, textarea { font-family: inherit; }
   content: '';
   position: absolute;
   left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
+  top: -1px;
+  bottom: -1px;
+  width: 5px;
   background: var(--accent-gradient);
   border-radius: var(--radius-lg) 0 0 var(--radius-lg);
   pointer-events: none;
@@ -5009,6 +5075,7 @@ input, select, textarea { font-family: inherit; }
 .trust-setup-guide h3 { font-size: 1rem; margin-bottom: var(--space-sm); color: var(--text-primary); }
 .trust-setup-guide ol { margin: 0; padding-left: 1.25rem; }
 .trust-setup-guide li { margin-bottom: var(--space-xs); }
+.step-optional-label { font-size: 13px; color: var(--text-muted); font-weight: 400; }
 .trust-setup-step .step-desc {
   font-size: 14px;
   color: var(--text-secondary);
@@ -5135,9 +5202,9 @@ input, select, textarea { font-family: inherit; }
   content: '';
   position: absolute;
   left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
+  top: -1px;
+  bottom: -1px;
+  width: 5px;
   background: var(--accent-gradient);
   border-radius: var(--radius-lg) 0 0 var(--radius-lg);
   pointer-events: none;

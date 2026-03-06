@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
-import { ArrowLeft, Settings as SettingsIcon, Bell, BellOff, Shield, Phone, CheckCircle, Trash2, Globe, RefreshCw, MessageSquarePlus, Mail, Smartphone, User, Package, Building2, BookOpen, Download, Key, Copy, ExternalLink } from 'lucide-react';
+import { Settings as SettingsIcon, Bell, BellOff, Shield, Phone, CheckCircle, Trash2, Globe, RefreshCw, MessageSquarePlus, Mail, Smartphone, User, Package, Building2, BookOpen, Download, Key, Copy, ExternalLink } from 'lucide-react';
+import PageHeader from '../components/ui/PageHeader';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 import { APP_CONFIG } from '../lib/config';
@@ -301,11 +302,7 @@ export default function Settings() {
   if (loading) {
     return (
       <div className="settings-page">
-        <header className="page-header">
-          <Link to="/dashboard" className="back-btn"><ArrowLeft size={20} /> Back</Link>
-          <div className="header-title"><SettingsIcon size={24} /><span>Settings</span></div>
-          <div style={{ width: 80 }} />
-        </header>
+        <PageHeader backTo="/dashboard" title="Settings" icon={<SettingsIcon size={24} />} />
         <main className="settings-main"><div className="loading">Loading settings...</div></main>
       </div>
     );
@@ -313,11 +310,7 @@ export default function Settings() {
 
   return (
     <div className="settings-page">
-      <header className="page-header">
-        <Link to="/dashboard" className="back-btn"><ArrowLeft size={20} /> Back</Link>
-        <div className="header-title"><SettingsIcon size={24} /><span>Settings</span></div>
-        <div style={{ width: 80 }} />
-      </header>
+      <PageHeader backTo="/dashboard" title="Settings" icon={<SettingsIcon size={24} />} />
 
       <main className="settings-main">
         <div className="settings-container">

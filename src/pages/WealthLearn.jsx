@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Landmark, Building2, Shield, TrendingUp, ChevronRight } from 'lucide-react';
+import { BookOpen, Landmark, Building2, Shield, TrendingUp, ChevronRight } from 'lucide-react';
 import { APP_CONFIG } from '../lib/config';
+import PageHeader from '../components/ui/PageHeader';
 export default function WealthLearn() {
   const navigate = useNavigate();
 
@@ -93,11 +94,7 @@ export default function WealthLearn() {
 
   return (
     <div className="settings-page wealth-learn-page">
-      <header className="page-header">
-        <Link to="/settings" className="back-btn"><ArrowLeft size={20} /> Back</Link>
-        <div className="header-title"><BookOpen size={24} /><span>Become an Expert</span></div>
-        <div style={{ width: 80 }} />
-      </header>
+      <PageHeader backTo="/settings" title="Become an Expert" icon={<BookOpen size={24} />} />
       <main className="settings-main">
         <div className="settings-container wealth-learn-container">
           <div className="aside-card wealth-learn-intro">

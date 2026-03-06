@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Bot } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
+import { Bot } from 'lucide-react';
+import PageHeader from '../components/ui/PageHeader';
 import ChatPanel from '../components/chat/ChatPanel';
 
 export default function Assistant() {
@@ -10,17 +10,7 @@ export default function Assistant() {
 
   return (
     <div className="assistant-page">
-      <header className="page-header">
-        <Link to="/dashboard" className="back-btn">
-          <ArrowLeft size={20} />
-          Back
-        </Link>
-        <div className="header-title">
-          <Bot size={24} />
-          <span>AI Assistant</span>
-        </div>
-        <div style={{ width: 60 }} />
-      </header>
+      <PageHeader backTo="/dashboard" title="AI Assistant" icon={<Bot size={24} />} />
 
       <main className="assistant-main">
         <ChatPanel context={context} initialPrompt={initialPrompt} />

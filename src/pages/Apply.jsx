@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
+import PageHeader from '../components/ui/PageHeader';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 import { APPLICATION_TYPES, APPLICATION_FIELDS } from './apply/applyConfig';
@@ -103,17 +104,7 @@ export default function Apply() {
 
   return (
     <div className="apply-page">
-      <header className="page-header">
-        <Link to="/dashboard" className="back-btn">
-          <ArrowLeft size={20} />
-          Back
-        </Link>
-        <div className="header-title">
-          <FileText size={24} />
-          <span>Apply for Permits</span>
-        </div>
-        <div style={{ width: 80 }} />
-      </header>
+      <PageHeader backTo="/dashboard" title="Apply for Permits" icon={<FileText size={24} />} />
 
       <main className="apply-main">
         <div className="apply-container">

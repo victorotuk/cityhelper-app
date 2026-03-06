@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Nava",
   "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "identifier": "com.navaapp",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -13,8 +13,10 @@
     "windows": [
       {
         "title": "Nava",
-        "width": 800,
-        "height": 600,
+        "width": 1280,
+        "height": 840,
+        "minWidth": 320,
+        "minHeight": 400,
         "resizable": true,
         "fullscreen": false
       }

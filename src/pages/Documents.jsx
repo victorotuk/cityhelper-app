@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Upload, X, Folder, Camera, Scan, Loader } from 'lucide-react';
+import { Upload, X, Folder, Camera, Scan, Loader } from 'lucide-react';
+import PageHeader from '../components/ui/PageHeader';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 import { encrypt, decrypt } from '../lib/crypto';
@@ -208,42 +209,41 @@ Return ONLY valid JSON, no markdown or explanation.`;
     }
   };
 
+  const headerRight = (
+    <div className="header-actions-row">
+      <label className={`btn btn-ghost btn-sm ${uploading ? 'disabled' : ''}`}>
+        <Upload size={16} />
+        Upload
+        <input
+          type="file"
+          onChange={(e) => handleUpload(e, false)}
+          disabled={uploading}
+          style={{ display: 'none' }}
+          accept="image/*,.pdf,.doc,.docx,.txt"
+        />
+      </label>
+      <label className={`btn btn-primary btn-sm ${uploading || scanning ? 'disabled' : ''}`}>
+        {scanning ? <Loader size={16} className="spin" /> : <Scan size={16} />}
+        {scanning ? 'Scanning...' : 'Scan & Upload'}
+        <input
+          type="file"
+          onChange={(e) => handleUpload(e, true)}
+          disabled={uploading || scanning}
+          style={{ display: 'none' }}
+          accept="image/*"
+        />
+      </label>
+    </div>
+  );
+
   return (
     <div className="documents-page">
-      <header className="page-header">
-        <Link to="/dashboard" className="back-btn">
-          <ArrowLeft size={20} />
-          Back
-        </Link>
-        <div className="header-title">
-          <Folder size={24} />
-          <span>Document Vault</span>
-        </div>
-        <div className="header-actions-row">
-          <label className={`btn btn-ghost btn-sm ${uploading ? 'disabled' : ''}`}>
-            <Upload size={16} />
-            Upload
-            <input 
-              type="file" 
-              onChange={(e) => handleUpload(e, false)} 
-              disabled={uploading}
-              style={{ display: 'none' }}
-              accept="image/*,.pdf,.doc,.docx,.txt"
-            />
-          </label>
-          <label className={`btn btn-primary btn-sm ${uploading || scanning ? 'disabled' : ''}`}>
-            {scanning ? <Loader size={16} className="spin" /> : <Scan size={16} />}
-            {scanning ? 'Scanning...' : 'Scan & Upload'}
-            <input 
-              type="file" 
-              onChange={(e) => handleUpload(e, true)} 
-              disabled={uploading || scanning}
-              style={{ display: 'none' }}
-              accept="image/*"
-            />
-          </label>
-        </div>
-      </header>
+      <PageHeader
+        backTo="/dashboard"
+        title="Document Vault"
+        icon={<Folder size={24} />}
+        right={headerRight}
+      />
 
       <main className="documents-main">
         <div className="documents-container">

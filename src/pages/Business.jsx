@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Building2, MapPin } from 'lucide-react';
+import { Plus, Trash2, Building2, MapPin } from 'lucide-react';
+import PageHeader from '../components/ui/PageHeader';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 
@@ -95,11 +96,7 @@ export default function Business() {
 
   return (
     <div className="settings-page">
-      <header className="page-header">
-        <Link to="/settings" className="back-btn"><ArrowLeft size={20} /> Back</Link>
-        <div className="header-title"><Building2 size={24} /><span>Business Entities & Locations</span></div>
-        <div style={{ width: 80 }} />
-      </header>
+      <PageHeader backTo="/settings" title="Business Entities & Locations" icon={<Building2 size={24} />} />
       <main className="settings-main">
         <div className="settings-container">
           <p className="section-desc">Manage your business entities and their locations for compliance tracking.</p>

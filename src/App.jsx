@@ -105,9 +105,13 @@ function App() {
     );
   }
 
+  // Desktop app (Tauri): first screen is sign in / sign up, not the full landing page
+  const isDesktop = typeof window !== 'undefined' && window.__TAURI__;
+  const homeElement = isDesktop ? <Navigate to="/auth" replace /> : <Landing />;
+
   return (
     <Routes>
-      <Route path="/" element={<Landing />} />
+      <Route path="/" element={homeElement} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/dashboard" element={
         <ProtectedRoute>

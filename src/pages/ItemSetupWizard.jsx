@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ChevronRight, CheckCircle, FileText } from 'lucide-react';
+import { ChevronRight, CheckCircle, FileText } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useComplianceStore } from '../stores/complianceStore';
 import { supabase } from '../lib/supabase';
 import { APP_CONFIG } from '../lib/config';
-import { TRUST_TYPES, hasTypeSelector, hasPeopleStep } from '../lib/setupWizardConfig';
+import { TRUST_TYPES, hasTypeSelector, hasPeopleStep, getSetupGuide } from '../lib/setupWizardConfig';
 import AppCard from '../components/ui/AppCard';
+import PageHeader from '../components/ui/PageHeader';
 
 const CATEGORY_EMOJIS = {
   immigration: '✈️', trust: '🏛️', tax: '💰', driving: '🚗', parking: '🅿️', health: '❤️', fitness: '💪',
@@ -104,11 +105,7 @@ export default function ItemSetupWizard() {
   if (done) {
     return (
       <div className="settings-page item-setup-page">
-        <header className="page-header">
-          <Link to="/dashboard" className="back-btn"><ArrowLeft size={20} /> Back</Link>
-          <div className="header-title"><span>Done</span></div>
-          <div style={{ width: 80 }} />
-        </header>
+        <PageHeader backTo="/dashboard" title="Done" />
         <main className="settings-main">
           <div className="settings-container" style={{ maxWidth: 480 }}>
             <AppCard className="app-card--no-bar" noGradient>
@@ -121,6 +118,9 @@ export default function ItemSetupWizard() {
                 <Link to="/dashboard" className="btn btn-primary">
                   Go to dashboard
                 </Link>
+                <p className="section-desc" style={{ marginTop: 16, fontSize: 13 }}>
+                  You can add more items anytime from your <Link to="/dashboard" style={{ color: 'var(--accent)' }}>dashboard</Link> (Track Item or Set up step-by-step).
+                </p>
               </div>
             </AppCard>
           </div>
@@ -131,19 +131,11 @@ export default function ItemSetupWizard() {
 
   return (
     <div className="settings-page item-setup-page">
-      <header className="page-header">
-        {step === 0 ? (
-          <Link to="/dashboard" className="back-btn"><ArrowLeft size={20} /> Back</Link>
-        ) : (
-          <button type="button" className="back-btn" onClick={() => step === 1 ? navigate(backTo || -1) : setStep(step - 1)}>
-            <ArrowLeft size={20} /> Back
-          </button>
-        )}
-        <div className="header-title">
-          <span>{step === 0 ? 'Set up an item' : `Set up ${catMeta?.name || category}`}</span>
-        </div>
-        <div style={{ width: 80 }} />
-      </header>
+      <PageHeader
+        backTo={step === 0 ? '/dashboard' : undefined}
+        onBack={step > 0 ? () => (step === 1 ? navigate(backTo || -1) : setStep(step - 1)) : undefined}
+        title={step === 0 ? 'Set up an item' : `Set up ${catMeta?.name || category}`}
+      />
       <main className="settings-main">
         <div className="settings-container" style={{ maxWidth: 520 }}>
           {step > 0 && (
@@ -182,11 +174,11 @@ export default function ItemSetupWizard() {
               {useTypeSelector ? (
                 <>
                   <div className="trust-setup-guide">
-                    <h3>How to set up a trust</h3>
+                    <h3>{getSetupGuide('trust').title}</h3>
                     <ol>
-                      <li><strong>Learn</strong> — You&apos;re here. Choose the type and add details below.</li>
-                      <li><strong>Set it up</strong> — Follow the steps: choose type, add trustee and beneficiaries, set a review date, and optionally link a document.</li>
-                      <li><strong>Track it</strong> — We add it to your dashboard so you get reminders for renewals and key dates.</li>
+                      {getSetupGuide('trust').steps.map((s, i) => (
+                        <li key={i}>{s}</li>
+                      ))}
                     </ol>
                   </div>
                   <h3>What type of trust?</h3>
@@ -218,11 +210,28 @@ export default function ItemSetupWizard() {
                 </>
               ) : (
                 <>
-                  <h3>Name this item</h3>
-                  <p className="step-desc">Give it a name so you can track it. You can pick a quick option below or type your own.</p>
+                  <div className="trust-setup-guide">
+                    <h3>{getSetupGuide(category).title}</h3>
+                    <ol>
+                      {getSetupGuide(category).steps.map((s, i) => (
+                        <li key={i}>{s}</li>
+                      ))}
+                    </ol>
+                  </div>
+                  <h3>Name this {catMeta?.name?.toLowerCase() || 'item'}</h3>
+                  <p className="step-desc">Type the name below. This is what you&apos;ll see on your dashboard.</p>
+                  <div className="form-group">
+                    <label>Name</label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder={catMeta?.name ? `e.g. My ${catMeta.name}` : 'e.g. Driver\'s License'}
+                    />
+                  </div>
                   {templates.length > 0 && (
                     <div className="form-group">
-                      <label>Quick add</label>
+                      <label className="step-optional-label">Or pick a quick option (optional)</label>
                       <div className="trust-type-options">
                         {templates.slice(0, 8).map((t, i) => (
                           <button
@@ -237,15 +246,6 @@ export default function ItemSetupWizard() {
                       </div>
                     </div>
                   )}
-                  <div className="form-group">
-                    <label>Name</label>
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder={templates[0] ? `e.g. ${templates[0].name || templates[0]}` : 'e.g. Driver\'s License'}
-                    />
-                  </div>
                 </>
               )}
               <button type="button" className="btn btn-primary" disabled={!canNextStep1} onClick={() => setStep(2)}>
@@ -283,14 +283,14 @@ export default function ItemSetupWizard() {
                 </>
               ) : (
                 <>
-                  <h3>Details (optional)</h3>
-                  <p className="step-desc">Add any notes—numbers, dates, or reminders—so you have them in one place.</p>
+                  <h3>Add any details you know (optional)</h3>
+                  <p className="step-desc">Put numbers, dates, or reminders here so everything is in one place. You can skip and add them later from your dashboard.</p>
                   <div className="form-group">
                     <label>Notes</label>
                     <textarea
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
-                      placeholder="e.g. Policy number, expiry, renewal contact..."
+                      placeholder="e.g. Registration number, key dates, who to contact..."
                       rows={3}
                     />
                   </div>
