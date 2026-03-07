@@ -28,12 +28,30 @@ Guidelines:
 Never provide specific legal or tax advice - always recommend consulting professionals for complex situations.`
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401
+      })
+    }
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2')
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    )
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401
+      })
+    }
+
     const { messages } = await req.json()
 
     if (!messages || !Array.isArray(messages)) {
@@ -80,9 +98,9 @@ serve(async (req) => {
         status: 200 
       }
     )
-  } catch (error) {
+  } catch (error: unknown) {
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as Error).message }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400 

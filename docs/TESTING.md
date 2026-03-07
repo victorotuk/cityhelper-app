@@ -84,8 +84,19 @@ To lock in behavior and catch regressions:
 
 See [Playwright](https://playwright.dev/) and [Vitest](https://vitest.dev/) docs for setup. A minimal Playwright smoke test is often the highest ROI.
 
+### Desktop (Tauri)
+- [ ] **Dev mode** – `npm run tauri:dev` opens desktop window; UI matches web.
+- [ ] **Auth-first** – Desktop opens to sign-in/sign-up (not the landing page promo).
+- [ ] **Scroll/overlap** – Scroll dashboard and settings; content does not overlap the top nav bar or native window controls.
+- [ ] **Headers** – Dashboard and page headers are solid (no transparency bleeding) with `tauri-desktop` class.
+- [ ] **Resize** – Drag window edges to resize; layout adjusts fluidly (min 320×400).
+- [ ] **Check for updates** – Settings → Check for updates button works (will say "latest version" if no update published).
+- [ ] **Startup update check** – On launch, if a newer `latest.json` exists on GitHub Releases, a confirm dialog appears.
+- [ ] **Logo** – Nava logo (dark/light) renders correctly in header and auth page.
+
 ## Environment notes
 
 - **Web** – Use same env as production (e.g. `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`) or a staging Supabase project.
 - **Mobile** – Test on device or emulator; push, calendar, and share target need real or mocked native APIs.
+- **Desktop** – `npm run tauri:dev` for dev, `npm run release -- <version>` for signed builds. Signing key at `~/.tauri/nava.key`.
 - **OpenClaw** – Use a real OpenClaw gateway + Nava plugin against your Supabase project to verify end-to-end messaging.

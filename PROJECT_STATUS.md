@@ -54,6 +54,7 @@ Three ways to run Nava; privacy-first, user chooses control level.
 - Stack: React + Vite, Capacitor (Android/iOS), Supabase, Tauri (desktop)
 
 ### Recent
+- **Desktop app (Tauri)**: Native desktop apps for macOS, Windows, Linux. Signed in-app updates (auto-check on startup + Settings). Release script: `npm run release -- <version>`. New Nava logo (3 waves, large sphere) — dark/light, theme-aware. Desktop-specific CSS (solid headers, no scroll overlap). Auth-first screen on desktop (no landing promo). Window 1280×840, fully resizable.
 - **OpenClaw integration**: Nava as OpenClaw plugin (`openclaw-nava`). Settings → OpenClaw & API (API URL, generate key). Edge functions: `nava-api` (HTTP API), `create-api-key`. Migration 028 (`nava_api_keys`). Setup script `scripts/setup-openclaw.sh`, README docs. Use Nava from WhatsApp, iMessage, etc. via OpenClaw.
 - **Local-first + E2E (Path A)**: compliance_items in IndexedDB, read/write local first, sync encrypted to Supabase. OAuth users get auto-generated encryption key (no passphrase). Email users use password.
 - **Mileage tracking (vehicles)**: GPS + Maps trip detection (mobile only, disabled on web). Options: OBD-II (GPS fallback) | GPS+Maps. Migrations 023–025.
@@ -110,7 +111,7 @@ Three ways to run Nava; privacy-first, user chooses control level.
 See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated to reduce indexing.
 
 ### Links
-- GitHub: `https://github.com/victorotuk/nava-app`
+- GitHub: `https://github.com/victorotuk/cityhelper-app`
 - Codemagic: `https://codemagic.io/app/695ded806dc729a6cfbc5215/build/695dededcec99af532b9b1ca`
 
 ### Security
@@ -133,24 +134,24 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
   - **Component breakdown (round 3):** WelcomeGuide: `welcomeGuide/quizConfig.js`, step components (WelcomeStepWelcome, AccountType, Roles, FocusAreas, LifeMoments, OtherNeeds, OrgInfo, OrgFocusAreas). TaxEstimator: `taxEstimator/taxConfig.js`, TaxEstimatorForm, TaxEstimatorSummary. Assets: `assets/assetsConfig.js`, AssetForm, AssetList, TripList, TripAssignModal, MileagePreferenceCard. Auth: AuthSocialButtons, AuthForm, AuthModeSwitch. Landing: LandingNav, LandingHero, LandingFeatures, LandingCta, LandingFooter. AddItemModal: AddItemCategoryPicker, AddItemFormFields. EmailSuggestions: `emailSuggestions/emailSuggestionsConfig.js`. ScanUpload: ScanUsageBar. Build passes.
   - **Large-file refactor (round 2):** Apply.jsx: extracted `src/pages/apply/applyConfig.js`, `ApplyTypeSelect.jsx`, `ApplyFormStep.jsx`, `ApplyReviewStep.jsx`, `ApplyGuideStep.jsx`. Documents.jsx: extracted `src/lib/documentUtils.js`, `src/components/documents/DocumentCard.jsx`, `DocumentViewModal.jsx`, `ScanResultCard.jsx`. DisputeTicket.jsx: extracted `src/components/dispute/DisputeStep1Ticket.jsx`, `DisputeStep2Reason.jsx`, `DisputeStep3Contact.jsx`, `DisputeStep4Review.jsx`. Settings.jsx: extracted `SettingsPushSection`, `SettingsDigestSection`, `SettingsPhoneSection`, `SettingsNotificationSuggestionsSection`, `SettingsInAppSection`, `SettingsSmartSuggestionsSection`, `SettingsSuggestFeatureSection`, `SettingsPrivacySection`. All use components and imports; build and lint pass (0 errors, 3 existing warnings).
   - **Large-file refactor (round 1):** Split Dashboard.jsx (~1523→646 lines), Settings.jsx (~906→~618 lines), WelcomeGuide.jsx (~809→~678 lines). New: `src/lib/renewalPortals.js`, `src/lib/addItemExtractPrompts.js`, `src/components/dashboard/constants.js`, `src/components/ItemCard.jsx`, `src/components/AddItemModal.jsx`, `src/components/dashboard/ComplianceHealth.jsx`, `FocusOnThree.jsx`, `EmptyState.jsx`, `SuggestedForYou.jsx`, `src/components/settings/*Section.jsx` (8 sections), `src/components/WelcomeGuideQuizInput.jsx`. All imports/references updated; build and lint pass.
-- 2026-02-01
-  - **"Do everything" session**: Lint fixes (onAskAI wired, setState in effect → derived state). UnlockScreen for password users. Ask AI button on item cards (opens chat with selectedItem). Autobackup in Settings → Data & Backup. Docker: Dockerfile, docker-compose.yml, nginx.conf, .env.example. Supabase URL/key configurable (VITE_SUPABASE_*).
-  - **OAuth auto-encryption**: OAuth users (Google/Azure) get an auto-generated encryption key on first sign-in. No passphrase required. Key stored in localStorage, restored to sessionStorage on return. Encryption works immediately.
-  - **Local vs online split (Path A)**: compliance_items now local-first. IndexedDB (src/lib/localStorage.js) for web/mobile/desktop. Read local first (instant), merge from Supabase. Add/update/delete/snooze write local first, sync to Supabase. clearLocalData on logout. Managed self-hosted explained.
-  - **Deployment model**: Added 3-option model (Cloud, Self-Hosted DIY, Managed Self-Hosted). LLM choice (local or web). Local vs online split, isolation boundary. Database privacy notes.
-  - **npm audit fix**: Resolved ajv, minimatch, rollup, tar vulnerabilities.
 - 2026-02-26
   - **Per-item country**: Migration 027 adds `country` to compliance_items. Dashboard filters by active country. AddItemModal + BulkEditModal: country picker when user has 2+ countries. ai-chat add_item: optional country param, uses context.country from dashboard.
   - **AI chat overlay**: ChatBubble opens slide-out panel (no blur, non-blocking backdrop). ChatPanel shared between overlay and /assistant. chatStore: persistence (sessionStorage), removeMessage, clearMessages. Delete button per message, Clear in status bar.
   - **AI chat enhancements**: Context (page, selectedItem, country) passed to ai-chat. export_to_calendar tool (.ics download). AISuggestionsCard on dashboard (refresh for suggestions, Ask AI). Dashboard sets context.country for AI-add.
   - **Logo**: Click Nava logo on dashboard scrolls to top (when already on /dashboard).
-- 2026-02-01
-  - **Mileage: GPS + OBD only (no manual)**: Removed manual option. Options: OBD-II (GPS fallback) | GPS+Maps. Implemented GPS trip detection: @capacitor/geolocation, speed >15 mph, Haversine distance. Trip detected → assign to vehicle modal. Migration 025. Android location permissions.
-  - **Mileage tracking**: Migration 023 adds `current_mileage`, `last_mileage_update` to assets table. Assets.jsx: vehicle category with manual odometer entry. Planned: OBD-II auto-read when available; GPS + Maps API fallback; trip detection (speed threshold, Snap to Roads).
 - 2026-02-21
   - **Rebrand to Nava**: name, formalName (Nava.ai for domains/copyright), UI palette (serene horizon — warm gold #d4a574, soft blues).
   - **AI agent**: ai-chat function calling — add/list/update items via natural language.
   - **Email suggestions**: Gmail + Outlook support. Settings → Email suggestions: Connect Gmail/Outlook, scan inbox, add or dismiss AI-extracted items. Edge functions: email-oauth (unified OAuth), fetch-email-suggestions (multi-provider). Migrations: 019 (email_connections, email_suggestion_dismissed), 020 (oauth_states), 021 (oauth_states.provider). Supabase secrets: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET, APP_URL.
+- 2026-02-10
+  - **Mileage: GPS + OBD only (no manual)**: Removed manual option. Options: OBD-II (GPS fallback) | GPS+Maps. Implemented GPS trip detection: @capacitor/geolocation, speed >15 mph, Haversine distance. Trip detected → assign to vehicle modal. Migration 025. Android location permissions.
+  - **Mileage tracking**: Migration 023 adds `current_mileage`, `last_mileage_update` to assets table. Assets.jsx: vehicle category with manual odometer entry. Planned: OBD-II auto-read when available; GPS + Maps API fallback; trip detection (speed threshold, Snap to Roads).
+- 2026-02-05
+  - **"Do everything" session**: Lint fixes (onAskAI wired, setState in effect → derived state). UnlockScreen for password users. Ask AI button on item cards (opens chat with selectedItem). Autobackup in Settings → Data & Backup. Docker: Dockerfile, docker-compose.yml, nginx.conf, .env.example. Supabase URL/key configurable (VITE_SUPABASE_*).
+  - **OAuth auto-encryption**: OAuth users (Google/Azure) get an auto-generated encryption key on first sign-in. No passphrase required. Key stored in localStorage, restored to sessionStorage on return. Encryption works immediately.
+  - **Local vs online split (Path A)**: compliance_items now local-first. IndexedDB (src/lib/localStorage.js) for web/mobile/desktop. Read local first (instant), merge from Supabase. Add/update/delete/snooze write local first, sync to Supabase. clearLocalData on logout. Managed self-hosted explained.
+  - **Deployment model**: Added 3-option model (Cloud, Self-Hosted DIY, Managed Self-Hosted). LLM choice (local or web). Local vs online split, isolation boundary. Database privacy notes.
+  - **npm audit fix**: Resolved ajv, minimatch, rollup, tar vulnerabilities.
 - 2026-02-01
   - Merged nava-app into nava. Single workspace.
   - PROJECT_STATUS updated: Android built and on device.

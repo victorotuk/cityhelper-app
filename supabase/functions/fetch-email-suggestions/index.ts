@@ -248,7 +248,7 @@ serve(async (req) => {
         if (Date.now() > expiresAt - 60000 && conn.refresh_token) {
           accessToken = await refreshOutlookToken(supabase, conn)
         }
-        const messages = await fetchOutlookMessages(accessToken, afterStr)
+        const messages = await fetchOutlookMessages(accessToken, outlookAfter)
         for (const msg of messages.slice(0, 15)) {
           const prefixedId = `outlook:${msg.id}`
           if (dismissedSet.has(prefixedId) || processed.has(prefixedId)) continue

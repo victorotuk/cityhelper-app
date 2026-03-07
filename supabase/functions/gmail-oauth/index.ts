@@ -99,7 +99,7 @@ serve(async (req) => {
     }
 
     const state = encode(crypto.getRandomValues(new Uint8Array(24)))
-    await supabase.from('oauth_states').insert({ state, user_id: user.id })
+    await supabase.from('oauth_states').insert({ state, user_id: user.id, provider: 'gmail' })
 
     const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth')
     authUrl.searchParams.set('client_id', clientId)

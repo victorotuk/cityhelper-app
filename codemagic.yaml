@@ -8,7 +8,7 @@ workflows:
     environment:
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.cityhelper.app
+        bundle_identifier: com.nava.app
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
@@ -42,7 +42,7 @@ workflows:
     environment:
       java: 17
       vars:
-        PACKAGE_NAME: "com.cityhelper.app"
+        PACKAGE_NAME: "com.nava.app"
       node: 20
     scripts:
       - name: Install dependencies

@@ -1,91 +1,101 @@
 # Desktop app updates (Tauri)
 
-The Nava desktop app uses Tauri’s built-in updater so users can **update in place** — no reinstall. They use **Settings → Check for updates** (or you can trigger a check on startup later).
+The Nava desktop app uses Tauri's built-in updater so users can **update in place** — no reinstall. The app **auto-checks on startup** (prompts user via `confirm()`) and users can also manually check via **Settings → Check for updates**.
 
-## One-time setup: signing keys
+## Signing keys (already set up)
 
-1. Generate a key pair (do this once, keep the private key safe):
+Keys live at:
+- **Private:** `~/.tauri/nava.key` — never commit, never share
+- **Public:** `~/.tauri/nava.key.pub` — already embedded in `src-tauri/tauri.conf.json` → `plugins.updater.pubkey`
 
-   ```bash
-   npm run tauri signer generate -- -w ~/.tauri/nava.key
-   ```
+If you need to regenerate (e.g. new machine), run:
 
-   This creates:
-   - `~/.tauri/nava.key` (private — never commit, never share)
-   - Prints the **public key** to the terminal
+```bash
+CI=false npx tauri signer generate -w ~/.tauri/nava.key -p "" -f
+```
 
-2. Put the **public key** in `src-tauri/tauri.conf.json`:
-
-   - Open `tauri.conf.json` and find `plugins.updater.pubkey`.
-   - Replace `REPLACE_AFTER_RUNNING_tauri_signer_generate` with the full public key content (the long string from the CLI output).
-
-3. For **building** signed update artifacts, set the private key when you build:
-
-   ```bash
-   export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/nava.key)"
-   # optional if key has a password:
-   # export TAURI_SIGNING_PRIVATE_KEY_PASSWORD="your-password"
-   CI=false npm run tauri:build
-   ```
-
-   Build output will include update bundles (e.g. `Nava.app.tar.gz` + `Nava.app.tar.gz.sig` on macOS) in `src-tauri/target/release/bundle/`.
+Then update the `pubkey` in `tauri.conf.json` with the contents of `~/.tauri/nava.key.pub`.
 
 ## Publishing a new version
 
+### Quick way (recommended)
+
+```bash
+npm run release -- 0.2.0
+```
+
+This script (`scripts/release.sh`):
+1. Bumps version in `package.json` and `tauri.conf.json`
+2. Builds a signed desktop app (reads `~/.tauri/nava.key` automatically)
+3. Generates `latest.json` in the project root
+4. Prints exact instructions for creating the GitHub Release
+
+### Manual way
+
 1. Bump version in **two** places:
    - `package.json` → `version`
-   - `src-tauri/tauri.conf.json` → top-level `"version"` (e.g. `"0.1.1"`).
+   - `src-tauri/tauri.conf.json` → `version`
 
-2. Build with the private key (see above). After the build you’ll have:
-   - **macOS:** `src-tauri/target/release/bundle/macos/Nava.app.tar.gz` and `Nava.app.tar.gz.sig`
-   - **Windows:** `.msi` / `.exe` and `.sig` in `bundle/msi` and `bundle/nsis`
-   - **Linux:** `.AppImage` and `.AppImage.sig` in `bundle/appimage`
+2. Build with the private key:
 
-3. Create a **GitHub Release** (e.g. tag `v0.1.1`):
-   - Upload the installer(s) you want to distribute (e.g. `Nava.app.tar.gz` for macOS, or the `.dmg` for first-time installs).
-   - Upload the **update** artifacts: for each platform, upload the `.tar.gz` (macOS), `.msi`/`.exe` (Windows), `.AppImage` (Linux) and their `.sig` files.
+   ```bash
+   export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/nava.key)"
+   export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""
+   CI=false npm run tauri:build
+   ```
 
-4. Add a **`latest.json`** asset to the release so the app can find the update. Format:
+   Output:
+   - **macOS:** `bundle/macos/Nava.app.tar.gz` + `.sig`, `bundle/dmg/Nava_<ver>_aarch64.dmg`
+   - **Windows:** `bundle/msi/*.msi` + `.sig`, `bundle/nsis/*.exe` + `.sig`
+   - **Linux:** `bundle/appimage/*.AppImage` + `.sig`
+
+3. Create a **GitHub Release** (e.g. tag `v0.2.0`):
+
+   ```bash
+   gh release create v0.2.0 --title 'v0.2.0' \
+     Nava_0.2.0_aarch64.dmg Nava.app.tar.gz latest.json
+   ```
+
+4. The `latest.json` format:
 
    ```json
    {
-     "version": "0.1.1",
-     "notes": "Optional release notes",
-     "pub_date": "2026-03-06T12:00:00Z",
+     "version": "0.2.0",
+     "notes": "Release notes here",
+     "pub_date": "2026-03-07T00:00:00Z",
      "platforms": {
        "darwin-aarch64": {
          "signature": "<contents of Nava.app.tar.gz.sig>",
-         "url": "https://github.com/victorotuk/cityhelper-app/releases/download/v0.1.1/Nava.app.tar.gz"
-       },
-       "darwin-x86_64": { "signature": "...", "url": "..." },
-       "windows-x86_64": { "signature": "...", "url": "..." },
-       "linux-x86_64": { "signature": "...", "url": "..." }
+         "url": "https://github.com/victorotuk/cityhelper-app/releases/download/v0.2.0/Nava.app.tar.gz"
+       }
      }
    }
    ```
 
-   - `signature`: paste the **entire contents** of the `.sig` file (not a path).
-   - `url`: direct download URL to the `.tar.gz`, `.msi`, `.exe`, or `.AppImage` on the same release.
+   The release script generates this automatically.
 
-5. The app is configured to look at:
-   `https://github.com/victorotuk/cityhelper-app/releases/latest/download/latest.json`
+## How users get updates
 
-   So either:
-   - Name the asset **exactly** `latest.json` and it will be served at that URL for the **latest** release, or
-   - Use a **redirect** or a small script that copies `latest.json` to that path for the latest release.
+1. **On startup:** App calls `check()` from `@tauri-apps/plugin-updater`. If a new version exists at the GitHub Releases endpoint, a `confirm()` dialog asks to update. User clicks OK → download, install, relaunch. All automatic.
+2. **Manual:** Settings → Check for updates → same flow.
+3. After restart, they're on the new version — no reinstall.
 
-   Easiest: upload a file named `latest.json` to each release; the “latest” in the URL refers to the **release** tagged as latest on GitHub. So when you mark release `v0.1.1` as latest, `.../releases/latest/download/latest.json` will serve that release’s `latest.json`.
+## CI builds (GitHub Actions)
 
-## User flow
+The `.github/workflows/tauri-build.yml` workflow builds for macOS, Windows, and Linux on every push to `main`. To produce **signed** artifacts in CI, add the `TAURI_SIGNING_PRIVATE_KEY` secret to your GitHub repo:
 
-1. User opens the desktop app → **Settings**.
-2. They click **Check for updates**.
-3. If an update is available, the app downloads it, installs it, and restarts (Tauri’s default dialog can be used; it’s enabled in config).
-4. After restart, they’re on the new version — no reinstall, no deleting the old app.
+1. Go to GitHub → repo → Settings → Secrets and variables → Actions
+2. Add `TAURI_SIGNING_PRIVATE_KEY` with the contents of `~/.tauri/nava.key`
+3. The workflow already passes this secret as an env var
 
 ## Config reference
 
-- **tauri.conf.json**
-  - `bundle.createUpdaterArtifacts: true` — build produces update bundles and `.sig` files.
-  - `plugins.updater` — `pubkey`, `endpoints` (e.g. GitHub `latest.json`), `dialog: true` for the built-in prompt.
-- **Capabilities:** `updater:default` and `process:default` are enabled so the frontend can check, download, install, and relaunch.
+- **`tauri.conf.json`**
+  - `bundle.createUpdaterArtifacts: true` — produces `.tar.gz` + `.sig`
+  - `plugins.updater.pubkey` — the public key (already set)
+  - `plugins.updater.endpoints` — `[".../releases/latest/download/latest.json"]`
+  - `plugins.updater.dialog: true` — built-in Tauri dialog (in addition to our `confirm()` on startup)
+- **`src-tauri/capabilities/default.json`** — `updater:default` and `process:default` permissions
+- **`src/lib/desktopUpdater.js`** — startup auto-check logic
+- **`src/components/settings/SettingsDesktopUpdatesSection.jsx`** — manual check UI
+- **`scripts/release.sh`** — one-command release workflow

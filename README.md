@@ -33,7 +33,7 @@ Nava is a **local-first** compliance assistant for Canada and the US. Users trac
 | **Frontend** | React 18, Vite | SPA with HMR |
 | **State** | Zustand | Auth, compliance items, chat overlay |
 | **Mobile** | Capacitor | Android/iOS native builds |
-| **Desktop** | Tauri | Desktop app (optional) |
+| **Desktop** | Tauri 2 | Native desktop app (macOS, Windows, Linux) with signed in-app updates |
 | **Backend** | Supabase | Auth, Edge Functions, Postgres |
 | **Local storage** | IndexedDB | Local-first compliance items |
 | **AI** | Groq (BYOK) | Chat, document scan, suggestions |
@@ -219,27 +219,23 @@ supabase functions serve
 - **Web:** Build → deploy `dist/` to Netlify, Vercel, or static host.
 - **Docker:** `docker-compose up` (see `Dockerfile`, `docker-compose.yml`).
 - **Mobile:** `npx cap sync` → build in Android Studio / Xcode.
+- **Desktop:** `npm run release -- 0.2.0` — builds signed macOS app, generates `latest.json`. See `docs/TAURI_UPDATES.md`.
 - **Edge Functions:** `supabase functions deploy ai-chat nava-api create-api-key`
 
 ---
 
-## Large Files & Refactoring
+## Codebase Refactoring (completed)
 
-| File | Lines | Recommendation |
-|------|-------|----------------|
-| `src/lib/config.js` | ~905 | Split: `config/parkingPortals.js`, `config/renewalPortals.js`, `config/templates.js`; `config.js` imports and re-exports. |
-| `src/pages/Dashboard.jsx` | ~1523 | Extract: `DashboardHeader`, `DashboardItemList`, `DashboardModals`, `DashboardCountryFilter`. |
-| `src/pages/Settings.jsx` | ~906 | Extract: `SettingsSection` components (Country, AI, OpenClaw, Push, etc.). |
-| `src/components/WelcomeGuide.jsx` | ~809 | Extract: quiz steps into `WelcomeGuideSteps/`. |
+All large files have been split into smaller, focused components:
 
-**Config split approach:** Create `src/lib/config/parkingPortals.js`, `renewalPortals.js`, `templates.js`; in `config.js`:
+| File | Before | After | What was extracted |
+|------|--------|-------|--------------------|
+| `Dashboard.jsx` | ~1523 lines | ~679 lines | `ItemCard`, `AddItemModal`, `ComplianceHealth`, `FocusOnThree`, `EmptyState`, `SuggestedForYou` |
+| `Settings.jsx` | ~906 lines | ~487 lines | 15+ section components under `components/settings/` |
+| `WelcomeGuide.jsx` | ~809 lines | ~264 lines | 8 step components under `components/welcomeGuide/` |
+| `config.js` | ~905 lines | ~907 lines | Extracted `renewalPortals.js`, `addItemExtractPrompts.js`; config remains central |
 
-```js
-import { parkingPortals } from './config/parkingPortals';
-import { renewalPortals } from './config/renewalPortals';
-import { templates } from './config/templates';
-// ... merge into APP_CONFIG
-```
+**Remaining large file:** `index.css` (~6,831 lines) — CSS is intentionally in one file for theming consistency.
 
 ---
 

@@ -26,10 +26,29 @@ serve(async (req) => {
   }
 
   try {
-    const { phone, userId } = await req.json()
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401
+      })
+    }
+    const authSupabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    )
+    const { data: { user }, error: authError } = await authSupabase.auth.getUser()
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401
+      })
+    }
 
-    if (!phone || !userId) {
-      throw new Error('Missing phone or userId')
+    const { phone } = await req.json()
+    const userId = user.id
+
+    if (!phone) {
+      throw new Error('Missing phone')
     }
 
     // Clean phone number (ensure +1 for Canada/US)
@@ -105,10 +124,10 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('Error:', err)
     return new Response(
-      JSON.stringify({ error: err.message }),
+      JSON.stringify({ error: (err as Error).message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
   }

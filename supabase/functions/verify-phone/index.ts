@@ -9,16 +9,37 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const MAX_ATTEMPTS = 5
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { code, userId } = await req.json()
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401
+      })
+    }
+    const authSupabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    )
+    const { data: { user }, error: authError } = await authSupabase.auth.getUser()
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401
+      })
+    }
 
-    if (!code || !userId) {
-      throw new Error('Missing code or userId')
+    const { code } = await req.json()
+    const userId = user.id
+
+    if (!code) {
+      throw new Error('Missing code')
     }
 
     const supabase = createClient(
@@ -26,7 +47,6 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get the verification record
     const { data: verification, error: fetchError } = await supabase
       .from('phone_verifications')
       .select('*')
@@ -37,15 +57,20 @@ serve(async (req) => {
       throw new Error('No verification pending. Please request a new code.')
     }
 
-    // Check if expired
     if (new Date(verification.expires_at) < new Date()) {
       await supabase.from('phone_verifications').delete().eq('user_id', userId)
       throw new Error('Code expired. Please request a new one.')
     }
 
-    // Check if code matches
+    const attempts = (verification.attempts ?? 0) + 1
+    if (attempts > MAX_ATTEMPTS) {
+      await supabase.from('phone_verifications').delete().eq('user_id', userId)
+      throw new Error('Too many attempts. Please request a new code.')
+    }
+
     if (verification.code !== code) {
-      throw new Error('Invalid code. Please try again.')
+      await supabase.from('phone_verifications').update({ attempts }).eq('user_id', userId)
+      throw new Error(`Invalid code. ${MAX_ATTEMPTS - attempts} attempts remaining.`)
     }
 
     // Success! Update user settings with verified phone
@@ -71,10 +96,10 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('Error:', err)
     return new Response(
-      JSON.stringify({ error: err.message }),
+      JSON.stringify({ error: (err as Error).message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
   }

@@ -3,7 +3,7 @@
 ## 1. Create a release keystore
 
 ```bash
-keytool -genkey -v -keystore android/release.keystore -alias cityhelper -keyalg RSA -keysize 2048 -validity 10000
+keytool -genkey -v -keystore android/release.keystore -alias nava -keyalg RSA -keysize 2048 -validity 10000
 ```
 
 Store the keystore and passwords securely. You'll need them for every update.
@@ -15,7 +15,7 @@ Copy `android/keystore.properties.example` to `android/keystore.properties` and 
 ```
 storeFile=release.keystore
 storePassword=YOUR_STORE_PASSWORD
-keyAlias=cityhelper
+keyAlias=nava
 keyPassword=YOUR_KEY_PASSWORD
 ```
 
