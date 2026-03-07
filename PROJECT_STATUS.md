@@ -88,7 +88,7 @@ Three ways to run Nava; privacy-first, user chooses control level.
 
 **Already in place:** Tauri 2 config (`src-tauri/`), `npm run tauri:dev` / `npm run tauri:build`, app name “Nava”, default window 1280×840 (desktop-app feel). Window is fully resizable (min 320×400); layout adjusts with flex/fluid CSS. Desktop uses same code as web; IndexedDB, auth, and API work unchanged.
 
-**In-place updates:** Tauri updater plugin enabled. Users use **Settings → Check for updates** to get new versions without reinstalling. One-time: run `tauri signer generate`, put public key in `tauri.conf.json`, then build with `TAURI_SIGNING_PRIVATE_KEY` set. See **docs/TAURI_UPDATES.md** for key setup and release workflow (GitHub Releases + `latest.json`).
+**In-place updates (fully wired):** Signing key generated (`~/.tauri/nava.key`), public key in `tauri.conf.json`. Builds produce signed `.tar.gz` + `.sig`. App auto-checks for updates on startup and prompts the user; manual check via **Settings → Check for updates**. Release workflow: `npm run release -- <version>` bumps version, builds signed artifacts, generates `latest.json`. Upload to GitHub Releases → users update in-app, no reinstall. See **docs/TAURI_UPDATES.md**.
 
 ### What's Left to Do
 | Priority | Item | Status |
