@@ -162,7 +162,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: `${APP_NAME} <onboarding@resend.dev>`, // Change to your verified domain
+        from: `${APP_NAME} <${Deno.env.get('FROM_EMAIL') || 'noreply@resend.dev'}>`,
         to,
         subject: template.subject,
         html: template.html,

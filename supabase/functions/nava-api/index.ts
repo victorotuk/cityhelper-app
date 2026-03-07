@@ -201,8 +201,8 @@ serve(async (req) => {
           .eq('user_id', user.id)
           .single()
         if (!item) throw new Error('Item not found')
-        const { data: { users } } = await supabase.auth.admin.listUsers()
-        const target = users?.find((u: any) => u.email?.toLowerCase() === emailTrim)
+        const { data: targetList } = await supabase.rpc('get_user_id_by_email', { lookup_email: emailTrim })
+        const target = targetList?.[0]
         if (!target) result = { error: 'No Nava account found with that email. They need to sign up first.' }
         else if (target.id === user.id) result = { error: "You can't share with yourself" }
         else {

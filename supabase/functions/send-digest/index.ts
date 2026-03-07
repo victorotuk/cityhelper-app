@@ -119,7 +119,7 @@ serve(async (req) => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: `${APP_NAME} <noreply@resend.dev>`,
+          from: `${APP_NAME} <${Deno.env.get('FROM_EMAIL') || 'noreply@resend.dev'}>`,
           to: email,
           subject: `🍁 Your ${getDigestDay(todayDay)} digest — ${items.length} items to track`,
           html

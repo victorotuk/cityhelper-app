@@ -46,8 +46,8 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
-    const { data: { users } } = await supabaseAdmin.auth.admin.listUsers()
-    const targetUser = users?.find(u => u.email?.toLowerCase() === emailTrim)
+    const { data: targetList } = await supabaseAdmin.rpc('get_user_id_by_email', { lookup_email: emailTrim })
+    const targetUser = targetList?.[0]
     if (!targetUser) {
       return new Response(JSON.stringify({ error: 'No account found with that email. They need to sign up first.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
