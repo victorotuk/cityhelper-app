@@ -17,7 +17,8 @@
     "// Desktop (Mac & Windows)": "",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "release": "bash scripts/release.sh"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",

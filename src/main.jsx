@@ -9,6 +9,7 @@ import './index.css'
 
 if (typeof window !== 'undefined' && window.__TAURI__) {
   document.documentElement.classList.add('tauri-desktop')
+  import('./lib/desktopUpdater.js').then(m => m.checkForAppUpdate())
 }
 
 const queryClient = new QueryClient()

@@ -105,9 +105,12 @@ function App() {
     );
   }
 
-  // Desktop app (Tauri): first screen is sign in / sign up, not the full landing page
+  // Desktop (Tauri) and mobile (Capacitor): minimal auth screen, no promo landing page.
+  // Web: full landing page with features/explanation.
   const isDesktop = typeof window !== 'undefined' && window.__TAURI__;
-  const homeElement = isDesktop ? <Navigate to="/auth" replace /> : <Landing />;
+  const isMobile = Capacitor.getPlatform() !== 'web';
+  const isApp = isDesktop || isMobile;
+  const homeElement = isApp ? <Navigate to="/auth" replace /> : <Landing />;
 
   return (
     <Routes>

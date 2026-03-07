@@ -1,5 +1,5 @@
 ## Nava — Project Status
-Updated: 2026-03-06
+Updated: 2026-03-07
 
 **→ For AI: Read this file first when user returns.** Full context: Vision, Recent (features), Changelog (what was built), What's Left, All Prompts & Outcomes. Project: cityhelper → Nava. React + Vite, Supabase, Capacitor.
 
@@ -118,6 +118,8 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
 - If Supabase or other security advisories arrive, address promptly. Privacy is key.
 
 ### Changelog
+- 2026-03-07
+  - **In-app updates fully wired:** Signing key generated, public key in tauri.conf.json. Builds now produce signed .tar.gz + .sig. Auto-check on startup (desktopUpdater.js in main.jsx) prompts users on launch if a new version exists. Manual check in Settings. Release script: npm run release -- 0.2.0 bumps version, builds signed artifacts, generates latest.json. Full workflow in docs/TAURI_UPDATES.md.
 - 2026-03-06
   - **New Nava logo (3 waves, large sphere):** Dark (`nava-logo-dark.png`) and light (`nava-logo-light.png`) versions in `public/`. Theme-aware `LogoImg` component; Dashboard, PageHeader, LandingNav, Auth use it. Favicon and Tauri app icons regenerated from dark logo. Config: `logoImageDark`, `logoImageLight`.
   - **Tauri in-place updates:** Updater plugin + process plugin; Settings → “Check for updates” (desktop only). `createUpdaterArtifacts: true`, endpoints for GitHub Releases; `docs/TAURI_UPDATES.md` for key generation and release workflow.

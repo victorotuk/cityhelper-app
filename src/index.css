@@ -551,6 +551,12 @@ input, select, textarea { font-family: inherit; }
   margin: 0 auto;
 }
 
+/* Desktop/mobile app: larger logo, centered minimal auth */
+.tauri-desktop .auth-logo-img {
+  height: 80px;
+  margin-bottom: var(--space-sm);
+}
+
 .auth-title {
   font-family: var(--font-display);
   font-size: 1.75rem;

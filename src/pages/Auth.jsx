@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 import { APP_CONFIG } from '../lib/config';
@@ -7,6 +8,8 @@ import LogoImg from '../components/ui/LogoImg';
 import AuthSocialButtons from '../components/auth/AuthSocialButtons';
 import AuthForm from '../components/auth/AuthForm';
 import AuthModeSwitch from '../components/auth/AuthModeSwitch';
+
+const isApp = (typeof window !== 'undefined' && window.__TAURI__) || Capacitor.getPlatform() !== 'web';
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
@@ -96,8 +99,8 @@ export default function Auth() {
   const getSubtitle = () => {
     if (mode === 'newpassword') return 'Enter your new password below';
     if (mode === 'forgot') return "We'll send you a reset link";
-    if (mode === 'signup') return 'Start tracking your compliance';
-    return 'Sign in to your dashboard';
+    if (mode === 'signup') return isApp ? 'Create your account to get started' : 'Start tracking your compliance';
+    return isApp ? 'Sign in to get started' : 'Sign in to your dashboard';
   };
 
   return (
@@ -151,9 +154,11 @@ export default function Auth() {
           />
         </div>
 
-        <p className="auth-footer">
-          <Link to="/">← Back to home</Link>
-        </p>
+        {!isApp && (
+          <p className="auth-footer">
+            <Link to="/">← Back to home</Link>
+          </p>
+        )}
       </div>
     </div>
   );
