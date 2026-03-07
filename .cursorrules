@@ -2,6 +2,7 @@
 
 - **Git**: Commit after each logical change. Do not batch unrelated edits into one commit.
 - **PROJECT_STATUS.md**: Update when adding features or completing work.
-- **Supabase**: Add migrations to `supabase/migrations/`. Always push migrations to Supabase: run `supabase db push` (or apply via Dashboard if CLI not linked) when adding/changing migrations or when saving/committing everything.
-- **Desktop releases (Tauri)**: Use `npm run release -- <version>` to bump version, build signed artifacts, and generate `latest.json`. Signing key lives at `~/.tauri/nava.key` — never commit it. After building, upload artifacts + `latest.json` to a GitHub Release. Users get auto-prompted on app launch; manual check in Settings → Check for updates.
+- **Supabase**: Add migrations to `supabase/migrations/`. Run `supabase db push` when adding/changing migrations or when saving/committing everything. Edge function secrets: `FROM_EMAIL`, `APP_URL`, `RESEND_API_KEY`, etc. — set via `supabase secrets set` or Dashboard.
+- **Domain & email**: `vicomnava.com` verified with Resend. Emails send from `noreply@vicomnava.com`. Supabase secrets `FROM_EMAIL` and `APP_URL` must be set.
+- **Desktop releases (Tauri)**: Use `npm run release -- <version>`. Signing key at `~/.tauri/nava.key` — never commit. GitHub Secrets `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` enable CI signed builds. Upload artifacts + `latest.json` to GitHub Release.
 - **Components**: Break code into small, reusable components with imports. Avoid large monolith files.

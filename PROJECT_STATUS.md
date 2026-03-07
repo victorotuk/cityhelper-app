@@ -60,7 +60,7 @@ Three ways to run Nava; privacy-first, user chooses control level.
 - **Mileage tracking (vehicles)**: GPS + Maps trip detection (mobile only, disabled on web). Options: OBD-II (GPS fallback) | GPS+Maps. Migrations 023–025.
 - **Trip detection (planned)**: Speed threshold >15 mph = driving vs walk/jog. Snap to Roads (Google) for road vs sidewalk. Note: We cannot read Google/Apple Maps "driving mode" — apps are sandboxed.
 - **Email suggestions**: Connect Gmail or Outlook to scan inbox for trackable items (subscriptions, tickets, renewals, bills). Multi-provider OAuth (email-oauth), AI extraction (fetch-email-suggestions). Migrations 019–021. Configured: Google OAuth, Microsoft Entra.
-- **Merged**: nava-app merged into nava. Single project now contains full React app, Android, iOS, Supabase, stripe-webhook, app.html (Predictably Human).
+- **Merged**: nava-app merged into nava. Single project now contains full React app, Android, iOS, Supabase, stripe-webhook.
 - **Bill Pay**: pay_url and pay_phone on compliance_items (migration 010). Housing, Office, Property items support "Pay online" URL and "Call to pay" phone.
 - **Android**: Built successfully via Codemagic. App installed on Android device, ready for iteration.
 - AI chat (Groq), document scanning (OpenAI), ScanUpload, ChatBubble, codemagic.yaml.
@@ -89,7 +89,9 @@ Three ways to run Nava; privacy-first, user chooses control level.
 
 **Already in place:** Tauri 2 config (`src-tauri/`), `npm run tauri:dev` / `npm run tauri:build`, app name “Nava”, default window 1280×840 (desktop-app feel). Window is fully resizable (min 320×400); layout adjusts with flex/fluid CSS. Desktop uses same code as web; IndexedDB, auth, and API work unchanged.
 
-**In-place updates (fully wired):** Signing key generated (`~/.tauri/nava.key`), public key in `tauri.conf.json`. Builds produce signed `.tar.gz` + `.sig`. App auto-checks for updates on startup and prompts the user; manual check via **Settings → Check for updates**. Release workflow: `npm run release -- <version>` bumps version, builds signed artifacts, generates `latest.json`. Upload to GitHub Releases → users update in-app, no reinstall. See **docs/TAURI_UPDATES.md**.
+**In-place updates (fully wired):** Signing key at `~/.tauri/nava.key`, public key in `tauri.conf.json`. GitHub Secrets: `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` — CI builds signed artifacts. App auto-checks on startup; manual check in **Settings → Check for updates**. Release: `npm run release -- <version>`. See **docs/TAURI_UPDATES.md**.
+
+**Domain & email:** `vicomnava.com` verified with Resend (DKIM, SPF, DMARC). Supabase secrets: `FROM_EMAIL` = `noreply@vicomnava.com`, `APP_URL` = `https://vicomnava.com`. Digest, onboarding, reminders send from verified domain.
 
 ### What's Left to Do
 | Priority | Item | Status |
@@ -120,7 +122,10 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
 
 ### Changelog
 - 2026-03-07
-  - **In-app updates fully wired:** Signing key generated, public key in tauri.conf.json. Builds now produce signed .tar.gz + .sig. Auto-check on startup (desktopUpdater.js in main.jsx) prompts users on launch if a new version exists. Manual check in Settings. Release script: npm run release -- 0.2.0 bumps version, builds signed artifacts, generates latest.json. Full workflow in docs/TAURI_UPDATES.md.
+  - **Domain & email:** vicomnava.com verified with Resend (Namecheap DNS: DKIM, SPF, DMARC). Supabase secrets FROM_EMAIL and APP_URL set. Digest, onboarding, reminders send from noreply@vicomnava.com.
+  - **GitHub Secrets:** TAURI_SIGNING_PRIVATE_KEY and TAURI_SIGNING_PRIVATE_KEY_PASSWORD added to repo — CI produces signed desktop builds.
+  - **Full audit fixes:** 27 issues across 33 files. Critical: stripe-webhook verify_jwt=false, fetch-email-suggestions outlookAfter bug. Security: auth on chat/send-sms/verify-phone, admin.listUsers→RPC in ai-chat/nava-api/share-item. Cleanup: app.html + assets/ removed. Branding: com.nava.app, Cargo.toml metadata, release.sh Cargo bump + platforms.
+  - **In-app updates fully wired:** Signing key, public key in tauri.conf.json. Builds produce signed .tar.gz + .sig. Auto-check on startup; manual check in Settings. Release script: npm run release -- 0.2.0. Full workflow in docs/TAURI_UPDATES.md.
 - 2026-03-06
   - **New Nava logo (3 waves, large sphere):** Dark (`nava-logo-dark.png`) and light (`nava-logo-light.png`) versions in `public/`. Theme-aware `LogoImg` component; Dashboard, PageHeader, LandingNav, Auth use it. Favicon and Tauri app icons regenerated from dark logo. Config: `logoImageDark`, `logoImageLight`.
   - **Tauri in-place updates:** Updater plugin + process plugin; Settings → “Check for updates” (desktop only). `createUpdaterArtifacts: true`, endpoints for GitHub Releases; `docs/TAURI_UPDATES.md` for key generation and release workflow.
