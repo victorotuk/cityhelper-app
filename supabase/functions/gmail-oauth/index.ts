@@ -23,7 +23,7 @@ serve(async (req) => {
 
   const clientId = Deno.env.get('GOOGLE_CLIENT_ID')
   const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET')
-  const appUrl = Deno.env.get('APP_URL') || 'http://localhost:5173'
+  const appUrl = Deno.env.get('APP_URL') || 'https://vicomnava.com'
 
   if (!clientId || !clientSecret) {
     return Response.redirect(`${appUrl}/settings?error=email_not_configured`, 302)

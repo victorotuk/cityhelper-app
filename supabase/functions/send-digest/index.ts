@@ -10,7 +10,7 @@ const corsHeaders = {
 }
 
 const APP_NAME = Deno.env.get('APP_NAME') || 'Nava'
-const APP_URL = Deno.env.get('APP_URL') || 'https://nava.ai'
+const APP_URL = Deno.env.get('APP_URL') || 'https://vicomnava.com'
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 
 function getDigestDay(day: number): string {
@@ -119,7 +119,7 @@ serve(async (req) => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: `${APP_NAME} <${Deno.env.get('FROM_EMAIL') || 'noreply@resend.dev'}>`,
+          from: `${APP_NAME} <${Deno.env.get('FROM_EMAIL') || 'noreply@vicomnava.com'}>`,
           to: email,
           subject: `🍁 Your ${getDigestDay(todayDay)} digest — ${items.length} items to track`,
           html

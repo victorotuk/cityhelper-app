@@ -40,7 +40,7 @@ serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   )
 
-  const appUrl = Deno.env.get('APP_URL') || 'http://localhost:5173'
+  const appUrl = Deno.env.get('APP_URL') || 'https://vicomnava.com'
   const redirectUri = `${url.origin}${url.pathname}`
 
   // ── GET: OAuth callback (code + state) ──

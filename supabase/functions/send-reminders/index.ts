@@ -95,7 +95,7 @@ async function getAppServer(): Promise<ApplicationServer | null> {
   try {
     const vapidKeys = importVapidKeys(JSON.parse(vapidJson) as ExportedVapidKeys)
     return await ApplicationServer.new({
-      contactInformation: Deno.env.get('APP_SUPPORT_EMAIL') || 'mailto:support@nava.ai',
+      contactInformation: Deno.env.get('APP_SUPPORT_EMAIL') || 'mailto:support@vicomnava.com',
       vapidKeys,
     })
   } catch (e) {

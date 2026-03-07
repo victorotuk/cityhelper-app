@@ -10,7 +10,7 @@ const corsHeaders = {
 }
 
 const APP_NAME = Deno.env.get('APP_NAME') || 'Nava'
-const APP_URL = Deno.env.get('APP_URL') || 'https://nava.ai'
+const APP_URL = Deno.env.get('APP_URL') || 'https://vicomnava.com'
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -162,7 +162,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: `${APP_NAME} <${Deno.env.get('FROM_EMAIL') || 'noreply@resend.dev'}>`,
+        from: `${APP_NAME} <${Deno.env.get('FROM_EMAIL') || 'noreply@vicomnava.com'}>`,
         to,
         subject: template.subject,
         html: template.html,
