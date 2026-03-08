@@ -54,6 +54,7 @@ Three ways to run Nava; privacy-first, user chooses control level.
 - Stack: React + Vite, Capacitor (Android/iOS), Supabase, Tauri (desktop)
 
 ### Recent
+- **Landing downloads**: Footer has "Download for Mac" (direct), "All downloads" (GitHub releases), and App Store / Play Store links when `appStoreUrl` / `playStoreUrl` are set in `config.js`.
 - **Desktop app (Tauri)**: Native desktop apps for macOS, Windows, Linux. Signed in-app updates (auto-check on startup + Settings). Release script: `npm run release -- <version>`. New Nava logo (3 waves, large sphere) — dark/light, theme-aware. Desktop-specific CSS (solid headers, no scroll overlap). Auth-first screen on desktop (no landing promo). Window 1280×840, fully resizable.
 - **OpenClaw integration**: Nava as OpenClaw plugin (`openclaw-nava`). Settings → OpenClaw & API (API URL, generate key). Edge functions: `nava-api` (HTTP API), `create-api-key`. Migration 028 (`nava_api_keys`). Setup script `scripts/setup-openclaw.sh`, README docs. Use Nava from WhatsApp, iMessage, etc. via OpenClaw.
 - **Local-first + E2E (Path A)**: compliance_items in IndexedDB, read/write local first, sync encrypted to Supabase. OAuth users get auto-generated encryption key (no passphrase). Email users use password.

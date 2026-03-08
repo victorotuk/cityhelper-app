@@ -2,6 +2,21 @@
 
 Use this to test the site thoroughly and keep it working and optimized.
 
+## View & test all platforms (one click)
+
+| Platform | How to open |
+|----------|-------------|
+| **Web** | `npm run dev` → open http://localhost:5173 in Chrome/Safari |
+| **Desktop (Tauri)** | `npm run tauri:dev` → opens native window (same URL, no browser chrome) |
+| **Mobile (simulated)** | `npm run dev` → Chrome DevTools (Mac: Cmd+Option+I) → Toggle device toolbar (Cmd+Shift+M) → pick iPhone/Android |
+| **Mobile (real device)** | `npm run dev` → ensure phone and Mac on same Wi‑Fi → open http://YOUR_MAC_IP:5173 on phone |
+
+**Quick test all three:**
+1. Terminal 1: `npm run dev`
+2. Browser: http://localhost:5173 (web)
+3. Chrome DevTools → device toolbar → iPhone 14 (mobile view)
+4. Terminal 2: `npm run tauri:dev` (desktop app)
+
 ## Quick checks (before every release)
 
 ```bash

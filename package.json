@@ -1,7 +1,7 @@
 {
   "name": "nava-app",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -18,7 +18,8 @@
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
-    "release": "bash scripts/release.sh"
+    "release": "bash scripts/release.sh",
+    "capture:comparison": "node scripts/capture-platform-comparison.js"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",
@@ -50,6 +51,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "playwright": "^1.58.2",
     "vite": "^7.2.4"
   }
 }

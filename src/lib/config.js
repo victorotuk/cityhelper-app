@@ -10,7 +10,7 @@ export const APP_CONFIG = {
   name: "Nava",                // In-app display name
   formalName: "Nava",         // Domains, app store, copyright, formal contexts
   tagline: "Never miss a deadline",
-  description: "Build wealth, protect your legacy — trusts, estate planning, holding companies, and all your compliance in one place.",
+  description: "Track renewals, visas, taxes, trusts, parking tickets — almost anything with a deadline. Get reminders. Soon: AI that helps you file applications.",
   
   // BRAND VISUALS — 3 waves, large sphere. Dark for dark theme, light (transparent) for light theme.
   logo: "N",           // Fallback for brand mark when no image
@@ -20,6 +20,16 @@ export const APP_CONFIG = {
   
   // CONTACT
   supportEmail: "support@example.com",
+
+  // DOWNLOADS & STORES — update appStoreUrl when iOS is live
+  downloads: {
+    githubReleases: "https://github.com/victorotuk/cityhelper-app/releases",
+    mac: "https://github.com/victorotuk/cityhelper-app/releases/latest/download/Nava.app.tar.gz",
+    windows: "https://github.com/victorotuk/cityhelper-app/releases",
+    linux: "https://github.com/victorotuk/cityhelper-app/releases",
+  },
+  appStoreUrl: null,   // e.g. "https://apps.apple.com/app/nava/id123456789" — add when iOS is live
+  playStoreUrl: "https://play.google.com/store/apps/details?id=com.nava.app",
 
   // MILEAGE TRACKING (OBD-II, GPS + Maps)
   mileage: {

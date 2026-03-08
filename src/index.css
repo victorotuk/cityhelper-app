@@ -149,6 +149,7 @@ textarea:focus,
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 72px; /* prevent sticky nav from overlapping anchor targets (#features, etc.) */
   -webkit-font-smoothing: antialiased;
   height: 100%;
 }
@@ -414,6 +415,16 @@ input, select, textarea { font-family: inherit; }
 .hero-aside {
   position: sticky;
   top: 100px;
+}
+
+/* Landing best practices: mobile = single column, one CTA prominent, minimal above fold */
+@media (max-width: 768px) {
+  .hero { grid-template-columns: 1fr; padding-bottom: var(--space-xl); }
+  .hero-aside { position: static; order: 2; }
+  .hero-content { order: 1; }
+  .hero-cta-primary { width: 100%; justify-content: center; min-height: 48px; }
+  .hero-cta-secondary { display: none; }
+  .hero-body { font-size: 16px; margin-bottom: var(--space-lg); }
 }
 
 .aside-card {

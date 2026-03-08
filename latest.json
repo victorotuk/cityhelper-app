@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "notes": "Nava v0.2.0",
+  "pub_date": "2026-03-08T01:03:10Z",
+  "platforms": {
+    "darwin-aarch64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRZU44RmdKclkyTnV3R2lXSjNMaklWaXpuaStyeDMrS284MlNRR1NFU1lQTU9iMUVIbEFRVEQ1eGlRVWJPQ291ckRVRXZQQ2tzZHN4VEpyOXl4QWEvb21PUXdMSVZpTlFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzcyOTMxNzkwCWZpbGU6TmF2YS5hcHAudGFyLmd6CkpDTE9PZHJXQ2dVY1BKU1V4SlNPcS94QnZRdzZXVzNZYzNTcjhacFE4VnIrMGcvbzBhV0xjcStzbXU0UG9IbzVTWXloQkRNc2FhaDVmczdDMVE1eURRPT0K",
+      "url": "https://github.com/victorotuk/cityhelper-app/releases/download/v0.2.0/Nava.app.tar.gz"
+    },
+    "darwin-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRZU44RmdKclkyTnV3R2lXSjNMaklWaXpuaStyeDMrS284MlNRR1NFU1lQTU9iMUVIbEFRVEQ1eGlRVWJPQ291ckRVRXZQQ2tzZHN4VEpyOXl4QWEvb21PUXdMSVZpTlFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzcyOTMxNzkwCWZpbGU6TmF2YS5hcHAudGFyLmd6CkpDTE9PZHJXQ2dVY1BKU1V4SlNPcS94QnZRdzZXVzNZYzNTcjhacFE4VnIrMGcvbzBhV0xjcStzbXU0UG9IbzVTWXloQkRNc2FhaDVmczdDMVE1eURRPT0K",
+      "url": "https://github.com/victorotuk/cityhelper-app/releases/download/v0.2.0/Nava.app.tar.gz"
+    },
+    "windows-x86_64": {
+      "signature": "",
+      "url": "https://github.com/victorotuk/cityhelper-app/releases/download/v0.2.0/Nava_0.2.0_x64-setup.exe"
+    },
+    "linux-x86_64": {
+      "signature": "",
+      "url": "https://github.com/victorotuk/cityhelper-app/releases/download/v0.2.0/nava_0.2.0_amd64.AppImage"
+    }
+  }
+}
