@@ -1,5 +1,5 @@
 ## Nava — Project Status
-Updated: 2026-03-07
+Updated: 2026-03-08
 
 **→ For AI: Read this file first when user returns.** Full context: Vision, Recent (features), Changelog (what was built), What's Left, All Prompts & Outcomes. Project: cityhelper → Nava. React + Vite, Supabase, Capacitor.
 
@@ -122,6 +122,9 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
 - If Supabase or other security advisories arrive, address promptly. Privacy is key.
 
 ### Changelog
+- 2026-03-08
+  - **ESLint:** Ignore `src-tauri/target/**`; scripts use Node globals. Lint: 0 errors, 3 warnings.
+  - **Docs:** TESTING.md — "How to check desktop changes" section; desktop overlap verification steps.
 - 2026-03-07 (overlap fix)
   - **Sticky header overlap fixed:** Desktop (Tauri): `padding-top: 100px` on dashboard-main, settings-main, tax-main, apply-main, assistant-main, documents-main so content doesn’t scroll under the sticky header. Web landing: hero and features-section `padding-top: 100px`, `scroll-padding-top` / `scroll-margin-top: 100px` for anchor links.
 - 2026-03-07

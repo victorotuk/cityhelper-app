@@ -2,6 +2,16 @@
 
 Use this to test the site thoroughly and keep it working and optimized.
 
+## How to check desktop changes
+
+```bash
+npm run tauri:dev
+```
+
+This opens the native desktop app. Sign in, then scroll on Dashboard, Settings, Tax, Apply, Assistant, and Documents — content should stay below the sticky header (no overlap). Resize the window to confirm layout adapts.
+
+---
+
 ## View & test all platforms (one click)
 
 | Platform | How to open |
@@ -100,6 +110,15 @@ To lock in behavior and catch regressions:
 See [Playwright](https://playwright.dev/) and [Vitest](https://vitest.dev/) docs for setup. A minimal Playwright smoke test is often the highest ROI.
 
 ### Desktop (Tauri)
+
+**How to verify desktop changes (including overlap fix):**
+
+1. Run `npm run tauri:dev` — opens the native desktop window.
+2. Sign in (or sign up) — desktop skips landing and goes straight to auth.
+3. On **Dashboard**: scroll down — content should stay below the sticky header (no overlap).
+4. On **Settings**, **Tax**, **Apply**, **Assistant**, **Documents**: same — scroll and confirm content doesn’t go under the top bar.
+5. Resize the window — layout should adapt without breaking.
+
 - [ ] **Dev mode** – `npm run tauri:dev` opens desktop window; UI matches web.
 - [ ] **Auth-first** – Desktop opens to sign-in/sign-up (not the landing page promo).
 - [ ] **Scroll/overlap** – Scroll dashboard and settings; content does not overlap the top nav bar or native window controls.

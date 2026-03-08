@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', 'android/**', 'ios/**', 'node_modules/**']),
+  globalIgnores(['dist', 'android/**', 'ios/**', 'node_modules/**', 'src-tauri/target/**']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [
@@ -25,5 +25,9 @@ export default defineConfig([
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_' }],
     },
+  },
+  {
+    files: ['scripts/**/*.js'],
+    languageOptions: { globals: { ...globals.browser, ...globals.node } },
   },
 ])
