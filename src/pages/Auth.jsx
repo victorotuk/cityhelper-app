@@ -154,11 +154,15 @@ export default function Auth() {
           />
         </div>
 
-        {!isApp && (
-          <p className="auth-footer">
+        <p className="auth-footer">
+          {isApp ? (
+            <a href={APP_CONFIG.webUrl || 'https://vicomnava.com'} target="_blank" rel="noopener noreferrer">
+              Learn more about {APP_CONFIG.name} ↗
+            </a>
+          ) : (
             <Link to="/">← Back to home</Link>
-          </p>
-        )}
+          )}
+        </p>
       </div>
     </div>
   );

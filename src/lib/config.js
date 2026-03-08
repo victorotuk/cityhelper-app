@@ -18,6 +18,9 @@ export const APP_CONFIG = {
   logoImageDark: "/nava-logo-dark.png",  // Dark backgrounds
   logoImageLight: "/nava-logo-light.png", // Light backgrounds (transparent)
   
+  // WEB URL — where the landing/promo page lives (for "Learn more" links in desktop/mobile app)
+  webUrl: "https://vicomnava.com",
+
   // CONTACT
   supportEmail: "support@example.com",
 
