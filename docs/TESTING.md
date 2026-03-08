@@ -10,6 +10,8 @@ npm run tauri:dev
 
 This opens the native desktop app. Sign in, then scroll on Dashboard, Settings, Tax, Apply, Assistant, and Documents — content should stay below the sticky header (no overlap). Resize the window to confirm layout adapts.
 
+**Title bar overlap:** If content scrolls under the native window title bar (close/minimize/maximize), we add `padding-top: 38px` on desktop. To use a content-under-titlebar style instead, set `--tauri-titlebar-height: 0` in your CSS.
+
 ---
 
 ## View & test all platforms (one click)

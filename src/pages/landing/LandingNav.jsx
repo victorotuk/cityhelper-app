@@ -8,7 +8,7 @@ export default function LandingNav() {
       <Link to="/" className="brand">
         <div className="brand-mark">
           {(APP_CONFIG.logoImage || APP_CONFIG.logoImageDark || APP_CONFIG.logoImageLight) ? (
-            <LogoImg alt="Nava" className="brand-logo-img" />
+            <LogoImg alt="Nava" className="brand-logo-img" variant="light" />
           ) : (
             <span>{APP_CONFIG.logo}</span>
           )}

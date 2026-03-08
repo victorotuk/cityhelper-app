@@ -1,6 +1,6 @@
-import { useEffect, lazy, Suspense } from 'react';
+import { useEffect, lazy, Suspense, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
 import { supabase } from './lib/supabase';
 import { startNotificationListener, stopNotificationListener } from './lib/notificationListener';
@@ -97,6 +97,29 @@ function App() {
     }).catch(() => {});
   }, []);
 
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return !!(window.__TAURI__ || document.documentElement?.classList?.contains('tauri-desktop'));
+  });
+
+  // Desktop (Tauri): __TAURI__ can be injected async; recheck after mount.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.__TAURI__ || document.documentElement?.classList?.contains('tauri-desktop')) {
+      setIsDesktop(true);
+    }
+  }, []);
+
+  // Belt-and-suspenders: if we're on desktop and at /, force redirect (handles async __TAURI__)
+  useEffect(() => {
+    if (!isDesktop) return;
+    if (location.pathname === '/') {
+      navigate('/auth', { replace: true });
+    }
+  }, [isDesktop, location.pathname, navigate]);
+
   if (loading) {
     return (
       <div className="loading-screen">
@@ -107,7 +130,6 @@ function App() {
 
   // Desktop (Tauri) and mobile (Capacitor): minimal auth screen, no promo landing page.
   // Web: full landing page with features/explanation.
-  const isDesktop = typeof window !== 'undefined' && window.__TAURI__;
   const isMobile = Capacitor.getPlatform() !== 'web';
   const isApp = isDesktop || isMobile;
   const homeElement = isApp ? <Navigate to="/auth" replace /> : <Landing />;
