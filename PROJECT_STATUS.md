@@ -122,6 +122,10 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
 - If Supabase or other security advisories arrive, address promptly. Privacy is key.
 
 ### Changelog
+- 2026-03-08 (get-started page + download flow)
+  - **New /get-started page:** Landing CTAs ("Start Free", "Get started") now go to /get-started instead of /auth. Page shows 3 options: Use on web (primary, links to /auth), Desktop app (Mac/Windows/Linux download buttons), Mobile app (App Store/Play Store). Desktop/mobile app skips this page entirely.
+  - **Footer cleaned up:** Removed download links from footer. Footer now just has tagline + copyright + Privacy/Terms.
+  - **Platform logic:** /get-started redirects to /auth on desktop/mobile app (no download links shown in-app).
 - 2026-03-08 (mobile UX + desktop fix)
   - **CRITICAL FIX:** Added `withGlobalTauri: true` to tauri.conf.json — root cause of desktop redirect never working. Without it, Tauri never injects `window.__TAURI__`.
   - **Mobile bottom tab bar:** Dashboard shows Home / Add / Docs / Settings at ≤640px (replaces hamburger-only nav).
