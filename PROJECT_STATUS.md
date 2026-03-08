@@ -122,6 +122,11 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
 - If Supabase or other security advisories arrive, address promptly. Privacy is key.
 
 ### Changelog
+- 2026-03-08 (desktop redirect + overlap)
+  - **Desktop redirect:** Robust detection (__TAURI__ + tauri-desktop class); useEffect redirect to /auth when on desktop at /. Desktop no longer shows landing.
+  - **Landing overlap:** Fixed nav, landing-main padding; tauri title bar clearance; solid headers.
+  - **LogoImg:** variant prop for landing nav (light on dark).
+  - **docs/ROADMAP.md** added.
 - 2026-03-08
   - **ESLint:** Ignore `src-tauri/target/**`; scripts use Node globals. Lint: 0 errors, 3 warnings.
   - **Docs:** TESTING.md — "How to check desktop changes" section; desktop overlap verification steps.
