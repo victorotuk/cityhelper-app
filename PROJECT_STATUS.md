@@ -122,6 +122,13 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
 - If Supabase or other security advisories arrive, address promptly. Privacy is key.
 
 ### Changelog
+- 2026-03-08 (mobile UX + desktop fix)
+  - **CRITICAL FIX:** Added `withGlobalTauri: true` to tauri.conf.json — root cause of desktop redirect never working. Without it, Tauri never injects `window.__TAURI__`.
+  - **Mobile bottom tab bar:** Dashboard shows Home / Add / Docs / Settings at ≤640px (replaces hamburger-only nav).
+  - **Landing nav hamburger:** Mobile gets hamburger; desktop keeps full links. From DESKTOP_MOBILE_UX.md.
+  - **Full-screen modals on mobile:** Modals fill the screen at ≤640px instead of centered overlay.
+  - **Chat overlay full-screen on mobile:** 100% width/height at ≤640px instead of 420px slide-over.
+  - **44px touch targets:** btn-icon, snooze menu, mobile menu items meet minimum 44px on mobile.
 - 2026-03-08 (desktop redirect + overlap, round 2)
   - **Desktop redirect:** Polling in index.html for __TAURI__ (up to 2s); sets tauri-desktop class + dispatches 'tauri-ready'. App listens and redirects to /auth. Handles async Tauri injection.
   - **Overlap fix:** landing-nav, dashboard-header, page-header use solid var(--bg-deep) (no transparency). isolation + box-shadow for crisp edges. Content no longer shows through when scrolling.
