@@ -122,6 +122,8 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
 - If Supabase or other security advisories arrive, address promptly. Privacy is key.
 
 ### Changelog
+- 2026-03-07 (overlap fix)
+  - **Sticky header overlap fixed:** Desktop (Tauri): `padding-top: 100px` on dashboard-main, settings-main, tax-main, apply-main, assistant-main, documents-main so content doesn’t scroll under the sticky header. Web landing: hero and features-section `padding-top: 100px`, `scroll-padding-top` / `scroll-margin-top: 100px` for anchor links.
 - 2026-03-07
   - **Domain & email:** vicomnava.com verified with Resend (Namecheap DNS: DKIM, SPF, DMARC). Supabase secrets FROM_EMAIL and APP_URL set. Digest, onboarding, reminders send from noreply@vicomnava.com.
   - **GitHub Secrets:** TAURI_SIGNING_PRIVATE_KEY and TAURI_SIGNING_PRIVATE_KEY_PASSWORD added to repo — CI produces signed desktop builds.
