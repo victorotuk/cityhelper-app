@@ -1,6 +1,6 @@
-import { useEffect, lazy, Suspense, useState } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
 import { supabase } from './lib/supabase';
 import { startNotificationListener, stopNotificationListener } from './lib/notificationListener';
@@ -98,33 +98,7 @@ function App() {
     }).catch(() => {});
   }, []);
 
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [isDesktop, setIsDesktop] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return !!(window.__TAURI__ || document.documentElement?.classList?.contains('tauri-desktop') || document.documentElement?.dataset?.tauri === 'true');
-  });
-
-  // Desktop (Tauri): __TAURI__ can be injected async; listen for early-detection script.
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const check = () => {
-      if (window.__TAURI__ || document.documentElement?.classList?.contains('tauri-desktop') || document.documentElement?.dataset?.tauri === 'true') {
-        setIsDesktop(true);
-      }
-    };
-    check();
-    window.addEventListener('tauri-ready', check);
-    return () => window.removeEventListener('tauri-ready', check);
-  }, []);
-
-  // Belt-and-suspenders: if we're on desktop and at /, force redirect (handles async __TAURI__)
-  useEffect(() => {
-    if (!isDesktop) return;
-    if (location.pathname === '/') {
-      navigate('/auth', { replace: true });
-    }
-  }, [isDesktop, location.pathname, navigate]);
+  const isDesktop = typeof window !== 'undefined' && !!window.__TAURI__;
 
   if (loading) {
     return (
