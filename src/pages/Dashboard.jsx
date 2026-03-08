@@ -45,7 +45,8 @@ import {
   Landmark,
   BookOpen,
   Sun,
-  Moon
+  Moon,
+  LayoutDashboard
 } from 'lucide-react';
 import NotificationBell from '../components/common/NotificationBell';
 import WelcomeGuide from '../components/welcomeGuide/WelcomeGuide';
@@ -674,6 +675,26 @@ export default function Dashboard() {
           onComplete={(p) => { setShowWelcome(false); if (p) setPersona(p); }} 
         />
       )}
+
+      {/* Mobile bottom tab bar */}
+      <nav className="bottom-tab-bar" aria-label="Main navigation">
+        <Link to="/dashboard" className={`active`}>
+          <LayoutDashboard />
+          <span>Home</span>
+        </Link>
+        <button type="button" onClick={handleOpenAddModal}>
+          <Plus />
+          <span>Add</span>
+        </button>
+        <Link to="/documents">
+          <Folder />
+          <span>Docs</span>
+        </Link>
+        <Link to="/settings">
+          <Settings />
+          <span>Settings</span>
+        </Link>
+      </nav>
     </div>
   );
 }
