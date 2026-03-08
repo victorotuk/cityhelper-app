@@ -101,15 +101,20 @@ function App() {
   const location = useLocation();
   const [isDesktop, setIsDesktop] = useState(() => {
     if (typeof window === 'undefined') return false;
-    return !!(window.__TAURI__ || document.documentElement?.classList?.contains('tauri-desktop'));
+    return !!(window.__TAURI__ || document.documentElement?.classList?.contains('tauri-desktop') || document.documentElement?.dataset?.tauri === 'true');
   });
 
-  // Desktop (Tauri): __TAURI__ can be injected async; recheck after mount.
+  // Desktop (Tauri): __TAURI__ can be injected async; listen for early-detection script.
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (window.__TAURI__ || document.documentElement?.classList?.contains('tauri-desktop')) {
-      setIsDesktop(true);
-    }
+    const check = () => {
+      if (window.__TAURI__ || document.documentElement?.classList?.contains('tauri-desktop') || document.documentElement?.dataset?.tauri === 'true') {
+        setIsDesktop(true);
+      }
+    };
+    check();
+    window.addEventListener('tauri-ready', check);
+    return () => window.removeEventListener('tauri-ready', check);
   }, []);
 
   // Belt-and-suspenders: if we're on desktop and at /, force redirect (handles async __TAURI__)

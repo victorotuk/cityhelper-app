@@ -13,6 +13,22 @@
   <body>
     <div id="root"></div>
     <script>
+      /* Tauri detection: __TAURI__ can be injected async. Poll and set class/event for React. */
+      (function() {
+        var attempts = 0, maxAttempts = 40;
+        function check() {
+          if (window.__TAURI__) {
+            document.documentElement.classList.add('tauri-desktop');
+            document.documentElement.dataset.tauri = 'true';
+            window.dispatchEvent(new CustomEvent('tauri-ready'));
+            return;
+          }
+          if (++attempts < maxAttempts) setTimeout(check, 50);
+        }
+        check();
+      })();
+    </script>
+    <script>
       window.__APP_ERROR__ = null;
       window.addEventListener('error', function(e) {
         window.__APP_ERROR__ = e;
