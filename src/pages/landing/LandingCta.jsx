@@ -9,7 +9,7 @@ export default function LandingCta() {
         <p className="aside-text" style={{ marginBottom: '24px' }}>
           Start free. No credit card required. Cancel anytime.
         </p>
-        <Link to="/auth" className="btn btn-primary btn-lg">
+        <Link to="/get-started" className="btn btn-primary btn-lg">
           Get started <ArrowRight size={18} />
         </Link>
       </div>

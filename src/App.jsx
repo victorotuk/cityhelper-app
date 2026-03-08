@@ -5,6 +5,7 @@ import { useAuthStore } from './stores/authStore';
 import { supabase } from './lib/supabase';
 import { startNotificationListener, stopNotificationListener } from './lib/notificationListener';
 import Landing from './pages/landing';
+import GetStarted from './pages/GetStarted';
 import Auth from './pages/Auth';
 import TaxEstimator from './pages/TaxEstimator';
 import Assistant from './pages/Assistant';
@@ -142,6 +143,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={homeElement} />
+      <Route path="/get-started" element={isApp ? <Navigate to="/auth" replace /> : <GetStarted />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/dashboard" element={
         <ProtectedRoute>

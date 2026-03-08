@@ -12,7 +12,7 @@ export default function LandingHero() {
         </h1>
         <p className="hero-body">{APP_CONFIG.description}</p>
         <div className="hero-actions">
-          <Link to="/auth" className="btn btn-primary btn-lg hero-cta-primary">
+          <Link to="/get-started" className="btn btn-primary btn-lg hero-cta-primary">
             Start Free <ArrowRight size={18} className="button-arrow" />
           </Link>
           <a href="#features" className="btn btn-ghost btn-lg hero-cta-secondary">Learn more</a>
