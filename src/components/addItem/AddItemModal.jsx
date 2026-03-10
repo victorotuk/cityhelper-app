@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Camera, Upload, List } from 'lucide-react';
+import { X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { AUTO_DETECT_PROMPT } from '../../lib/addItemExtractPrompts';
 import { APP_CONFIG } from '../../lib/config';
 import AddItemCategoryPicker from './AddItemCategoryPicker';
 import AddItemFormFields from './AddItemFormFields';
+import AddItemScanFirst from './AddItemScanFirst';
 
 export default function AddItemModal({
   onClose,
@@ -174,35 +175,14 @@ export default function AddItemModal({
         </div>
 
         {showScanFirst ? (
-          <div className="scan-first-screen">
-            <input ref={cameraRef} type="file" accept="image/*" capture="environment" onChange={handleFileChange} hidden />
-            <input ref={fileRef} type="file" accept="image/*,.pdf" onChange={handleFileChange} hidden />
-
-            {scanning ? (
-              <div className="scan-first-loading">
-                <div className="loading-spinner" />
-                <p>Identifying document...</p>
-              </div>
-            ) : (
-              <>
-                <p className="scan-first-hint">Snap a photo of any document — we'll figure out what it is.</p>
-                <button type="button" className="scan-first-btn primary" onClick={() => cameraRef.current?.click()}>
-                  <Camera size={24} />
-                  <span>Scan with camera</span>
-                </button>
-                <button type="button" className="scan-first-btn" onClick={() => fileRef.current?.click()}>
-                  <Upload size={20} />
-                  <span>Upload a photo</span>
-                </button>
-                {scanError && <p className="scan-first-error">{scanError}</p>}
-                <div className="scan-first-divider"><span>or</span></div>
-                <button type="button" className="scan-first-btn ghost" onClick={() => setShowCategories(true)}>
-                  <List size={20} />
-                  <span>Browse categories</span>
-                </button>
-              </>
-            )}
-          </div>
+          <AddItemScanFirst
+            cameraRef={cameraRef}
+            fileRef={fileRef}
+            scanning={scanning}
+            scanError={scanError}
+            onFileChange={handleFileChange}
+            onBrowseCategories={() => setShowCategories(true)}
+          />
         ) : !selectedCategory ? (
           <AddItemCategoryPicker
             activeGroup={activeGroup}

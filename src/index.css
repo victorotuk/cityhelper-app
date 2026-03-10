@@ -1731,6 +1731,31 @@ input, select, textarea { font-family: inherit; }
   height: 1px;
   background: var(--border-subtle);
 }
+.scan-first-btn.subtle {
+  background: transparent;
+  border: 1px dashed var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 10px 20px;
+  max-width: 320px;
+  width: 100%;
+}
+.scan-first-btn.subtle:hover { border-color: var(--accent); color: var(--accent); }
+.continue-on-mobile { display: flex; flex-direction: column; align-items: center; margin-top: 4px; }
+.mobile-qr-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+}
+.mobile-qr-img { border-radius: var(--radius-md); }
+.mobile-qr-hint { font-size: 12px; color: var(--text-muted); text-align: center; max-width: 220px; }
+
 .scan-first-loading {
   padding: var(--space-xl) 0;
   display: flex;
