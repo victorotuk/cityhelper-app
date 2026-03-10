@@ -28,6 +28,7 @@ import SettingsSmartSuggestionsSection from '../components/settings/SettingsSmar
 import SettingsSuggestFeatureSection from '../components/settings/SettingsSuggestFeatureSection';
 import SettingsPrivacySection from '../components/settings/SettingsPrivacySection';
 import SettingsDesktopUpdatesSection from '../components/settings/SettingsDesktopUpdatesSection';
+import SettingsAboutSection from '../components/settings/SettingsAboutSection';
 
 export default function Settings() {
   const { user, signOut } = useAuthStore();
@@ -460,6 +461,7 @@ export default function Settings() {
           <SettingsSuggestFeatureSection onOpenSuggestionBox={() => setShowSuggestionBox(true)} />
           <SettingsPrivacySection />
           <SettingsDesktopUpdatesSection />
+          <SettingsAboutSection />
           <SettingsDangerSection signOut={signOut} />
         </div>
       </main>
