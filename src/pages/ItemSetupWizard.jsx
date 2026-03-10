@@ -6,24 +6,12 @@ import { useComplianceStore } from '../stores/complianceStore';
 import { supabase } from '../lib/supabase';
 import { APP_CONFIG } from '../lib/config';
 import { TRUST_TYPES, hasTypeSelector, hasPeopleStep, getSetupGuide } from '../lib/setupWizardConfig';
+import { EMPTY_EMOJIS } from '../components/dashboard/constants';
 import AppCard from '../components/ui/AppCard';
 import PageHeader from '../components/ui/PageHeader';
 
-const CATEGORY_EMOJIS = {
-  immigration: '✈️', trust: '🏛️', tax: '💰', driving: '🚗', parking: '🅿️', health: '❤️', fitness: '💪',
-  education: '📚', work_schedule: '⏰', retirement_estate: '📜', housing: '🏡',
-  business_tax: '💰', employees: '👥', assets: '📦', liabilities: '⚠️',
-  business_insurance: '🛡️', office: '💼', business_license: '📋', property: '🏠', professional: '🎓', other: '📌',
-  subscriptions: '🔄', pet_care: '🐕', kids_family: '👶', personal_insurance: '🛡️',
-  credit_banking: '💳', travel: '✈️', important_dates: '📅', legal_court: '⚖️', moving: '🚚', government_benefits: '📋',
-  contracts: '📝', certifications: '🏅', patents_ip: '©️', environmental: '🌿', data_privacy: '🔒',
-  employee_benefits: '🎁',
-  inst_regulatory: '🏛️', inst_staff: '👨‍🏫', inst_student: '🎓', inst_finance: '💰',
-  inst_safety: '🔥', inst_facilities: '🔧', inst_legal: '⚖️', inst_programs: '📖', inst_sports: '🏆',
-};
-
 function getCategoryEmoji(catId) {
-  return CATEGORY_EMOJIS[catId] || '📌';
+  return EMPTY_EMOJIS[catId] || '📌';
 }
 
 export default function ItemSetupWizard() {

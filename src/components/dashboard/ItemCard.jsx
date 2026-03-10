@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { APP_CONFIG } from '../../lib/config';
 import { getRenewalUrl } from '../../lib/renewalPortals';
+import { EMPTY_EMOJIS } from './constants';
 import ShareItemModal from '../modals/ShareItemModal';
 
 const SWIPE_THRESHOLD = 80;
@@ -47,22 +48,8 @@ function useSwipe({ onSwipeLeft, onSwipeRight }) {
   return { elRef, onTouchStart, onTouchMove, onTouchEnd };
 }
 
-const CATEGORY_EMOJIS = {
-  immigration: '✈️', trust: '🏛️', tax: '💰', business_tax: '💰',
-  driving: '🚗', parking: '🅿️', health: '❤️', fitness: '💪', retirement_estate: '📜', housing: '🏡',
-  office: '💼', business_license: '📋', property: '🏠', professional: '🎓', other: '📌',
-  subscriptions: '🔄', pet_care: '🐕', kids_family: '👶', personal_insurance: '🛡️',
-  credit_banking: '💳', travel: '✈️', important_dates: '📅', legal_court: '⚖️', moving: '🚚', government_benefits: '📋',
-  contracts: '📝', certifications: '🏅', patents_ip: '©️', environmental: '🌿', data_privacy: '🔒',
-  employee_benefits: '🎁',
-  education: '📚', work_schedule: '⏰', employees: '👥', assets: '📦', liabilities: '⚠️',
-  business_insurance: '🛡️', inst_regulatory: '🏛️', inst_staff: '👨‍🏫', inst_student: '🎓',
-  inst_finance: '💰', inst_safety: '🔥', inst_facilities: '🔧', inst_legal: '⚖️',
-  inst_programs: '📖', inst_sports: '🏆'
-};
-
 function getCategoryEmoji(id) {
-  return CATEGORY_EMOJIS[id] || '📌';
+  return EMPTY_EMOJIS[id] || '📌';
 }
 
 export default function ItemCard({

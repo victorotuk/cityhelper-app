@@ -1,22 +1,10 @@
 import { Clipboard } from 'lucide-react';
 import { APP_CONFIG } from '../../lib/config';
 import { parseTextForSuggestion } from '../../lib/smartSuggestParse';
-
-const CATEGORY_EMOJIS = {
-  immigration: '✈️', trust: '🏛️', tax: '💰', driving: '🚗', parking: '🅿️', health: '❤️', fitness: '💪',
-  education: '📚', work_schedule: '⏰', retirement_estate: '📜', housing: '🏡',
-  business_tax: '💰', employees: '👥', assets: '📦', liabilities: '⚠️',
-  business_insurance: '🛡️', office: '💼', business_license: '📋', property: '🏠', professional: '🎓', other: '📌',
-  subscriptions: '🔄', pet_care: '🐕', kids_family: '👶', personal_insurance: '🛡️',
-  credit_banking: '💳', travel: '✈️', important_dates: '📅', legal_court: '⚖️', moving: '🚚', government_benefits: '📋',
-  contracts: '📝', certifications: '🏅', patents_ip: '©️', environmental: '🌿', data_privacy: '🔒',
-  employee_benefits: '🎁',
-  inst_regulatory: '🏛️', inst_staff: '👨‍🏫', inst_student: '🎓', inst_finance: '💰',
-  inst_safety: '🔥', inst_facilities: '🔧', inst_legal: '⚖️', inst_programs: '📖', inst_sports: '🏆',
-};
+import { EMPTY_EMOJIS } from '../dashboard/constants';
 
 function getCategoryEmoji(catId) {
-  return CATEGORY_EMOJIS[catId] || '📌';
+  return EMPTY_EMOJIS[catId] || '📌';
 }
 
 const inGroup = (cat, g) => cat.group === g || cat.groups?.includes(g);

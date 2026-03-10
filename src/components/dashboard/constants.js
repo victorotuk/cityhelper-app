@@ -61,7 +61,7 @@ export const EMPTY_EXAMPLES = {
 };
 
 export const EMPTY_EMOJIS = {
-  immigration: '✈️', trust: '🏛️', tax: '💰', driving: '🚗', parking: '🅿️', health: '❤️',
+  immigration: '✈️', trust: '🏛️', tax: '💰', driving: '🚗', parking: '🅿️', health: '❤️', fitness: '💪',
   education: '📚', work_schedule: '⏰', housing: '🏡', retirement_estate: '📜', other: '📌',
   employees: '👥', business_tax: '💰', assets: '📦', liabilities: '⚠️',
   business_license: '📋', business_insurance: '🛡️', office: '💼', property: '🏠', professional: '🎓',
