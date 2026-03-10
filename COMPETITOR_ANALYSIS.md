@@ -18,7 +18,7 @@ Features from 17 competitors mapped to Nava. ✅ = we have it. 🔲 = gap.
 | **Task completion history** | Pebbles | ✅ Mark done |
 | **Family/household sharing** | Tidee, Doqit | 🔲 |
 | **Assign owners to tasks** | Tidee | 🔲 |
-| **Weekly digest email** | Tidee | 🔲 |
+| **Weekly digest email** | Tidee | ✅ send-digest Edge Function + Settings toggle |
 
 ## Business Compliance (RemindCal, Expiration Reminder, Avalara)
 
@@ -28,7 +28,7 @@ Features from 17 competitors mapped to Nava. ✅ = we have it. 🔲 = gap.
 | **Bulk edit** | Avalara | ✅ BulkEditModal |
 | **Entity/location management** | Avalara | ✅ Business/Estate pages, migration 018 |
 | **Audit trail** | RemindCal, Avalara | ✅ AuditModal |
-| Multi-recipient alerts | RemindCal | 🔲 |
+| Multi-recipient alerts | RemindCal | ✅ alert_emails on items + send-reminders |
 
 ## Estate/Trust (Trust & Will, LifeFile, Trusty)
 
@@ -37,7 +37,7 @@ Features from 17 competitors mapped to Nava. ✅ = we have it. 🔲 = gap.
 | Trust/will tracking | All | ✅ Trusts category |
 | **Executor/nominee management** | LifeFile | ✅ estate_executors table |
 | **Create documents** (will, trust) | Trust & Will | 🔲 (we track, not create) |
-| **Asset inventory with photos** | Trust & Will, LifeFile | 🔲 |
+| **Asset inventory with photos** | Trust & Will, LifeFile | ✅ Assets page with photo upload |
 | **Secure sharing with beneficiaries** | LifeFile | 🔲 |
 
 ## Parking (Parking Ticket Pal)
@@ -63,10 +63,13 @@ Features from 17 competitors mapped to Nava. ✅ = we have it. 🔲 = gap.
 - ✅ Audit trail
 - ✅ Task completion (mark done)
 
-**Phase 2 (future):**
-- Weekly digest email
+**Phase 2 (implemented):**
+- ✅ Weekly digest email (send-digest Edge Function + Settings toggle)
+- ✅ Multi-recipient alerts (alert_emails + send-reminders emails)
+- ✅ Asset inventory with photos (Assets page + photo upload)
+
+**Phase 3 (future):**
 - Family sharing
 - Assign task owners
-- Asset inventory with photos
 - Secure sharing with beneficiaries
 - Document creation (wills, trusts)

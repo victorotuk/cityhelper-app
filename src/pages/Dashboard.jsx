@@ -46,7 +46,8 @@ import {
   BookOpen,
   Sun,
   Moon,
-  LayoutDashboard
+  LayoutDashboard,
+  Plug
 } from 'lucide-react';
 import NotificationBell from '../components/common/NotificationBell';
 import WelcomeGuide from '../components/welcomeGuide/WelcomeGuide';
@@ -408,6 +409,9 @@ export default function Dashboard() {
           </Link>
           <Link to="/business" onClick={() => setShowMenu(false)}>
             <Building2 size={18} /> Business Entities
+          </Link>
+          <Link to="/integrations" onClick={() => setShowMenu(false)}>
+            <Plug size={18} /> Integrations
           </Link>
           <Link to="/settings" onClick={() => setShowMenu(false)}>
             <Settings size={18} /> Settings

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import {
@@ -8,6 +8,44 @@ import {
 import { APP_CONFIG } from '../../lib/config';
 import { getRenewalUrl } from '../../lib/renewalPortals';
 import ShareItemModal from '../modals/ShareItemModal';
+
+const SWIPE_THRESHOLD = 80;
+
+function useSwipe({ onSwipeLeft, onSwipeRight }) {
+  const startX = useRef(0);
+  const currentX = useRef(0);
+  const swiping = useRef(false);
+  const elRef = useRef(null);
+
+  const onTouchStart = useCallback((e) => {
+    startX.current = e.touches[0].clientX;
+    currentX.current = 0;
+    swiping.current = true;
+    if (elRef.current) elRef.current.style.transition = 'none';
+  }, []);
+
+  const onTouchMove = useCallback((e) => {
+    if (!swiping.current) return;
+    const dx = e.touches[0].clientX - startX.current;
+    currentX.current = dx;
+    if (elRef.current) {
+      const clamped = Math.max(-140, Math.min(140, dx));
+      elRef.current.style.transform = `translateX(${clamped}px)`;
+    }
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
+    swiping.current = false;
+    if (elRef.current) {
+      elRef.current.style.transition = 'transform 0.25s ease';
+      elRef.current.style.transform = 'translateX(0)';
+    }
+    if (currentX.current < -SWIPE_THRESHOLD && onSwipeLeft) onSwipeLeft();
+    if (currentX.current > SWIPE_THRESHOLD && onSwipeRight) onSwipeRight();
+  }, [onSwipeLeft, onSwipeRight]);
+
+  return { elRef, onTouchStart, onTouchMove, onTouchEnd };
+}
 
 const CATEGORY_EMOJIS = {
   immigration: '✈️', trust: '🏛️', tax: '💰', business_tax: '💰',
@@ -52,8 +90,22 @@ export default function ItemCard({
   const payHandler = onPay?.(item);
   const renewalUrl = onRenew && userCountry ? getRenewalUrl(item.name, userCountry) : null;
 
+  const { elRef, onTouchStart, onTouchMove, onTouchEnd } = useSwipe({
+    onSwipeLeft: onMarkDone,
+    onSwipeRight: () => onSnooze?.(1),
+  });
+
   return (
-    <div className={`item-card ${statusInfo.status} ${bulkEditMode && !item.isShared ? 'bulk-selectable' : ''}`}>
+    <div className={`item-card-wrap ${statusInfo.status}`}>
+      <div className="swipe-action swipe-done"><Check size={20} /> Done</div>
+      <div className="swipe-action swipe-snooze"><Clock size={20} /> Snooze</div>
+      <div
+        ref={elRef}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        className={`item-card ${statusInfo.status} ${bulkEditMode && !item.isShared ? 'bulk-selectable' : ''}`}
+      >
       {bulkEditMode && !item.isShared && (
         <button
           type="button"
@@ -170,6 +222,7 @@ export default function ItemCard({
           onShared={() => { onShared?.(); setShowShareModal(false); }}
         />
       )}
+      </div>
     </div>
   );
 }

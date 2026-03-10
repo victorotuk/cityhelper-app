@@ -122,6 +122,16 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
 - If Supabase or other security advisories arrive, address promptly. Privacy is key.
 
 ### Changelog
+- 2026-03-09 (camera-first, categories, UX, integrations)
+  - **Camera-first Add Item:** Tapping "Track Item" now shows camera/upload as primary action. AI auto-detects document category, name, dates. "Browse categories" available as secondary option. No more picking category first.
+  - **Category refocus:** Personal categories split into "Core" (money-saving deadlines: immigration, tax, insurance, banking, subscriptions, driving, parking, legal, housing, etc.) and "Extras" (fitness, pet care, work schedule, moving). Core shows first, Extras shown below with dashed border.
+  - **Swipe actions (mobile):** Item cards support swipe-left (mark done) and swipe-right (snooze 1 day) on touch devices. Swipe reveals colored action labels underneath.
+  - **Desktop hover-reveal:** Item card action buttons hidden by default, appear on hover/focus. Cleaner card layout.
+  - **Documents drag-and-drop:** Desktop users can drag files onto the Documents page. Drop overlay appears, auto-scans images.
+  - **Document viewer full-screen (mobile):** Viewer fills entire screen at ≤640px.
+  - **Multi-recipient email alerts:** send-reminders Edge Function now emails addresses in `alert_emails` field when items are due. Uses Resend API.
+  - **Integrations page:** New /integrations page. Shows available (push, phone) and coming-soon (washer/dryer, stove, fitness, smart home) integrations. "Notify me" for upcoming. Vision statement for IoT/smart home.
+  - **Auto-detect AI prompt:** New `AUTO_DETECT_PROMPT` in addItemExtractPrompts.js — scans any document and identifies category, name, dates, amounts.
 - 2026-03-08 (get-started page + download flow)
   - **New /get-started page:** Landing CTAs ("Start Free", "Get started") now go to /get-started instead of /auth. Page shows 3 options: Use on web (primary, links to /auth), Desktop app (Mac/Windows/Linux download buttons), Mobile app (App Store/Play Store). Desktop/mobile app skips this page entirely.
   - **Footer cleaned up:** Removed download links from footer. Footer now just has tagline + copyright + Privacy/Terms.

@@ -16,6 +16,7 @@ import Estate from './pages/Estate';
 import Assets from './pages/Assets';
 import Business from './pages/Business';
 import WealthLearn from './pages/WealthLearn';
+import Integrations from './pages/Integrations';
 import ItemSetupWizard from './pages/ItemSetupWizard';
 import ChatBubble from './components/ui/ChatBubble';
 import ChatOverlay from './components/ui/ChatOverlay';
@@ -159,6 +160,9 @@ function App() {
       } />
       <Route path="/business" element={
         <ProtectedRoute><Business /></ProtectedRoute>
+      } />
+      <Route path="/integrations" element={
+        <ProtectedRoute><Integrations /></ProtectedRoute>
       } />
     </Routes>
   );

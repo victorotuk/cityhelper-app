@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Upload, X, Folder, Camera, Scan, Loader } from 'lucide-react';
 import PageHeader from '../components/ui/PageHeader';
@@ -18,6 +18,18 @@ export default function Documents() {
   const [error, setError] = useState(null);
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState(null);
+  const [dragOver, setDragOver] = useState(false);
+
+  const handleDrop = useCallback(async (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer?.files?.[0];
+    if (!file) return;
+    const fakeEvent = { target: { files: [file], value: '' } };
+    Object.defineProperty(fakeEvent.target, 'value', { set() {}, get() { return ''; } });
+    const shouldScan = file.type.startsWith('image/');
+    await handleUpload(fakeEvent, shouldScan);
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (user) fetchDocuments();
@@ -245,7 +257,18 @@ Return ONLY valid JSON, no markdown or explanation.`;
         right={headerRight}
       />
 
-      <main className="documents-main">
+      <main
+        className={`documents-main ${dragOver ? 'drag-active' : ''}`}
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={(e) => { if (e.currentTarget.contains(e.relatedTarget)) return; setDragOver(false); }}
+        onDrop={handleDrop}
+      >
+        {dragOver && (
+          <div className="drop-overlay">
+            <Upload size={40} />
+            <p>Drop to upload</p>
+          </div>
+        )}
         <div className="documents-container">
           <div className="vault-notice">
             <span>🔐</span>

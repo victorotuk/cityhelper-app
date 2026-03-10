@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, Camera, Upload, List } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { AUTO_DETECT_PROMPT } from '../../lib/addItemExtractPrompts';
+import { APP_CONFIG } from '../../lib/config';
 import AddItemCategoryPicker from './AddItemCategoryPicker';
 import AddItemFormFields from './AddItemFormFields';
 
@@ -27,13 +29,16 @@ export default function AddItemModal({
   const [alertEmails, setAlertEmails] = useState('');
   const [activeGroup, setActiveGroup] = useState(accountType === 'organization' ? 'business' : 'personal');
   const [countryOverride, setCountryOverride] = useState(null);
+  const [showCategories, setShowCategories] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState('');
+  const cameraRef = useRef(null);
+  const fileRef = useRef(null);
 
   const itemCountry = countryOverride ?? activeCountry ?? '';
 
   useEffect(() => {
     if (initialValues) {
-      /* Sync form when initialValues changes (e.g. from Share). */
-      /* eslint-disable-next-line react-hooks/set-state-in-effect */
       setName(initialValues.name || '');
       setDueDate(initialValues.due_date || '');
       setCountryOverride(initialValues.country || null);
@@ -50,6 +55,56 @@ export default function AddItemModal({
       .limit(50)
       .then(({ data }) => setDocuments(data || []));
   }, [selectedCategory, userId]);
+
+  const handleAutoDetect = async (file) => {
+    setScanning(true);
+    setScanError('');
+    try {
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const { data, error } = await supabase.functions.invoke('ai-scan', {
+        body: { image: base64, prompt: AUTO_DETECT_PROMPT },
+      });
+      if (error) throw error;
+      if (data?.limit_reached) {
+        setScanError(`Scan limit reached (${data.scan_count}/${data.scan_limit}). Choose a category manually.`);
+        setScanning(false);
+        setShowCategories(true);
+        return;
+      }
+      const ext = data?.extracted || {};
+      if (ext.category && APP_CONFIG.categories.find(c => c.id === ext.category)) {
+        setSelectedCategory(ext.category);
+      }
+      if (ext.name) setName(ext.name);
+      if (ext.expiryDate) setDueDate(ext.expiryDate);
+      else if (ext.dueDate) setDueDate(ext.dueDate);
+      const notesParts = [];
+      if (ext.number) notesParts.push(`Number: ${ext.number}`);
+      if (ext.amount) notesParts.push(`Amount: ${ext.amount}`);
+      if (ext.notes) notesParts.push(ext.notes);
+      if (notesParts.length) setNotes(notesParts.join('\n'));
+      if (!ext.category) {
+        setShowCategories(true);
+      }
+    } catch (err) {
+      console.error('[AddItem] Auto-detect failed:', err);
+      setScanError('Could not identify document. Choose a category manually.');
+      setShowCategories(true);
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) handleAutoDetect(file);
+    e.target.value = '';
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -108,15 +163,47 @@ export default function AddItemModal({
     if (s.category) setSelectedCategory(s.category);
   };
 
+  const showScanFirst = !selectedCategory && !showCategories;
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>{selectedCategory ? 'Add Item' : 'What are you tracking?'}</h2>
+          <h2>{selectedCategory ? 'Add Item' : showScanFirst ? 'Track something' : 'What are you tracking?'}</h2>
           <button type="button" className="btn-icon" onClick={onClose}><X size={20} /></button>
         </div>
 
-        {!selectedCategory ? (
+        {showScanFirst ? (
+          <div className="scan-first-screen">
+            <input ref={cameraRef} type="file" accept="image/*" capture="environment" onChange={handleFileChange} hidden />
+            <input ref={fileRef} type="file" accept="image/*,.pdf" onChange={handleFileChange} hidden />
+
+            {scanning ? (
+              <div className="scan-first-loading">
+                <div className="loading-spinner" />
+                <p>Identifying document...</p>
+              </div>
+            ) : (
+              <>
+                <p className="scan-first-hint">Snap a photo of any document — we'll figure out what it is.</p>
+                <button type="button" className="scan-first-btn primary" onClick={() => cameraRef.current?.click()}>
+                  <Camera size={24} />
+                  <span>Scan with camera</span>
+                </button>
+                <button type="button" className="scan-first-btn" onClick={() => fileRef.current?.click()}>
+                  <Upload size={20} />
+                  <span>Upload a photo</span>
+                </button>
+                {scanError && <p className="scan-first-error">{scanError}</p>}
+                <div className="scan-first-divider"><span>or</span></div>
+                <button type="button" className="scan-first-btn ghost" onClick={() => setShowCategories(true)}>
+                  <List size={20} />
+                  <span>Browse categories</span>
+                </button>
+              </>
+            )}
+          </div>
+        ) : !selectedCategory ? (
           <AddItemCategoryPicker
             activeGroup={activeGroup}
             setActiveGroup={setActiveGroup}
@@ -149,7 +236,7 @@ export default function AddItemModal({
             userCountries={userCountries}
             onExtracted={handleExtracted}
             onSubmit={handleSubmit}
-            onBack={() => setSelectedCategory(null)}
+            onBack={() => { setSelectedCategory(null); setShowCategories(false); }}
           />
         )}
       </div>

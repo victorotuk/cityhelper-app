@@ -16,6 +16,34 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+const APP_NAME = Deno.env.get('APP_NAME') || 'Nava'
+const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@vicomnava.com'
+
+async function sendAlertEmail(to: string, itemName: string, daysUntil: number, emoji: string): Promise<boolean> {
+  if (!RESEND_API_KEY) return false
+  const status = daysUntil < 0
+    ? `${Math.abs(daysUntil)} day${Math.abs(daysUntil) === 1 ? '' : 's'} overdue`
+    : daysUntil === 0 ? 'due today' : `due in ${daysUntil} day${daysUntil === 1 ? '' : 's'}`
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: `${APP_NAME} Alerts <${FROM_EMAIL}>`,
+        to,
+        subject: `${emoji} ${itemName} is ${status}`,
+        html: `<div style="font-family:system-ui,sans-serif;max-width:480px;margin:0 auto;padding:32px 20px;background:#0a0a0c;color:#f5f5f4;">
+          <h2 style="color:#e8c47c;margin:0 0 12px">${emoji} ${itemName}</h2>
+          <p style="font-size:16px;margin:0 0 20px;color:#a1a1a6;">This item is <strong style="color:#f5f5f4">${status}</strong>.</p>
+          <p style="color:#6b6b70;font-size:12px;margin:0;">You were added as an alert recipient on ${APP_NAME}.</p>
+        </div>`
+      })
+    })
+    return res.ok
+  } catch { return false }
+}
+
 // Urgency levels determine how often we bug the user
 // and what the message tone is
 function getUrgency(daysUntilDue: number): {
@@ -162,10 +190,9 @@ serve(async (req) => {
       } | null
       if (!sub?.endpoint || !sub?.keys?.p256dh || !sub?.keys?.auth) continue
 
-      // Get this user's compliance items with due dates (exclude snoozed)
       const { data: items } = await supabase
         .from('compliance_items')
-        .select('id, name, category, due_date, status, snooze_until')
+        .select('id, name, category, due_date, status, snooze_until, alert_emails')
         .eq('user_id', user.user_id)
         .not('due_date', 'is', null)
         .in('status', ['active', 'pending', null])
@@ -219,7 +246,6 @@ serve(async (req) => {
             .update({ last_push_sent: now.toISOString() })
             .eq('user_id', user.user_id)
 
-          // Also create in-app notification
           await supabase.from('notifications').insert({
             user_id: user.user_id,
             title,
@@ -235,6 +261,15 @@ serve(async (req) => {
             .from('user_settings')
             .update({ push_subscription: null })
             .eq('user_id', user.user_id)
+        }
+      }
+
+      // Multi-recipient email alerts for items with alert_emails
+      for (const item of actionableItems) {
+        const emails = (item as { alert_emails?: string[] | null }).alert_emails
+        if (!emails?.length) continue
+        for (const addr of emails) {
+          await sendAlertEmail(addr, item.name, item.daysUntil, item.urgency.emoji)
         }
       }
     }
