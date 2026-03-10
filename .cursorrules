@@ -1,8 +1,63 @@
 # Nava project rules
 
-- **Git**: Commit after each logical change. Do not batch unrelated edits into one commit.
-- **PROJECT_STATUS.md**: Update when adding features or completing work.
-- **Supabase**: Add migrations to `supabase/migrations/`. Run `supabase db push` when adding/changing migrations or when saving/committing everything. Edge function secrets: `FROM_EMAIL`, `APP_URL`, `RESEND_API_KEY`, etc. — set via `supabase secrets set` or Dashboard.
-- **Domain & email**: `vicomnava.com` verified with Resend. Emails send from `noreply@vicomnava.com`. Supabase secrets `FROM_EMAIL` and `APP_URL` must be set.
-- **Desktop releases (Tauri)**: Use `npm run release -- <version>`. Signing key at `~/.tauri/nava.key` — never commit. GitHub Secrets `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` enable CI signed builds. Upload artifacts + `latest.json` to GitHub Release.
-- **Components**: Break code into small, reusable components with imports. Avoid large monolith files.
+## FIRST THING: Read these docs before doing ANYTHING
+When starting a new session or receiving a task, **always read these files first** (in order):
+1. `PROJECT_STATUS.md` — full project context, vision, what's built, what's left, changelog
+2. `COMPETITOR_ANALYSIS.md` — feature gaps vs competitors
+3. `docs/ROADMAP.md` — phased plan (APIs, IoT, acquisitions, global expansion)
+4. `docs/DESKTOP_MOBILE_UX.md` — platform-specific UX rules (desktop vs mobile)
+5. `src-tauri/tauri.conf.json` — desktop config; `withGlobalTauri: true` is CRITICAL for desktop detection
+6. `docs/TAURI_UPDATES.md` — desktop build, signing, icon, and release workflow
+
+## Stack
+- **Frontend:** React + Vite, JSX (not TSX)
+- **Backend:** Supabase (Postgres, Edge Functions in Deno/TypeScript, Auth)
+- **Mobile:** Capacitor (Android/iOS)
+- **Desktop:** Tauri 2 (macOS/Windows/Linux)
+- **AI:** OpenAI (scan/vision), Groq (chat), BYOK supported
+
+## Key architecture
+- **Local-first:** compliance_items stored in IndexedDB, synced encrypted to Supabase
+- **Platform detection:** `window.__TAURI__` for desktop (requires `withGlobalTauri: true`), `Capacitor.getPlatform()` for mobile
+- **E2E encryption:** Email users = password (PBKDF2); OAuth users = auto-generated key
+- **Camera-first Add Item:** AI auto-detects document type from photo (AUTO_DETECT_PROMPT)
+
+## Git
+- Commit after each logical change. Do not batch unrelated edits into one commit.
+- Use descriptive commit messages explaining the "why"
+
+## Supabase
+- Migrations go in `supabase/migrations/` (currently up to 029)
+- Run `supabase db push` when adding/changing migrations
+- Edge function secrets: `FROM_EMAIL`, `APP_URL`, `RESEND_API_KEY`, `VAPID_KEYS_JSON`, etc.
+
+## Domain & email
+- `vicomnava.com` verified with Resend. Emails from `noreply@vicomnava.com`
+- Supabase secrets `FROM_EMAIL` and `APP_URL` must be set
+
+## Desktop releases (Tauri)
+- Use `npm run release -- <version>`. Signing key at `~/.tauri/nava.key` — never commit
+- App icon uses **light (cream bubble)** logo: `npx tauri icon public/nava-logo-light.png`
+- GitHub Secrets `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` enable CI signed builds
+
+## Components
+- Break code into small, reusable components. Avoid files >300 lines
+- Category emojis: use `EMPTY_EMOJIS` from `src/components/dashboard/constants.js` — do NOT create local copies
+- Feature folders: `addItem/`, `dashboard/`, `dispute/`, `documents/`, `settings/`, `welcomeGuide/`, `auth/`, `scanUpload/`, `emailSuggestions/`, `chat/`
+
+## CSS
+- All styles in `src/index.css` with CSS custom properties
+- Mobile breakpoint: `max-width: 640px`
+- Desktop hover-reveal on item cards; mobile swipe actions
+- 44px minimum touch targets on mobile
+
+## Testing
+- See `docs/TESTING.md` for QA checklist
+- Build: `npm run build` must pass
+- Lint: `npx eslint .` — 0 errors allowed (3 pre-existing warnings OK)
+
+## What NOT to do
+- Never remove `withGlobalTauri: true` from tauri.conf.json
+- Never add polling/detection hacks for `window.__TAURI__` — it's available synchronously
+- Never put download links in the desktop/mobile app
+- Never commit `.env`, `~/.tauri/nava.key`, or other secrets

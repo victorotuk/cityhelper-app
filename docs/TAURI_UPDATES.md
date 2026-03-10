@@ -1,6 +1,16 @@
 # Desktop app updates (Tauri)
 
-The Nava desktop app uses Tauri's built-in updater so users can **update in place** — no reinstall. The app **auto-checks on startup** (prompts user via `confirm()`) and users can also manually check via **Settings → Check for updates**.
+The Nava desktop app uses Tauri's built-in updater so users can **update in place** — no reinstall.
+
+## App icon (dock / Applications)
+
+The desktop app icon uses the **light (cream bubble)** logo so it’s visible in the macOS dock and Applications. Icons are in `src-tauri/icons/`. To regenerate from the light logo:
+
+```bash
+npx tauri icon public/nava-logo-light.png
+```
+
+After changing icons, rebuild the app (or run `npm run tauri:dev`). If the dock still shows the old icon, quit Nava, remove it from the dock, open it again from Applications, then re-add to dock. The app **auto-checks on startup** (prompts user via `confirm()`) and users can also manually check via **Settings → Check for updates**.
 
 ## Signing keys (already set up)
 

@@ -1,5 +1,5 @@
 ## Nava — Project Status
-Updated: 2026-03-08
+Updated: 2026-03-10
 
 **→ For AI: Read this file first when user returns.** Full context: Vision, Recent (features), Changelog (what was built), What's Left, All Prompts & Outcomes. Project: cityhelper → Nava. React + Vite, Supabase, Capacitor.
 
@@ -84,7 +84,7 @@ Three ways to run Nava; privacy-first, user chooses control level.
 ### Before desktop build (Tauri) — completed
 | Step | Status |
 |------|--------|
-| 1. **App icons** | Done — `npx tauri icon public/nava-logo-dark.png` (new logo: 3 waves, large sphere). Dark/light logos in `public/`. |
+| 1. **App icons** | Done — Desktop/dock icon uses **light (cream bubble)** version for visibility in Applications and dock. Source: `public/nava-logo-light.png`. To regenerate: `npx tauri icon public/nava-logo-light.png`. |
 | 2. **Web build** | OK — `npm run build` passes; desktop uses `dist/`. |
 | 3. **Bundle identifier** | `npm run tauri:dev` — opens desktop window; app runs as “web” (Capacitor.getPlatform() === 'web'), so no mobile-only features. |
 
@@ -98,6 +98,7 @@ Three ways to run Nava; privacy-first, user chooses control level.
 | Priority | Item | Status |
 |----------|------|--------|
 | **Low** | user_settings local storage (optional) | Not wired |
+| **Future** | **Integrations / IoT** (washer, stove, fitness, smart home) | UI and vision at /integrations; implement when we have users and partner APIs. See **docs/ROADMAP.md** § Integrations & IoT. |
 
 **Done:** OpenClaw integration — `openclaw-nava` plugin, nava-api + create-api-key Edge Functions, migration 028 (API keys), Settings → OpenClaw & API, setup script, README.
 
@@ -106,9 +107,12 @@ Three ways to run Nava; privacy-first, user chooses control level.
 **Build:** ✅ OK. **Lint:** 0 errors, 3 warnings.
 
 ### Codebase refactor (large-file split)
-- **Dashboard.jsx** (was ~1523 lines): Split into `ItemCard`, `AddItemModal`, `ComplianceHealth`, `FocusOnThree`, `EmptyState`, `SuggestedForYou` in `components/` and `components/dashboard/`. Added `lib/renewalPortals.js`, `lib/addItemExtractPrompts.js`, `components/dashboard/constants.js`. Dashboard.jsx now ~646 lines.
-- **Settings.jsx** (was ~906 lines): Extracted section components under `components/settings/`: `SettingsCountrySection`, `SettingsDataBackupSection`, `SettingsAISection`, `SettingsOpenClawSection`, `SettingsRecoverySection`, `SettingsPersonalizationSection`, `SettingsWealthSection`, `SettingsDangerSection`. Settings.jsx reduced accordingly.
+- **Dashboard.jsx** (was ~1523 → ~700 → ~290 lines): Split into `DashboardHeader` (header + country switcher + mobile menu), `DashboardItemsList` (grouped item sections with ItemCard rendering), `ItemCard`, `AddItemModal`, `ComplianceHealth`, `FocusOnThree`, `EmptyState`, `SuggestedForYou` in `components/dashboard/`. Added `lib/renewalPortals.js`, `lib/addItemExtractPrompts.js`, `components/dashboard/constants.js`.
+- **Add Item flow:** `AddItemModal` uses `AddItemCategoryPicker`, `AddItemFormFields`, and **AddItemScanFirst** (camera-first screen with "Continue on phone" QR code for desktop users). Scan-first screen extracted so add-item stays componentized.
+- **Category emoji maps:** Centralized in `components/dashboard/constants.js` (`EMPTY_EMOJIS`). All files import from there — no local copies.
+- **Settings.jsx** (was ~906 lines): Extracted section components under `components/settings/`: `SettingsCountrySection`, `SettingsDataBackupSection`, `SettingsAISection`, `SettingsOpenClawSection`, `SettingsRecoverySection`, `SettingsPersonalizationSection`, `SettingsWealthSection`, `SettingsDangerSection`, `SettingsAboutSection` (version + platform). Settings.jsx reduced accordingly.
 - **WelcomeGuide.jsx** (was ~809 lines): Extracted `QuizTextInput` and `QuizTextareaMic` to `WelcomeGuideQuizInput.jsx`. WelcomeGuide.jsx reduced by ~130 lines.
+- **Dead code removed:** `src/lib/ai.js` (unused BYOK client), `supabase/functions/chat/` (replaced by ai-chat), `supabase/functions/gmail-oauth/` (replaced by email-oauth), `public/favicon-32x32.png`, `public/nava-logo-light-dock.png`.
 
 ### Cursor Crashes (macOS 26+)
 See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated to reduce indexing.
@@ -122,6 +126,15 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
 - If Supabase or other security advisories arrive, address promptly. Privacy is key.
 
 ### Changelog
+- 2026-03-10 (cleanup, refactor, "continue on mobile", dead code removal)
+  - **Desktop/dock icon:** Restored **light (cream bubble)** icon set. Regenerate: `npx tauri icon public/nava-logo-light.png`. See **docs/TAURI_UPDATES.md**.
+  - **Dashboard refactor:** Extracted `DashboardHeader` (header + country switcher + mobile menu) and `DashboardItemsList` (grouped item rendering) from Dashboard.jsx. Dashboard.jsx reduced from ~700 to ~290 lines.
+  - **Category emoji centralization:** Removed 3 duplicate `CATEGORY_EMOJIS` maps from ItemCard, AddItemCategoryPicker, ItemSetupWizard. All now import `EMPTY_EMOJIS` from `constants.js`.
+  - **"Continue on phone" QR:** Desktop/web users see a "Continue on phone" button in the scan-first screen. Shows a QR code linking to Nava on their phone for camera uploads.
+  - **SettingsAboutSection:** Wired into Settings — shows app name, version, and platform (web/desktop).
+  - **Dead code removed:** `src/lib/ai.js` (unused), `supabase/functions/chat/` (dead), `supabase/functions/gmail-oauth/` (replaced by email-oauth), `public/favicon-32x32.png`, `public/nava-logo-light-dock.png`.
+  - **`.cursorrules` updated:** Agents now read PROJECT_STATUS.md, COMPETITOR_ANALYSIS.md, ROADMAP.md, DESKTOP_MOBILE_UX.md, and TAURI docs first. Includes stack, architecture, and "what NOT to do" rules.
+  - **IoT follow-up:** ROADMAP.md has "Integrations & IoT (when we have users)" for future washer/dryer, stove, fitness, smart home.
 - 2026-03-09 (camera-first, categories, UX, integrations)
   - **Camera-first Add Item:** Tapping "Track Item" now shows camera/upload as primary action. AI auto-detects document category, name, dates. "Browse categories" available as secondary option. No more picking category first.
   - **Category refocus:** Personal categories split into "Core" (money-saving deadlines: immigration, tax, insurance, banking, subscriptions, driving, parking, legal, housing, etc.) and "Extras" (fitness, pet care, work schedule, moving). Core shows first, Extras shown below with dashed border.

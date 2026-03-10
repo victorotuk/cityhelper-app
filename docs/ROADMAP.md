@@ -47,6 +47,21 @@ Web stays simple and fast. Heavier agent features live in native where you have 
 
 ---
 
+## Integrations & IoT (when we have users)
+
+**Do not forget:** The `/integrations` page and vision describe smart-home and app integrations. Implement when there are enough users and partner APIs available.
+
+| Integration | Vision | Status |
+|-------------|--------|--------|
+| **Washer / dryer** | Remind when laundry is done; move to dryer | Coming soon — UI at /integrations |
+| **Stove / oven** | Alert if left on too long | Coming soon — UI at /integrations |
+| **Fitness / gym** | Sync membership renewals; Apple Health, Strava | Coming soon — UI at /integrations |
+| **Smart home hub** | Apple HomeKit, Google Home, Alexa, SmartThings | Coming soon — UI at /integrations |
+
+**Next steps when ready:** Backend: partner OAuth or device APIs; store integration preferences per user; cron or webhooks to send reminders. Frontend: /integrations "Notify me" → collect email; turn on/off per integration.
+
+---
+
 ## Phase 3: Acquire competitors
 
 - Buy out competitors to consolidate users and features
