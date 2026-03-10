@@ -31,7 +31,7 @@ export default function WelcomeStepFocusAreas({ selectedFocusAreas, toggleFocusA
       </div>
       <div className="guide-actions">
         <button type="button" className="btn btn-ghost" onClick={onBack}>Back</button>
-        <button type="button" className="btn btn-primary" onClick={onNext} disabled={!canGoNext()}>
+        <button type="button" className="btn btn-primary" onClick={onNext} disabled={!canGoNext}>
           Next <ChevronRight size={18} />
         </button>
       </div>

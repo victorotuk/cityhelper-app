@@ -37,7 +37,7 @@ export default function WelcomeStepAccountType({ accountType, setAccountType, is
         ) : (
           <button type="button" className="btn btn-ghost" onClick={onBack}>Back</button>
         )}
-        <button type="button" className="btn btn-primary" onClick={onNext} disabled={!canGoNext()}>
+        <button type="button" className="btn btn-primary" onClick={onNext} disabled={!canGoNext}>
           Next <ChevronRight size={18} />
         </button>
       </div>
