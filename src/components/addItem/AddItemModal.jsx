@@ -74,7 +74,12 @@ export default function AddItemModal({
       const { data, error } = await supabase.functions.invoke('ai-scan', {
         body: { image: base64, prompt: AUTO_DETECT_PROMPT },
       });
-      if (error) throw error;
+      if (error) {
+        let errMsg = error?.message || 'Scan failed';
+        try { errMsg = (await error?.context?.json?.())?.error || errMsg; } catch { /* use default */ }
+        throw new Error(errMsg);
+      }
+      if (data?.error) throw new Error(data.error);
       if (data?.limit_reached) {
         setScanError(`Scan limit reached (${data.scan_count}/${data.scan_limit}). Choose a category manually.`);
         setScanning(false);
@@ -86,6 +91,12 @@ export default function AddItemModal({
         try {
           const match = ext.match(/\{[\s\S]*\}/);
           if (match) ext = JSON.parse(match[0]);
+        } catch { /* keep ext as-is */ }
+      }
+      if ((!ext || typeof ext !== 'object' || Object.keys(ext).length === 0) && data?.raw) {
+        try {
+          const match = String(data.raw).match(/\{[\s\S]*\}/);
+          if (match) ext = JSON.parse(match[0]) || ext;
         } catch { /* keep ext as-is */ }
       }
       if (ext && ext.readable === false) {
@@ -113,20 +124,19 @@ export default function AddItemModal({
       if (ext.amount) notesParts.push(`Amount: ${ext.amount}`);
       if (ext.notes) notesParts.push(ext.notes);
       if (notesParts.length) setNotes(notesParts.join('\n'));
-      // Show confirm whenever we have usable extraction (name or date); only fall back to category picker when we got nothing
-      const hasUsableExtraction = ext && (ext.name || ext.expiryDate || ext.dueDate);
+      // Show confirm whenever we have usable extraction (name or date); only fall back when we got nothing
+      const hasUsableExtraction = ext && typeof ext === 'object' && (ext.name || ext.expiryDate || ext.dueDate);
       if (hasUsableExtraction && category) {
         setShowScanConfirm(true);
       } else if (hasUsableExtraction) {
         setSelectedCategory('other');
         setShowScanConfirm(true);
       } else {
-        setShowCategories(true);
+        setScanError('We couldn\'t read that image. Try another photo or choose "Browse categories" to pick manually.');
       }
     } catch (err) {
       console.error('[AddItem] Auto-detect failed:', err);
-      setScanError('Could not identify document. Choose a category manually.');
-      setShowCategories(true);
+      setScanError(err?.message || 'Could not identify document. Try another photo or choose "Browse categories" below.');
     } finally {
       setScanning(false);
     }
@@ -136,6 +146,12 @@ export default function AddItemModal({
     const file = e.target.files?.[0];
     if (file) handleAutoDetect(file);
     e.target.value = '';
+  };
+
+  const handleCapture = (blob) => {
+    if (!blob) return;
+    const file = blob instanceof File ? blob : new File([blob], 'capture.jpg', { type: blob.type || 'image/jpeg' });
+    handleAutoDetect(file);
   };
 
   const buildItem = () => {
@@ -245,6 +261,7 @@ export default function AddItemModal({
             scanning={scanning}
             scanError={scanError}
             onFileChange={handleFileChange}
+            onCapture={handleCapture}
             onBrowseCategories={() => setShowCategories(true)}
           />
         ) : !selectedCategory ? (

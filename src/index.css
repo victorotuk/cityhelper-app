@@ -1786,6 +1786,36 @@ input, select, textarea { font-family: inherit; }
   max-width: 300px;
 }
 
+/* Live camera view (getUserMedia on desktop) */
+.scan-camera-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md) 0;
+}
+.scan-camera-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.scan-camera-video {
+  width: 100%;
+  max-height: 340px;
+  border-radius: var(--radius-md);
+  background: #000;
+  object-fit: cover;
+}
+.scan-camera-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+.scan-camera-actions .scan-first-btn {
+  flex: 1;
+}
+
 /* Scan confirm — show doc details and one-click Track it / Edit */
 .scan-confirm-screen {
   display: flex;
