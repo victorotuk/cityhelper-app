@@ -1,6 +1,7 @@
 // Nava API — HTTP API for OpenClaw and other integrations
-// Auth: Bearer <nava_api_key>
+// Auth: Bearer <nava_api_key> (user gets this from Nava Settings → OpenClaw & API)
 // Body: { action: string, params?: object }
+// Rate limits: per tier (free=no API, personal=2k/mo, business=25k/mo, enterprise=100k/mo; per-minute caps)
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -8,6 +9,19 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// Tier limits: monthly cap, per-minute cap. Free = no API access.
+const API_LIMITS: Record<string, { monthly: number; perMinute: number }> = {
+  free: { monthly: 0, perMinute: 0 },
+  personal: { monthly: 2000, perMinute: 20 },
+  business: { monthly: 25000, perMinute: 40 },
+  enterprise: { monthly: 100000, perMinute: 60 },
+}
+
+function currentMonth(): string {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 }
 
 const CATEGORIES = 'subscriptions, parking, driving, tax, health, legal_court, housing, immigration, credit_banking, personal_insurance, education, trust, kids_family, business_tax, assets, other'
@@ -79,6 +93,72 @@ serve(async (req) => {
     if (!user) {
       return new Response(JSON.stringify({ error: 'Invalid API key' }), {
         status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Resolve tier and enforce rate limits
+    let tier = 'free'
+    const { data: sub } = await supabase
+      .from('subscriptions')
+      .select('tier')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+    if (sub?.tier && API_LIMITS[sub.tier]) tier = sub.tier
+    const limits = API_LIMITS[tier] ?? API_LIMITS.free
+
+    if (limits.monthly === 0) {
+      return new Response(JSON.stringify({
+        error: 'API access requires a paid plan. Upgrade to Personal ($2.50/mo) to use the API (OpenClaw, etc.).',
+        upgrade: 'personal',
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const month = currentMonth()
+    const { data: usageRow } = await supabase
+      .from('api_usage')
+      .select('id, request_count')
+      .eq('user_id', user.id)
+      .eq('month', month)
+      .single()
+    const monthlyCount = usageRow?.request_count ?? 0
+
+    const oneMinAgo = new Date(Date.now() - 60 * 1000).toISOString()
+    const { count: perMinuteCount } = await supabase
+      .from('api_request_log')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .gte('created_at', oneMinAgo)
+
+    if (monthlyCount >= limits.monthly) {
+      return new Response(JSON.stringify({
+        error: `Monthly API limit reached (${limits.monthly}). Upgrade to Business or Enterprise for higher limits.`,
+        limit_reached: true,
+        used: monthlyCount,
+        limit: limits.monthly,
+        tier,
+      }), {
+        status: 429,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'X-RateLimit-Limit-Monthly': String(limits.monthly),
+          'X-RateLimit-Remaining-Monthly': '0',
+        },
+      })
+    }
+    if ((perMinuteCount ?? 0) >= limits.perMinute) {
+      return new Response(JSON.stringify({
+        error: 'Too many requests. Slow down and try again in a minute.',
+        retry_after: 60,
+      }), {
+        status: 429,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -315,8 +395,39 @@ serve(async (req) => {
       result = { error: (e as Error).message }
     }
 
+    // Record usage (only for valid actions, not "Unknown action")
+    const recorded = body?.action && result?.error !== `Unknown action: ${body?.action}`
+    if (recorded) {
+      const { data: updated } = await supabase.from('api_usage')
+        .update({ request_count: monthlyCount + 1, updated_at: new Date().toISOString() })
+        .eq('user_id', user.id).eq('month', month)
+        .select('id')
+        .single()
+      if (!updated) {
+        await supabase.from('api_usage').insert({
+          user_id: user.id,
+          month,
+          request_count: 1,
+          updated_at: new Date().toISOString(),
+        })
+      }
+      await supabase.from('api_request_log').insert({ user_id: user.id })
+      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+      await supabase.from('api_request_log').delete().eq('user_id', user.id).lt('created_at', fiveMinAgo)
+    }
+
+    const finalMonthly = recorded ? monthlyCount + 1 : monthlyCount
+    const remainingMonthly = Math.max(0, limits.monthly - finalMonthly)
+    const responseHeaders = {
+      ...corsHeaders,
+      'Content-Type': 'application/json',
+      'X-RateLimit-Limit-Monthly': String(limits.monthly),
+      'X-RateLimit-Remaining-Monthly': String(remainingMonthly),
+      'X-RateLimit-Limit-PerMinute': String(limits.perMinute),
+    }
+
     return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: responseHeaders,
     })
   } catch (error) {
     console.error('Nava API error:', error)

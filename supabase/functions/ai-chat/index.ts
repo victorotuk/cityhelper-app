@@ -291,9 +291,11 @@ const TOOLS = [
 const CHAT_PROVIDERS: Record<string, { url: string; model: string }> = {
   groq: { url: 'https://api.groq.com/openai/v1/chat/completions', model: 'llama-3.1-8b-instant' },
   openai: { url: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o-mini' },
+  openrouter: { url: 'https://openrouter.ai/api/v1/chat/completions', model: 'meta-llama/llama-3.1-8b-instruct' },
 }
 
 function detectChatProvider(apiKey: string): string {
+  if (apiKey.startsWith('sk-or-v1-')) return 'openrouter'
   if (apiKey.startsWith('sk-') && !apiKey.startsWith('sk-ant-')) return 'openai'
   return 'groq'
 }

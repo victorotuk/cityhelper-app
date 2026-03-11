@@ -4,6 +4,8 @@ import { Key, ExternalLink, ChevronDown } from 'lucide-react';
 const AI_PROVIDERS = [
   { id: 'groq', name: 'Groq', prefix: 'gsk_', freeSignup: 'https://console.groq.com', free: true,
     hint: 'Free — 1,000 requests/day. Best for most users.' },
+  { id: 'openrouter', name: 'OpenRouter', prefix: 'sk-or-v1-', freeSignup: 'https://openrouter.ai/keys', free: true,
+    hint: 'One key for 400+ models (AllenAI Olmo, Meta Llama, DeepSeek, etc.). Many free models.' },
   { id: 'openai', name: 'OpenAI', prefix: 'sk-', freeSignup: null, free: false,
     hint: 'Paid — if you already have an OpenAI subscription.' },
   { id: 'anthropic', name: 'Claude (Anthropic)', prefix: 'sk-ant-', freeSignup: null, free: false,
@@ -15,6 +17,7 @@ const AI_PROVIDERS = [
 function detectProviderFromKey(key) {
   if (!key) return null;
   if (key.startsWith('gsk_')) return 'groq';
+  if (key.startsWith('sk-or-v1-')) return 'openrouter';
   if (key.startsWith('sk-ant-')) return 'anthropic';
   if (key.startsWith('sk-')) return 'openai';
   if (key.startsWith('AI')) return 'gemini';
@@ -140,7 +143,10 @@ export default function SettingsAISection({
 
           <div className="ai-other-providers">
             <p className="ai-guide-note" style={{ marginTop: '12px' }}>
-              <strong>Already pay for another AI?</strong> Paste your OpenAI, Claude, or Gemini key instead — Nava detects it automatically.
+              <strong>OpenRouter</strong> (openrouter.ai) gives one key for 400+ models including AllenAI Olmo and Meta Llama; many are free.
+            </p>
+            <p className="ai-guide-note" style={{ marginTop: '6px' }}>
+              <strong>Already pay for another AI?</strong> Paste your OpenAI, Claude, or Gemini key — Nava detects it automatically.
             </p>
           </div>
         </div>

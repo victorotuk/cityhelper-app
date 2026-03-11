@@ -72,10 +72,26 @@ const PROVIDERS: Record<string, {
       }
     },
   },
+  openrouter: {
+    url: 'https://openrouter.ai/api/v1/chat/completions',
+    model: 'google/gemini-2.0-flash-001:free',
+    supportsVision: true,
+    buildBody: (model, prompt, imageUrl) => ({
+      model,
+      max_tokens: 1000,
+      temperature: 0.1,
+      response_format: { type: 'json_object' },
+      messages: [{ role: 'user', content: [
+        { type: 'text', text: prompt },
+        { type: 'image_url', image_url: { url: imageUrl } },
+      ]}],
+    }),
+  },
 }
 
 function detectProvider(apiKey: string): string {
   if (apiKey.startsWith('gsk_')) return 'groq'
+  if (apiKey.startsWith('sk-or-v1-')) return 'openrouter'
   if (apiKey.startsWith('sk-ant-')) return 'anthropic'
   if (apiKey.startsWith('sk-')) return 'openai'
   if (apiKey.startsWith('AI')) return 'gemini'

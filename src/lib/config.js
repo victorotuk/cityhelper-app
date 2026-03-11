@@ -47,25 +47,33 @@ export const APP_CONFIG = {
       name: "Free",
       price: 0,
       itemLimit: 10,
+      apiMonthly: 0,
+      apiPerMinute: 0,
       features: ["Track up to 10 items", "Deadline reminders", "Email alerts", "BYOK AI (bring your own key)"]
     },
     personal: {
       name: "Personal",
       price: 2.50,
       itemLimit: null,
-      features: ["Unlimited items", "Document vault", "Sharing", "Voice feedback", "SMS alerts", "Calendar sync"]
+      apiMonthly: 2000,
+      apiPerMinute: 20,
+      features: ["Unlimited items", "Document vault", "Sharing", "Voice feedback", "SMS alerts", "Calendar sync", "2,000 API calls/month (OpenClaw)"]
     },
     business: {
       name: "Business",
       price: 5,
       itemLimit: null,
-      features: ["Everything in Personal", "Team members", "Business categories", "Estate tools", "Priority support"]
+      apiMonthly: 25000,
+      apiPerMinute: 40,
+      features: ["Everything in Personal", "Team members", "Business categories", "Estate tools", "Priority support", "25,000 API calls/month"]
     },
     enterprise: {
       name: "Enterprise",
       price: 10,
       itemLimit: null,
-      features: ["Everything in Business", "API access (OpenClaw)", "Custom categories", "Dedicated support"]
+      apiMonthly: 100000,
+      apiPerMinute: 60,
+      features: ["Everything in Business", "100,000 API calls/month", "OpenClaw / integrations", "Custom categories", "Dedicated support"]
     },
     managed_ai: {
       name: "Managed AI",

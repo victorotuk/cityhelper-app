@@ -39,19 +39,23 @@ Three ways to run Nava; privacy-first, user chooses control level.
 **LLM choice:** BYOK (Bring Your Own Key) is the primary model. Users add their own AI key in Settings → AI. Groq is free (no credit card). OpenAI, Claude, and Gemini also supported — Nava auto-detects the provider from the key prefix. Optional server fallback: GROQ_API_KEY in Supabase secrets for managed AI add-on ($1/mo).
 
 **AI services (which model is used where):**
-- **Chat:** Groq (`llama-3.1-8b-instant`) or OpenAI (`gpt-4o-mini`) via Edge Function `ai-chat`. Provider auto-detected from user's key. Server fallback: `GROQ_API_KEY`.
-- **Document scanning:** Groq Llama 4 Scout (vision), OpenAI `gpt-4o-mini`, Claude `claude-3-5-haiku`, or Gemini `2.0-flash` via Edge Function `ai-scan`. Provider auto-detected from key. All support vision/image input.
-- **BYOK is the default.** Users bring their own key (Groq free, or any provider they already pay for). No artificial scan limits when BYOK. Server key (managed AI) is a $1/mo add-on for users who don't want to manage keys.
-- **Key storage:** `localStorage` per user (`nava_ai_key_<user_id>`, `nava_ai_provider_<user_id>`, plus backward-compat `nava_groq_key_<user_id>`).
+- **Chat:** Groq, OpenAI, or OpenRouter via Edge Function `ai-chat`. Provider auto-detected from key prefix. Server fallback: `GROQ_API_KEY`.
+- **Document scanning:** Groq, OpenAI, Claude, Gemini, or OpenRouter (400+ models, e.g. AllenAI Olmo, Meta Llama) via Edge Function `ai-scan`. All support vision. OpenRouter key: `sk-or-v1-...`.
+- **BYOK is the default.** No artificial scan limits when BYOK. Server key = managed AI add-on ($1/mo).
+- **Key storage:** `localStorage` per user (`nava_ai_key_<user_id>`, `nava_ai_provider_<user_id>`, backward-compat `nava_groq_key_<user_id>`).
+
+**API (OpenClaw / integrations):**
+- **nava-api** Edge Function: HTTP API for OpenClaw, scripts, etc. Auth: `Bearer <nava_api_key>`. Users get their **Nava API key** from Settings → OpenClaw & API (generate key). When we set up OpenClaw for a user, we use that same Nava API key — they do not need an "OpenClaw key."
+- **Rate limits (tiered):** Free = 0 API calls (upgrade to use API). Personal = 2,000/month, 20/min. Business = 25,000/month, 40/min. Enterprise = 100,000/month, 60/min. Enforced in nava-api; usage in `api_usage` and `api_request_log` (migration 030).
 
 **Pricing (USD) — app fee separate from AI:**
-| Tier | Price | What |
-|------|-------|------|
-| Free | $0 | 10 items, BYOK, reminders |
-| Personal | $2.50/mo | Unlimited items, vault, sharing, voice, SMS, calendar |
-| Business | $5/mo | + team, business categories, estate tools |
-| Enterprise | $10/mo | + API (OpenClaw), custom categories, dedicated support |
-| Managed AI | +$1/mo | We handle AI key; uses server key |
+| Tier | Price | API (monthly / per-min) |
+|------|-------|-------------------------|
+| Free | $0 | 0 (no API access) |
+| Personal | $2.50/mo | 2,000 / 20 |
+| Business | $5/mo | 25,000 / 40 |
+| Enterprise | $10/mo | 100,000 / 60 |
+| Managed AI | +$1/mo | We handle AI key |
 
 **Local vs Online split (Path A — Supabase + client-side E2E):**
 - **LOCAL (IndexedDB on web/mobile/desktop):** compliance_items, user_settings (country, persona). Read/write local first. Encrypted before sync. Autobackup. Web uses IndexedDB too — not just mobile.
@@ -252,6 +256,7 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
   - **Scan caching**: Duplicate scans (same image+prompt SHA-256 hash) return cached results — no Groq call, no usage counted.
   - **ScanUpload UI**: Shows "X/Y scans used this month" with warning when near limit, disables buttons when at limit.
 - 2026-01-07 — Android workflow ready, iOS on hold.
+- 2026-03-06 — API rate limits and OpenRouter: nava-api tiered limits (Free=0, Personal=2k/mo 20/min, Business=25k/mo 40/min, Enterprise=100k/mo 60/min). Migration 030. OpenRouter in ai-scan and ai-chat. Nava API key from Settings is what OpenClaw uses.
 - 2026-03-06 — Multi-provider BYOK: ai-scan supports Groq, OpenAI, Claude, Gemini (auto-detected from key). ai-chat supports Groq + OpenAI. Settings → AI is now the primary AI setup (not hidden). Pricing updated: Free (10 items, BYOK), Personal ($2.50), Business ($5), Enterprise ($10), Managed AI (+$1). No artificial scan limits when BYOK.
 - 2026-03-06 — Document scanning switched from OpenAI to Groq (Llama 4 Scout vision). Same Groq key as chat; user's key from Settings → AI sent with each scan (free tier). Optional GROQ_API_KEY in Supabase for server fallback.
 - 2026-01-05 — AI chat (Groq), AI scan (OpenAI).
@@ -521,6 +526,7 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
   - **Scan caching**: Duplicate scans (same image+prompt SHA-256 hash) return cached results — no Groq call, no usage counted.
   - **ScanUpload UI**: Shows "X/Y scans used this month" with warning when near limit, disables buttons when at limit.
 - 2026-01-07 — Android workflow ready, iOS on hold.
+- 2026-03-06 — API rate limits and OpenRouter: nava-api tiered limits (Free=0, Personal=2k/mo 20/min, Business=25k/mo 40/min, Enterprise=100k/mo 60/min). Migration 030. OpenRouter in ai-scan and ai-chat. Nava API key from Settings is what OpenClaw uses.
 - 2026-03-06 — Multi-provider BYOK: ai-scan supports Groq, OpenAI, Claude, Gemini (auto-detected from key). ai-chat supports Groq + OpenAI. Settings → AI is now the primary AI setup (not hidden). Pricing updated: Free (10 items, BYOK), Personal ($2.50), Business ($5), Enterprise ($10), Managed AI (+$1). No artificial scan limits when BYOK.
 - 2026-03-06 — Document scanning switched from OpenAI to Groq (Llama 4 Scout vision). Same Groq key as chat; user's key from Settings → AI sent with each scan (free tier). Optional GROQ_API_KEY in Supabase for server fallback.
 - 2026-01-05 — AI chat (Groq), AI scan (OpenAI).
