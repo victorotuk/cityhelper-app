@@ -4,6 +4,7 @@ Updated: 2026-03-06
 **→ For AI: Read this file first when user returns.** Full context: Vision, Recent (features), Changelog (what was built), What's Left, All Prompts & Outcomes. Project: cityhelper → Nava. React + Vite, Supabase, Capacitor.
 
 **Key docs for setup and operations:**
+- **docs/OPENCLAW_CHECKLIST.md** — Step-by-step checklist to get OpenClaw working (install, Nava API key, config, connect WhatsApp). Appendix: Groq vs OpenRouter for free-tier server AI.
 - **docs/OPENCLAW_AND_API.md** — We run OpenClaw for everyone (charge a fee); scalable “Nava over WhatsApp” (phone linking, one bridge, route by sender); API limits and limit-increase requests; tier → user category.
 - **docs/AI_PROVIDERS.md** — OpenRouter setup; all supported providers; provider downtime backup (Groq then OpenRouter via OPENROUTER_API_KEY); adding a new provider.
 
