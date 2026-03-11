@@ -13,6 +13,7 @@ import {
   Download, Edit3, LayoutDashboard
 } from 'lucide-react';
 import { getVoicePreference } from '../lib/voice';
+import { getSuggestedCountryFromTimezone, getUseLocationForCountry } from '../lib/countryFromLocation';
 import A11yPromptModal, { wasA11yPromptAsked } from '../components/modals/A11yPromptModal';
 import { parseTextForSuggestion } from '../lib/smartSuggestParse';
 import { parseTicketFromNotes } from '../lib/payTicketUtils';
@@ -31,6 +32,7 @@ import BulkEditModal from '../components/modals/BulkEditModal';
 import CalendarImportModal from '../components/modals/CalendarImportModal';
 import AuditModal from '../components/modals/AuditModal';
 import AddItemModal from '../components/addItem/AddItemModal';
+import CountryRequiredModal from '../components/modals/CountryRequiredModal';
 
 export default function Dashboard() {
   const { user, signOut } = useAuthStore();
@@ -125,9 +127,22 @@ export default function Dashboard() {
     if (!user) return;
     const { data } = await supabase.from('user_settings').select('country, countries, persona').eq('user_id', user.id).single();
     if (data?.persona) setPersona(data.persona);
-    const primary = data?.country || null;
+    let primary = data?.country || null;
     const others = Array.isArray(data?.countries) ? data.countries : [];
-    const list = primary ? [primary, ...others].filter((c, i, a) => a.indexOf(c) === i) : others.filter((c, i, a) => a.indexOf(c) === i);
+    let list = primary ? [primary, ...others].filter((c, i, a) => a.indexOf(c) === i) : others.filter((c, i, a) => a.indexOf(c) === i);
+    if (!primary && getUseLocationForCountry(user.id)) {
+      const suggested = getSuggestedCountryFromTimezone();
+      if (suggested === 'ca' || suggested === 'us') {
+        const { error } = await supabase.from('user_settings').upsert({
+          user_id: user.id, country: suggested, updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+        if (!error) {
+          primary = suggested;
+          list = [suggested];
+          localStorage.setItem(`nava_active_country_${user.id}`, suggested);
+        }
+      }
+    }
     setUserCountry(primary);
     setUserCountries(list);
     const stored = localStorage.getItem(`nava_active_country_${user.id}`);
@@ -341,43 +356,22 @@ export default function Dashboard() {
 
       {/* Country required modal */}
       {showCountryRequired && (
-        <div className="modal-overlay" onClick={() => setShowCountryRequired(false)}>
-          <div className="modal country-required-modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Select your country</h2>
-              <button className="btn-icon" onClick={() => setShowCountryRequired(false)}><X size={20} /></button>
-            </div>
-            <div className="modal-body">
-              <p className="modal-body-text">Which country do you need to track compliance for?</p>
-              <div className="country-picker-inline">
-                {[{ id: 'ca', name: 'Canada', flag: '🇨🇦' }, { id: 'us', name: 'United States', flag: '🇺🇸' }].map(c => (
-                  <button
-                    key={c.id}
-                    className="country-pick-btn"
-                    onClick={async () => {
-                      const { error: saveErr } = await supabase.from('user_settings').upsert({
-                        user_id: user.id, country: c.id, updated_at: new Date().toISOString()
-                      }, { onConflict: 'user_id' });
-                      if (saveErr) { alert('Could not save country: ' + saveErr.message); return; }
-                      setUserCountry(c.id);
-                      setActiveCountry(c.id);
-                      setUserCountries(prev => prev.includes(c.id) ? prev : [c.id, ...prev]);
-                      localStorage.setItem(`nava_active_country_${user.id}`, c.id);
-                      setShowCountryRequired(false);
-                      setShowAddModal(true);
-                    }}
-                  >
-                    <span className="country-pick-flag">{c.flag}</span>
-                    <span className="country-pick-name">{c.name}</span>
-                  </button>
-                ))}
-              </div>
-              <p className="modal-body-text soft" style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '12px' }}>
-                You can add more countries anytime in Settings.
-              </p>
-            </div>
-          </div>
-        </div>
+        <CountryRequiredModal
+          suggestedCountry={getSuggestedCountryFromTimezone()}
+          onSelect={async (cId) => {
+            const { error: saveErr } = await supabase.from('user_settings').upsert({
+              user_id: user.id, country: cId, updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id' });
+            if (saveErr) { alert('Could not save country: ' + saveErr.message); return; }
+            setUserCountry(cId);
+            setActiveCountry(cId);
+            setUserCountries(prev => prev.includes(cId) ? prev : [cId, ...prev]);
+            localStorage.setItem(`nava_active_country_${user.id}`, cId);
+            setShowCountryRequired(false);
+            setShowAddModal(true);
+          }}
+          onClose={() => setShowCountryRequired(false)}
+        />
       )}
 
       {showAddModal && (

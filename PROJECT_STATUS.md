@@ -72,6 +72,7 @@ Three ways to run Nava; privacy-first, user chooses control level.
 - **AI chat overlay**: Slide-out panel from ChatBubble (no blur, dashboard stays interactive). Full /assistant page for deep chats. Chat persists (sessionStorage), delete individual messages, clear chat.
 - **AI chat tools**: Context awareness (page, selectedItem, country), export_to_calendar (.ics), proactive suggestions (AISuggestionsCard on dashboard).
 - **Per-item country**: Migration 027. Items can belong to Canada or US. Dashboard filters by active country. Add/BulkEdit: country picker when 2+ countries. ai-chat add_item supports country.
+- **Location-based country (timezone):** If user hasn’t set a country, we suggest or auto-set it from device timezone (no GPS, no permission). Settings → Country: toggle “Use location to suggest country” (On by default); turn Off to choose manually for privacy. `src/lib/countryFromLocation.js`; CountryRequiredModal shows “Suggested” when we have a timezone hint.
 - **Scan confirm + voice (a11y):** After scan, show "Confirm & track" with doc details; one-click Track it or Edit details. Settings → Accessibility: voice feedback (Nava-specific; device handles VoiceOver/TalkBack). One-time prompt on dashboard. Blurry images: AI returns readable:false, Nava shows message and does not suggest a category.
 
 ### Mobile
@@ -131,6 +132,9 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
 - If Supabase or other security advisories arrive, address promptly. Privacy is key.
 
 ### Changelog
+- 2026-03-05 (location-based country setting)
+  - **Automate or manual country:** Timezone-based suggestion (no GPS) when user has no country. If “Use location to suggest country” is On (default), we auto-set primary country from timezone on load. If Off, user chooses in the “Select your country” modal; modal still shows a “Suggested” country from timezone for one-tap. Settings → Country: On/Off toggle and short privacy note.
+  - **New:** `src/lib/countryFromLocation.js` (getSuggestedCountryFromTimezone, get/setUseLocationForCountry), `CountryRequiredModal.jsx` for the country picker modal.
 - 2026-03-05 (scan flow fix, AI docs)
   - **Add Item scan → confirm:** Upload (e.g. driver’s licence) now always shows the "Confirm & track" screen when the AI returns any usable extraction (name or date). No longer falls through to category picker when the AI returns "other" or an unmapped category. Driver’s licence detection widened (photo card, ID card, G1/G2, Ontario photo/licence); AI category string normalized (e.g. "driver's license" → driving).
   - **PROJECT_STATUS:** Documented which AI is used where: Chat = Groq (user key); document parsing = OpenAI gpt-4o-mini via Edge Function `ai-scan` (OPENAI_API_KEY).

@@ -326,6 +326,7 @@ export default function Settings() {
           )}
 
           <SettingsCountrySection
+            userId={user?.id}
             country={country}
             otherCountries={otherCountries}
             setCountry={setCountry}

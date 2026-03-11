@@ -6334,6 +6334,17 @@ input, select, textarea { font-family: inherit; }
   color: var(--text-primary);
 }
 
+.country-pick-btn.suggested {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+
+.country-pick-suggested {
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
 .quick-action.primary {
   background: var(--accent-gradient);
   color: var(--bg-deep);
