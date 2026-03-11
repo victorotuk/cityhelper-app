@@ -7,7 +7,7 @@ import { useChatOverlayStore } from '../stores/chatOverlayStore';
 import { useSharedSuggestStore } from '../stores/sharedSuggestStore';
 import { APP_CONFIG } from '../lib/config';
 import { supabase } from '../lib/supabase';
-import { format, differenceInDays, parseISO, addDays } from 'date-fns';
+import { format, differenceInDays, parseISO } from 'date-fns';
 import {
   Plus, Calendar, X, FileText, Folder, Settings,
   Download, Edit3, LayoutDashboard
@@ -213,7 +213,11 @@ export default function Dashboard() {
     ok: filteredItems.filter(i => getStatusInfo(i.due_date).status === 'ok'),
     completed: filteredItems
       .filter(i => i.last_completed_at)
-      .filter(i => new Date(i.last_completed_at) > new Date(Date.now() - 30 * 86400000))
+      .filter(i => {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 30);
+        return new Date(i.last_completed_at) > cutoff;
+      })
       .sort((a, b) => new Date(b.last_completed_at) - new Date(a.last_completed_at))
       .slice(0, 10),
   };
