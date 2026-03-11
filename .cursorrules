@@ -1,13 +1,12 @@
 # Nava project rules
 
-## FIRST THING: Read these docs before doing ANYTHING
-When starting a new session or receiving a task, **always read these files first** (in order):
-1. `PROJECT_STATUS.md` — full project context, vision, what's built, what's left, changelog
-2. `COMPETITOR_ANALYSIS.md` — feature gaps vs competitors
-3. `docs/ROADMAP.md` — phased plan (APIs, IoT, acquisitions, global expansion)
-4. `docs/DESKTOP_MOBILE_UX.md` — platform-specific UX rules (desktop vs mobile)
-5. `src-tauri/tauri.conf.json` — desktop config; `withGlobalTauri: true` is CRITICAL for desktop detection
-6. `docs/TAURI_UPDATES.md` — desktop build, signing, icon, and release workflow
+## FIRST THING: Read the docs before doing ANYTHING
+**Always check the relevant docs first.** Skipping this leads to wrong behavior (e.g. overlap bugs, scan flow going to categories instead of confirm). When starting a session or implementing a feature:
+1. **Read** `PROJECT_STATUS.md` — full context, vision, what's built, changelog, **which AI is used where** (chat = Groq, scan = OpenAI gpt-4o-mini via ai-scan).
+2. For UI/platform work: read `docs/DESKTOP_MOBILE_UX.md` and `src-tauri/tauri.conf.json` (e.g. `withGlobalTauri: true` is CRITICAL for desktop).
+3. For roadmap/priorities: `COMPETITOR_ANALYSIS.md`, `docs/ROADMAP.md`.
+4. For desktop build/release: `docs/TAURI_UPDATES.md`.
+Then implement so behavior matches the docs (e.g. Add Item: camera-first → AI scan → **Confirm & track** screen with doc details → Track it or Edit details; never skip confirm and jump to category picker when we have extraction).
 
 ## Stack
 - **Frontend:** React + Vite, JSX (not TSX)

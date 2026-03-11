@@ -96,9 +96,14 @@ export default function AddItemModal({
         return;
       }
       const nameLower = (ext.name || '').toLowerCase();
-      const looksLikeDriverLicense = /driver|licen[c]?e|permit|ontario.*licence/i.test(nameLower) || (ext.notes || '').toLowerCase().includes('driver');
-      let category = ext.category && APP_CONFIG.categories.find(c => c.id === ext.category) ? ext.category : null;
+      const notesLower = (ext.notes || '').toLowerCase();
+      const looksLikeDriverLicense = /driver|licen[c]?e|permit|photo\s*card|id\s*card|g1|g2|ontario\s*(photo|licen|id)/i.test(nameLower) || notesLower.includes('driver') || notesLower.includes('licen');
+      // Normalize AI category: map common variations to our category id (e.g. "driver's license" -> driving)
+      const rawCat = (ext.category || '').toString().toLowerCase().replace(/\s+/g, '_').replace(/'/g, '');
+      const categoryAliases = { driver_license: 'driving', drivers_license: 'driving', driving: 'driving', licence: 'driving', license: 'driving', drivers_licence: 'driving', driver_licence: 'driving' };
+      let category = ext.category && APP_CONFIG.categories.find(c => c.id === ext.category) ? ext.category : (categoryAliases[rawCat] || null);
       if (!category && looksLikeDriverLicense) category = 'driving';
+      if (!category && (ext.name || ext.expiryDate || ext.dueDate)) category = 'other';
       if (category) setSelectedCategory(category);
       if (ext.name) setName(ext.name);
       if (ext.expiryDate) setDueDate(ext.expiryDate);
@@ -108,7 +113,12 @@ export default function AddItemModal({
       if (ext.amount) notesParts.push(`Amount: ${ext.amount}`);
       if (ext.notes) notesParts.push(ext.notes);
       if (notesParts.length) setNotes(notesParts.join('\n'));
-      if (category) {
+      // Show confirm whenever we have usable extraction (name or date); only fall back to category picker when we got nothing
+      const hasUsableExtraction = ext && (ext.name || ext.expiryDate || ext.dueDate);
+      if (hasUsableExtraction && category) {
+        setShowScanConfirm(true);
+      } else if (hasUsableExtraction) {
+        setSelectedCategory('other');
         setShowScanConfirm(true);
       } else {
         setShowCategories(true);

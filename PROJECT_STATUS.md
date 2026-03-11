@@ -38,6 +38,10 @@ Three ways to run Nava; privacy-first, user chooses control level.
 
 **LLM choice:** Users can run any LLM — local (Ollama, etc.) or web (OpenAI, Anthropic, Groq). BYOK or we manage keys (paid).
 
+**AI services (which model is used where):**
+- **Chat (Nava assistant):** Groq. User’s API key in Settings → AI (Bring your own key); stored per user in `localStorage` (`nava_groq_key_<user_id>`). Used by the chat overlay, /assistant, and AI suggestions.
+- **Document parsing / scan (Add Item, dispute, etc.):** OpenAI **gpt-4o-mini** (vision) via Supabase Edge Function `ai-scan`. Server-side only; requires **OPENAI_API_KEY** in Supabase Edge Function secrets. Not user-configurable; same for all users.
+
 **Local vs Online split (Path A — Supabase + client-side E2E):**
 - **LOCAL (IndexedDB on web/mobile/desktop):** compliance_items, user_settings (country, persona). Read/write local first. Encrypted before sync. Autobackup. Web uses IndexedDB too — not just mobile.
 - **ONLINE (Supabase + Edge Functions):** Auth, OAuth (email, calendar), email suggestions, AI chat. Server-based; required for those features.
@@ -127,6 +131,9 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
 - If Supabase or other security advisories arrive, address promptly. Privacy is key.
 
 ### Changelog
+- 2026-03-05 (scan flow fix, AI docs)
+  - **Add Item scan → confirm:** Upload (e.g. driver’s licence) now always shows the "Confirm & track" screen when the AI returns any usable extraction (name or date). No longer falls through to category picker when the AI returns "other" or an unmapped category. Driver’s licence detection widened (photo card, ID card, G1/G2, Ontario photo/licence); AI category string normalized (e.g. "driver's license" → driving).
+  - **PROJECT_STATUS:** Documented which AI is used where: Chat = Groq (user key); document parsing = OpenAI gpt-4o-mini via Edge Function `ai-scan` (OPENAI_API_KEY).
 - 2026-03-05 (componentize a11y prompt, cursor rules)
   - **A11y prompt as component:** One-time accessibility prompt extracted from Dashboard into `components/modals/A11yPromptModal.jsx` (with `markA11yPromptAsked` / `wasA11yPromptAsked` helpers). Dashboard uses the component; no large inline JSX.
   - **Cursor rules — Components:** Rules now require breaking everything into components: no large inline JSX in pages, extract modals/sections into named components; shared UI in `components/modals/` or `components/common/`.
