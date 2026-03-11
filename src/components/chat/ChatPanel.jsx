@@ -98,7 +98,10 @@ export default function ChatPanel({ context, compact = false, onClose, initialPr
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
-      addMessage({ role: 'assistant', content: data.reply });
+      const replyText = data.backup_used
+        ? 'We used a backup AI provider for this response (your usual one may be having issues).\n\n' + data.reply
+        : data.reply;
+      addMessage({ role: 'assistant', content: replyText });
 
       if (data.calendarExport?.ics) {
         const blob = new Blob([data.calendarExport.ics], { type: 'text/calendar' });

@@ -223,11 +223,30 @@ Return ONLY valid JSON, no markdown or explanation.`
       headers['Authorization'] = `Bearer ${resolvedKey}`
     }
 
-    const response = await fetch(fetchUrl, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(requestBody),
-    })
+    let response = await fetch(fetchUrl, { method: 'POST', headers, body: JSON.stringify(requestBody) })
+    let backupUsed = false
+
+    // On 5xx or network error: retry once with server key (Groq) so user still gets a result
+    const isServerError = !response.ok && response.status >= 500
+    const usedUserKey = resolvedKey !== serverKey
+    if ((isServerError || !response.ok) && usedUserKey && serverKey) {
+      try {
+        const groqProvider = PROVIDERS.groq
+        const groqBody = groqProvider.buildBody(groqProvider.model, extractPrompt, imageUrl)
+        const retryRes = await fetch(groqProvider.url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serverKey}` },
+          body: JSON.stringify(groqBody),
+        })
+        if (retryRes.ok) {
+          response = retryRes
+          backupUsed = true
+          console.log('AI scan: primary provider failed; served with backup (Groq)')
+        }
+      } catch (e) {
+        console.error('AI scan backup retry failed:', e)
+      }
+    }
 
     if (!response.ok) {
       const errorText = await response.text()
@@ -245,9 +264,10 @@ Return ONLY valid JSON, no markdown or explanation.`
 
     // Extract text from provider-specific response format
     let extractedText = ''
-    if (providerName === 'anthropic') {
+    const effectiveProvider = backupUsed ? 'groq' : providerName
+    if (effectiveProvider === 'anthropic') {
       extractedText = data.content?.[0]?.text || ''
-    } else if (providerName === 'gemini') {
+    } else if (effectiveProvider === 'gemini') {
       extractedText = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
     } else {
       extractedText = data.choices?.[0]?.message?.content || ''
@@ -277,10 +297,16 @@ Return ONLY valid JSON, no markdown or explanation.`
         if (error) console.error('Cache write error (non-fatal):', error)
       })
 
-    return new Response(
-      JSON.stringify({ extracted, raw: extractedText }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    const responsePayload: { extracted: unknown; raw: string; backup_used?: boolean } = { extracted, raw: extractedText }
+    if (backupUsed) responsePayload.backup_used = true
+
+    return new Response(JSON.stringify(responsePayload), {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+        ...(backupUsed ? { 'X-AI-Backup-Used': 'true' } : {}),
+      },
+    })
 
   } catch (error) {
     console.error('AI Scan error:', error)

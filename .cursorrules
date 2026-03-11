@@ -2,10 +2,12 @@
 
 ## FIRST THING: Read the docs before doing ANYTHING
 **Always check the relevant docs first.** Skipping this leads to wrong behavior (e.g. overlap bugs, scan flow going to categories instead of confirm). When starting a session or implementing a feature:
-1. **Read** `PROJECT_STATUS.md` — full context, vision, what's built, changelog, **which AI is used where** (chat = Groq, scan = Groq Llama 4 Scout via ai-scan, same key).
+1. **Read** `PROJECT_STATUS.md` — full context, vision, what's built, changelog, which AI is used where, API limits, provider downtime backup.
 2. For UI/platform work: read `docs/DESKTOP_MOBILE_UX.md` and `src-tauri/tauri.conf.json` (e.g. `withGlobalTauri: true` is CRITICAL for desktop).
 3. For roadmap/priorities: `COMPETITOR_ANALYSIS.md`, `docs/ROADMAP.md`.
 4. For desktop build/release: `docs/TAURI_UPDATES.md`.
+5. For OpenClaw, API limits, setting up for non-technical users: `docs/OPENCLAW_AND_API.md`.
+6. For AI providers, OpenRouter setup, downtime/backup: `docs/AI_PROVIDERS.md`.
 Then implement so behavior matches the docs (e.g. Add Item: camera-first → AI scan → **Confirm & track** screen with doc details → Track it or Edit details; never skip confirm and jump to category picker when we have extraction).
 
 ## Stack

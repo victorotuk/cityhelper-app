@@ -300,7 +300,7 @@ function detectChatProvider(apiKey: string): string {
   return 'groq'
 }
 
-async function callAI(messages: any[], tools: any[], toolChoice: string, userApiKey?: string) {
+async function callAI(messages: any[], tools: any[], toolChoice: string, userApiKey?: string): Promise<{ data: any; backupUsed: boolean }> {
   const serverKey = Deno.env.get('GROQ_API_KEY')
   const key = userApiKey || serverKey
   if (!key) throw new Error('AI not configured. Add your AI key in Settings → AI. Groq is free at console.groq.com.')
@@ -308,18 +308,37 @@ async function callAI(messages: any[], tools: any[], toolChoice: string, userApi
   const provider = CHAT_PROVIDERS[providerName] || CHAT_PROVIDERS.groq
   const body: any = { model: provider.model, messages, temperature: 0.7, max_tokens: 1024 }
   if (tools?.length) { body.tools = tools; body.tool_choice = toolChoice }
-  const res = await fetch(provider.url, {
+
+  let res = await fetch(provider.url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
     body: JSON.stringify(body),
   })
+
+  // On 5xx: retry once with server key so user still gets a reply
+  const isServerError = !res.ok && res.status >= 500
+  if (isServerError && userApiKey && serverKey) {
+    const groq = CHAT_PROVIDERS.groq
+    const retryRes = await fetch(groq.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serverKey}` },
+      body: JSON.stringify({ ...body, model: groq.model }),
+    })
+    if (retryRes.ok) {
+      const data = await retryRes.json()
+      console.log('AI chat: primary provider failed; served with backup (Groq)')
+      return { data, backupUsed: true }
+    }
+  }
+
   if (!res.ok) {
     const errText = await res.text()
     if (res.status === 401 || res.status === 403) throw new Error(`Invalid ${providerName} API key. Check Settings → AI.`)
     if (res.status === 429) throw new Error('Rate limit reached. Try again shortly.')
     throw new Error(`AI error: ${errText}`)
   }
-  return res.json()
+  const data = await res.json()
+  return { data, backupUsed: false }
 }
 
 serve(async (req) => {
@@ -391,7 +410,10 @@ When user refers to an item by name, use list_items first to find item_id. Categ
       ...messages.map((m: any) => ({ role: m.role, content: m.content || '' })),
     ]
 
-    let data = await callAI(chatMessages, TOOLS, 'auto', userApiKey)
+    let backupUsed = false
+    let callResult = await callAI(chatMessages, TOOLS, 'auto', userApiKey)
+    backupUsed = callResult.backupUsed
+    let data = callResult.data
     let msg = data.choices?.[0]?.message
     let iterations = 0
     let calendarExportIcs: string | null = null
@@ -567,9 +589,16 @@ When user refers to an item by name, use list_items first to find item_id. Categ
     }
 
     const reply = msg?.content || 'Sorry, I couldn\'t complete that.'
-    const body: { reply: string; calendarExport?: { ics: string } } = { reply }
-    if (calendarExportIcs) body.calendarExport = { ics: calendarExportIcs }
-    return new Response(JSON.stringify(body), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    const responseBody: { reply: string; calendarExport?: { ics: string }; backup_used?: boolean } = { reply }
+    if (calendarExportIcs) responseBody.calendarExport = { ics: calendarExportIcs }
+    if (backupUsed) responseBody.backup_used = true
+    return new Response(JSON.stringify(responseBody), {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+        ...(backupUsed ? { 'X-AI-Backup-Used': 'true' } : {}),
+      },
+    })
   } catch (error) {
     console.error('AI Chat error:', error)
     return new Response(JSON.stringify({ error: (error as Error).message }), {

@@ -3,6 +3,10 @@ Updated: 2026-03-06
 
 **→ For AI: Read this file first when user returns.** Full context: Vision, Recent (features), Changelog (what was built), What's Left, All Prompts & Outcomes. Project: cityhelper → Nava. React + Vite, Supabase, Capacitor.
 
+**Key docs for setup and operations:**
+- **docs/OPENCLAW_AND_API.md** — Nava API key vs OpenClaw; setting up OpenClaw for someone else (e.g. sister); API limits rationale; tier → user category.
+- **docs/AI_PROVIDERS.md** — OpenRouter setup; all supported providers; provider downtime and temporary backup (retry with server key); adding a new provider.
+
 ### Vision (North Star)
 Nava is **not just compliance/deadline tracking**. The goal: users interact via **any channel they prefer** (app, WhatsApp, iMessage, etc.) to get things done with one message.
 
@@ -43,6 +47,7 @@ Three ways to run Nava; privacy-first, user chooses control level.
 - **Document scanning:** Groq, OpenAI, Claude, Gemini, or OpenRouter (400+ models, e.g. AllenAI Olmo, Meta Llama) via Edge Function `ai-scan`. All support vision. OpenRouter key: `sk-or-v1-...`.
 - **BYOK is the default.** No artificial scan limits when BYOK. Server key = managed AI add-on ($1/mo).
 - **Key storage:** `localStorage` per user (`nava_ai_key_<user_id>`, `nava_ai_provider_<user_id>`, backward-compat `nava_groq_key_<user_id>`).
+- **Provider downtime:** If the user's provider returns 5xx or times out, we retry once with server `GROQ_API_KEY` (if set). Response includes `backup_used: true` and header `X-AI-Backup-Used`; chat UI shows a short notice. See docs/AI_PROVIDERS.md.
 
 **API (OpenClaw / integrations):**
 - **nava-api** Edge Function: HTTP API for OpenClaw, scripts, etc. Auth: `Bearer <nava_api_key>`. Users get their **Nava API key** from Settings → OpenClaw & API (generate key). When we set up OpenClaw for a user, we use that same Nava API key — they do not need an "OpenClaw key."
@@ -256,6 +261,7 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
   - **Scan caching**: Duplicate scans (same image+prompt SHA-256 hash) return cached results — no Groq call, no usage counted.
   - **ScanUpload UI**: Shows "X/Y scans used this month" with warning when near limit, disables buttons when at limit.
 - 2026-01-07 — Android workflow ready, iOS on hold.
+- 2026-03-06 — Docs and provider backup: docs/OPENCLAW_AND_API.md (setup for others, API limits rationale, tier→user category). docs/AI_PROVIDERS.md (OpenRouter setup, downtime backup). ai-scan and ai-chat retry once with server GROQ_API_KEY on 5xx; response has backup_used and X-AI-Backup-Used; chat UI shows notice. .cursorrules and PROJECT_STATUS point to new docs.
 - 2026-03-06 — API rate limits and OpenRouter: nava-api tiered limits (Free=0, Personal=2k/mo 20/min, Business=25k/mo 40/min, Enterprise=100k/mo 60/min). Migration 030. OpenRouter in ai-scan and ai-chat. Nava API key from Settings is what OpenClaw uses.
 - 2026-03-06 — Multi-provider BYOK: ai-scan supports Groq, OpenAI, Claude, Gemini (auto-detected from key). ai-chat supports Groq + OpenAI. Settings → AI is now the primary AI setup (not hidden). Pricing updated: Free (10 items, BYOK), Personal ($2.50), Business ($5), Enterprise ($10), Managed AI (+$1). No artificial scan limits when BYOK.
 - 2026-03-06 — Document scanning switched from OpenAI to Groq (Llama 4 Scout vision). Same Groq key as chat; user's key from Settings → AI sent with each scan (free tier). Optional GROQ_API_KEY in Supabase for server fallback.
@@ -526,6 +532,7 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
   - **Scan caching**: Duplicate scans (same image+prompt SHA-256 hash) return cached results — no Groq call, no usage counted.
   - **ScanUpload UI**: Shows "X/Y scans used this month" with warning when near limit, disables buttons when at limit.
 - 2026-01-07 — Android workflow ready, iOS on hold.
+- 2026-03-06 — Docs and provider backup: docs/OPENCLAW_AND_API.md (setup for others, API limits rationale, tier→user category). docs/AI_PROVIDERS.md (OpenRouter setup, downtime backup). ai-scan and ai-chat retry once with server GROQ_API_KEY on 5xx; response has backup_used and X-AI-Backup-Used; chat UI shows notice. .cursorrules and PROJECT_STATUS point to new docs.
 - 2026-03-06 — API rate limits and OpenRouter: nava-api tiered limits (Free=0, Personal=2k/mo 20/min, Business=25k/mo 40/min, Enterprise=100k/mo 60/min). Migration 030. OpenRouter in ai-scan and ai-chat. Nava API key from Settings is what OpenClaw uses.
 - 2026-03-06 — Multi-provider BYOK: ai-scan supports Groq, OpenAI, Claude, Gemini (auto-detected from key). ai-chat supports Groq + OpenAI. Settings → AI is now the primary AI setup (not hidden). Pricing updated: Free (10 items, BYOK), Personal ($2.50), Business ($5), Enterprise ($10), Managed AI (+$1). No artificial scan limits when BYOK.
 - 2026-03-06 — Document scanning switched from OpenAI to Groq (Llama 4 Scout vision). Same Groq key as chat; user's key from Settings → AI sent with each scan (free tier). Optional GROQ_API_KEY in Supabase for server fallback.
