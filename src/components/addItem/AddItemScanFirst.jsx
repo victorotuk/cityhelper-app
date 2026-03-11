@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Camera, Upload, List, Smartphone, QrCode } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Camera, Upload, List, Smartphone } from 'lucide-react';
+import { getVoicePreference, speak } from '../../lib/voice';
 
 function isMobileDevice() {
   if (typeof navigator === 'undefined') return false;
@@ -41,6 +42,7 @@ function ContinueOnMobile() {
 }
 
 export default function AddItemScanFirst({
+  userId,
   cameraRef,
   fileRef,
   scanning,
@@ -48,6 +50,14 @@ export default function AddItemScanFirst({
   onFileChange,
   onBrowseCategories,
 }) {
+  const didSpeakHint = useRef(false);
+  useEffect(() => {
+    if (!userId || scanning || didSpeakHint.current) return;
+    if (!getVoicePreference(userId)) return;
+    didSpeakHint.current = true;
+    speak('Track something. Take a photo or upload an image. We\'ll identify it for you. Or choose browse categories to pick manually.');
+  }, [userId, scanning]);
+
   return (
     <div className="scan-first-screen">
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" onChange={onFileChange} hidden />

@@ -7,6 +7,7 @@ import AddItemCategoryPicker from './AddItemCategoryPicker';
 import AddItemFormFields from './AddItemFormFields';
 import AddItemScanFirst from './AddItemScanFirst';
 import AddItemScanConfirm from './AddItemScanConfirm';
+import { getVoicePreference, speak } from '../../lib/voice';
 
 export default function AddItemModal({
   onClose,
@@ -86,6 +87,13 @@ export default function AddItemModal({
           const match = ext.match(/\{[\s\S]*\}/);
           if (match) ext = JSON.parse(match[0]);
         } catch { /* keep ext as-is */ }
+      }
+      if (ext && ext.readable === false) {
+        const msg = ext.message || 'This image is too blurry or unclear to read. Try a clearer photo or choose a category manually.';
+        setScanError(msg);
+        if (userId && getVoicePreference(userId)) speak(msg);
+        setScanning(false);
+        return;
       }
       const nameLower = (ext.name || '').toLowerCase();
       const looksLikeDriverLicense = /driver|licen[c]?e|permit|ontario.*licence/i.test(nameLower) || (ext.notes || '').toLowerCase().includes('driver');
@@ -221,6 +229,7 @@ export default function AddItemModal({
           />
         ) : showScanFirst ? (
           <AddItemScanFirst
+            userId={userId}
             cameraRef={cameraRef}
             fileRef={fileRef}
             scanning={scanning}

@@ -159,6 +159,10 @@ export default function Dashboard() {
   const handleAddItem = async (item) => {
     try {
       await addItem({ ...item, user_id: user.id, created_at: new Date().toISOString() });
+      if (getVoicePreference(user.id)) {
+        const { speak } = await import('../lib/voice');
+        speak(`Added. ${item.name || 'Item'} is now being tracked.`);
+      }
       setShowAddModal(false);
       setSelectedCategory(null);
     } catch (err) {

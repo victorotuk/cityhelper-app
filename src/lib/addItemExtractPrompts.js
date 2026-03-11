@@ -90,15 +90,22 @@ export const EXTRACT_PROMPTS = {
 
 const DEFAULT_PROMPT = `Extract key info and return JSON: {"name":"","number":"","expiryDate":"YYYY-MM-DD","type":""}`;
 
-export const AUTO_DETECT_PROMPT = `Look at this document/image and identify what it is. Return ONLY JSON with these fields:
-{"category":"one of: trust, retirement_estate, credit_banking, tax, subscriptions, health, personal_insurance, housing, immigration, driving, parking, education, travel, important_dates, legal_court, government_benefits, kids_family, pet_care, business_tax, employees, contracts, business_license, business_insurance, office, assets, professional, other",
+export const AUTO_DETECT_PROMPT = `Look at this document/image and identify what it is.
+
+If the image is blurry, blank, too dark, or otherwise unreadable so you cannot identify the document, return ONLY:
+{"readable":false,"message":"Image is too blurry or unclear to read."}
+(or a brief reason in message, e.g. "Image is too dark." or "No document visible.")
+
+If the image is readable, return ONLY JSON with these fields:
+{"readable":true,
+"category":"one of: trust, retirement_estate, credit_banking, tax, subscriptions, health, personal_insurance, housing, immigration, driving, parking, education, travel, important_dates, legal_court, government_benefits, kids_family, pet_care, business_tax, employees, contracts, business_license, business_insurance, office, assets, professional, other",
 "name":"short name for the item (e.g. 'Driver License', 'Parking Ticket', 'Work Permit')",
 "expiryDate":"YYYY-MM-DD or empty",
 "dueDate":"YYYY-MM-DD or empty",
 "number":"any reference/ticket/policy number or empty",
 "amount":"dollar amount if visible or empty",
 "notes":"any other key details, keep brief"}
-Pick the most specific category. If unsure, use "other".`;
+Pick the most specific category. If unsure what document it is (but image is readable), use "other".`;
 
 export function getExtractPromptForCategory(selectedCategory) {
   return EXTRACT_PROMPTS[selectedCategory] || DEFAULT_PROMPT;
