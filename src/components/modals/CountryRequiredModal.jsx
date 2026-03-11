@@ -34,7 +34,7 @@ export default function CountryRequiredModal({ suggestedCountry, onSelect, onClo
             ))}
           </div>
           <p className="modal-body-text soft" style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '12px' }}>
-            You can add more countries or turn off location-based suggestion in Settings.
+            You can add more countries anytime in Settings.
           </p>
         </div>
       </div>

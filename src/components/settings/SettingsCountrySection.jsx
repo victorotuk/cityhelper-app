@@ -35,9 +35,9 @@ export default function SettingsCountrySection({
         <div className="setting-card setting-card-padded" style={{ marginBottom: 'var(--space-md)' }}>
           <div className="setting-row">
             <div className="setting-info">
-              <h3>Use location to suggest country</h3>
+              <h3>Suggest country from timezone</h3>
               <p id="country-location-desc" style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                When on, we use your device timezone only (no GPS) to set your country if you haven&apos;t chosen one. Turn off to choose manually for privacy.
+                When on, we can pre-fill your country from your device timezone (we never ask for location permission). When off, you choose below—same app, no limits either way. It&apos;s just a preference.
               </p>
             </div>
             <button
@@ -45,7 +45,7 @@ export default function SettingsCountrySection({
               className={`btn btn-sm ${useLocationForCountry ? 'btn-primary' : 'btn-ghost'}`}
               onClick={() => handleLocationToggle(!useLocationForCountry)}
               aria-pressed={useLocationForCountry}
-              aria-label={useLocationForCountry ? 'Turn off location-based country' : 'Turn on location-based country'}
+              aria-label={useLocationForCountry ? 'Turn off timezone suggestion' : 'Turn on timezone suggestion'}
             >
               {useLocationForCountry ? 'On' : 'Off'}
             </button>

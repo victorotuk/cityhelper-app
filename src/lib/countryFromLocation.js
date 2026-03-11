@@ -1,7 +1,7 @@
 /**
- * Location-based country suggestion for Nava (CA/US).
- * Uses device timezone only — no GPS, no IP, no permission.
- * Users can disable in Settings and choose country manually (privacy).
+ * Optional country suggestion for Nava (CA/US).
+ * Uses device timezone only — no GPS, no location permission ever.
+ * If the user turns this off or sets country manually, the app works exactly the same; no penalties.
  */
 
 const STORAGE_KEY = (userId) => `nava_use_location_country_${userId || ''}`;
