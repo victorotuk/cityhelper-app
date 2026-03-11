@@ -6,6 +6,7 @@ import { APP_CONFIG } from '../../lib/config';
 import AddItemCategoryPicker from './AddItemCategoryPicker';
 import AddItemFormFields from './AddItemFormFields';
 import AddItemScanFirst from './AddItemScanFirst';
+import AddItemScanConfirm from './AddItemScanConfirm';
 
 export default function AddItemModal({
   onClose,
@@ -31,8 +32,10 @@ export default function AddItemModal({
   const [activeGroup, setActiveGroup] = useState(accountType === 'organization' ? 'business' : 'personal');
   const [countryOverride, setCountryOverride] = useState(null);
   const [showCategories, setShowCategories] = useState(false);
+  const [showScanConfirm, setShowScanConfirm] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState('');
+  const [tracking, setTracking] = useState(false);
   const cameraRef = useRef(null);
   const fileRef = useRef(null);
 
@@ -77,10 +80,18 @@ export default function AddItemModal({
         setShowCategories(true);
         return;
       }
-      const ext = data?.extracted || {};
-      if (ext.category && APP_CONFIG.categories.find(c => c.id === ext.category)) {
-        setSelectedCategory(ext.category);
+      let ext = data?.extracted || {};
+      if (typeof ext === 'string') {
+        try {
+          const match = ext.match(/\{[\s\S]*\}/);
+          if (match) ext = JSON.parse(match[0]);
+        } catch { /* keep ext as-is */ }
       }
+      const nameLower = (ext.name || '').toLowerCase();
+      const looksLikeDriverLicense = /driver|licen[c]?e|permit|ontario.*licence/i.test(nameLower) || (ext.notes || '').toLowerCase().includes('driver');
+      let category = ext.category && APP_CONFIG.categories.find(c => c.id === ext.category) ? ext.category : null;
+      if (!category && looksLikeDriverLicense) category = 'driving';
+      if (category) setSelectedCategory(category);
       if (ext.name) setName(ext.name);
       if (ext.expiryDate) setDueDate(ext.expiryDate);
       else if (ext.dueDate) setDueDate(ext.dueDate);
@@ -89,7 +100,9 @@ export default function AddItemModal({
       if (ext.amount) notesParts.push(`Amount: ${ext.amount}`);
       if (ext.notes) notesParts.push(ext.notes);
       if (notesParts.length) setNotes(notesParts.join('\n'));
-      if (!ext.category) {
+      if (category) {
+        setShowScanConfirm(true);
+      } else {
         setShowCategories(true);
       }
     } catch (err) {
@@ -107,10 +120,9 @@ export default function AddItemModal({
     e.target.value = '';
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const buildItem = () => {
     const emails = alertEmails.trim().split(/[\s,;]+/).filter(Boolean);
-    onAdd({
+    return {
       name,
       category: selectedCategory,
       due_date: dueDate || null,
@@ -121,7 +133,25 @@ export default function AddItemModal({
       document_id: documentId || null,
       alert_emails: emails.length ? emails : null,
       country: itemCountry || activeCountry || null,
-    });
+    };
+  };
+
+  const handleSubmit = (e) => {
+    e?.preventDefault?.();
+    onAdd(buildItem());
+  };
+
+  const handleTrackIt = async () => {
+    if (!selectedCategory) return;
+    setTracking(true);
+    try {
+      await Promise.resolve(onAdd(buildItem()));
+      onClose();
+    } catch (err) {
+      console.error('[AddItem] Track it failed:', err);
+    } finally {
+      setTracking(false);
+    }
   };
 
   const handleExtracted = (data) => {
@@ -164,17 +194,31 @@ export default function AddItemModal({
     if (s.category) setSelectedCategory(s.category);
   };
 
-  const showScanFirst = !selectedCategory && !showCategories;
+  const showScanFirst = !selectedCategory && !showCategories && !showScanConfirm;
+  const categoryMeta = selectedCategory ? APP_CONFIG.categories.find(c => c.id === selectedCategory) : null;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>{selectedCategory ? 'Add Item' : showScanFirst ? 'Track something' : 'What are you tracking?'}</h2>
+          <h2>
+            {showScanConfirm ? 'Confirm & track' : selectedCategory && !showScanConfirm ? 'Add Item' : showScanFirst ? 'Track something' : 'What are you tracking?'}
+          </h2>
           <button type="button" className="btn-icon" onClick={onClose}><X size={20} /></button>
         </div>
 
-        {showScanFirst ? (
+        {showScanConfirm ? (
+          <AddItemScanConfirm
+            categoryId={selectedCategory}
+            categoryName={categoryMeta?.name}
+            name={name}
+            dueDate={dueDate}
+            notes={notes}
+            onTrackIt={handleTrackIt}
+            onEditDetails={() => setShowScanConfirm(false)}
+            tracking={tracking}
+          />
+        ) : showScanFirst ? (
           <AddItemScanFirst
             cameraRef={cameraRef}
             fileRef={fileRef}

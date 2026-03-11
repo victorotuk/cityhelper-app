@@ -1771,6 +1771,89 @@ input, select, textarea { font-family: inherit; }
   max-width: 300px;
 }
 
+/* Scan confirm — show doc details and one-click Track it / Edit */
+.scan-confirm-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-md) 0;
+  gap: var(--space-lg);
+}
+.scan-confirm-card {
+  width: 100%;
+  max-width: 360px;
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  text-align: left;
+}
+.scan-confirm-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  margin-bottom: var(--space-sm);
+}
+.scan-confirm-emoji {
+  font-size: 28px;
+  line-height: 1;
+}
+.scan-confirm-title-row {
+  flex: 1;
+  min-width: 0;
+}
+.scan-confirm-name {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.scan-confirm-category {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.scan-confirm-detail {
+  margin: 0 0 var(--space-xs);
+  font-size: 14px;
+  color: var(--text);
+}
+.scan-confirm-notes {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+  max-height: 80px;
+  overflow-y: auto;
+}
+.scan-confirm-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 320px;
+}
+.scan-confirm-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  max-width: 320px;
+}
+.scan-confirm-track {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+.loading-spinner.small {
+  width: 18px;
+  height: 18px;
+  border-width: 2px;
+}
+
 /* Category buttons */
 .category-grid {
   display: grid;
