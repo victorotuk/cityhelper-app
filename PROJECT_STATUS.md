@@ -4,8 +4,8 @@ Updated: 2026-03-06
 **→ For AI: Read this file first when user returns.** Full context: Vision, Recent (features), Changelog (what was built), What's Left, All Prompts & Outcomes. Project: cityhelper → Nava. React + Vite, Supabase, Capacitor.
 
 **Key docs for setup and operations:**
-- **docs/OPENCLAW_AND_API.md** — Nava API key vs OpenClaw; setting up OpenClaw for someone else (e.g. sister); API limits rationale; tier → user category.
-- **docs/AI_PROVIDERS.md** — OpenRouter setup; all supported providers; provider downtime and temporary backup (retry with server key); adding a new provider.
+- **docs/OPENCLAW_AND_API.md** — We run OpenClaw for everyone (charge a fee); scalable “Nava over WhatsApp” (phone linking, one bridge, route by sender); API limits and limit-increase requests; tier → user category.
+- **docs/AI_PROVIDERS.md** — OpenRouter setup; all supported providers; provider downtime backup (Groq then OpenRouter via OPENROUTER_API_KEY); adding a new provider.
 
 ### Vision (North Star)
 Nava is **not just compliance/deadline tracking**. The goal: users interact via **any channel they prefer** (app, WhatsApp, iMessage, etc.) to get things done with one message.
@@ -47,11 +47,12 @@ Three ways to run Nava; privacy-first, user chooses control level.
 - **Document scanning:** Groq, OpenAI, Claude, Gemini, or OpenRouter (400+ models, e.g. AllenAI Olmo, Meta Llama) via Edge Function `ai-scan`. All support vision. OpenRouter key: `sk-or-v1-...`.
 - **BYOK is the default.** No artificial scan limits when BYOK. Server key = managed AI add-on ($1/mo).
 - **Key storage:** `localStorage` per user (`nava_ai_key_<user_id>`, `nava_ai_provider_<user_id>`, backward-compat `nava_groq_key_<user_id>`).
-- **Provider downtime:** If the user's provider returns 5xx or times out, we retry once with server `GROQ_API_KEY` (if set). Response includes `backup_used: true` and header `X-AI-Backup-Used`; chat UI shows a short notice. See docs/AI_PROVIDERS.md.
+- **Provider downtime:** On 5xx we retry with server Groq, then (if needed) server OpenRouter (`OPENROUTER_API_KEY`). So when Groq is down, we can still serve via OpenRouter. Response includes `backup_used: true` and header `X-AI-Backup-Used`; chat UI shows a short notice. See docs/AI_PROVIDERS.md.
 
 **API (OpenClaw / integrations):**
-- **nava-api** Edge Function: HTTP API for OpenClaw, scripts, etc. Auth: `Bearer <nava_api_key>`. Users get their **Nava API key** from Settings → OpenClaw & API (generate key). When we set up OpenClaw for a user, we use that same Nava API key — they do not need an "OpenClaw key."
-- **Rate limits (tiered):** Free = 0 API calls (upgrade to use API). Personal = 2,000/month, 20/min. Business = 25,000/month, 40/min. Enterprise = 100,000/month, 60/min. Enforced in nava-api; usage in `api_usage` and `api_request_log` (migration 030).
+- **nava-api** Edge Function: HTTP API for OpenClaw, scripts, etc. Auth: `Bearer <nava_api_key>`. Users get their **Nava API key** from Settings → OpenClaw & API (generate key).
+- **We run OpenClaw for everyone:** Product = “Nava over WhatsApp” for users who don’t want to run OpenClaw; we run the bridge, route by linked phone → user, call nava-api with their key; we charge a fee. Scales to many users (one shared bridge; phone linking in DB). See docs/OPENCLAW_AND_API.md.
+- **Rate limits (tiered):** Free = 0 API calls. Personal = 2,000/month, 20/min. Business = 25,000/month, 40/min. Enterprise = 100,000/month, 60/min. Users can request a limit increase (review; per-user overrides when approved). Enforced in nava-api; usage in `api_usage` and `api_request_log` (migration 030).
 
 **Pricing (USD) — app fee separate from AI:**
 | Tier | Price | API (monthly / per-min) |
