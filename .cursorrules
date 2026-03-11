@@ -22,9 +22,9 @@ When starting a new session or receiving a task, **always read these files first
 - **E2E encryption:** Email users = password (PBKDF2); OAuth users = auto-generated key
 - **Camera-first Add Item:** AI auto-detects document type from photo (AUTO_DETECT_PROMPT)
 
-## Git
-- Commit after each logical change. Do not batch unrelated edits into one commit.
-- Use descriptive commit messages explaining the "why"
+## Git & docs
+- Commit after each logical change. Do not batch unrelated edits into one commit. Use descriptive commit messages explaining the "why".
+- **PROJECT_STATUS.md:** Update when adding features or completing work. Add a changelog entry and refresh the Updated date. Keep Recent and Codebase refactor sections accurate.
 
 ## Supabase
 - Migrations go in `supabase/migrations/` (currently up to 029)

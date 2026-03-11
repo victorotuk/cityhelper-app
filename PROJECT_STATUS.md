@@ -1,5 +1,5 @@
 ## Nava — Project Status
-Updated: 2026-03-10
+Updated: 2026-03-11
 
 **→ For AI: Read this file first when user returns.** Full context: Vision, Recent (features), Changelog (what was built), What's Left, All Prompts & Outcomes. Project: cityhelper → Nava. React + Vite, Supabase, Capacitor.
 
@@ -68,6 +68,7 @@ Three ways to run Nava; privacy-first, user chooses control level.
 - **AI chat overlay**: Slide-out panel from ChatBubble (no blur, dashboard stays interactive). Full /assistant page for deep chats. Chat persists (sessionStorage), delete individual messages, clear chat.
 - **AI chat tools**: Context awareness (page, selectedItem, country), export_to_calendar (.ics), proactive suggestions (AISuggestionsCard on dashboard).
 - **Per-item country**: Migration 027. Items can belong to Canada or US. Dashboard filters by active country. Add/BulkEdit: country picker when 2+ countries. ai-chat add_item supports country.
+- **Scan confirm + voice (a11y):** After scan, show "Confirm & track" with doc details; one-click Track it or Edit details. Settings → Accessibility: voice feedback (Nava-specific; device handles VoiceOver/TalkBack). One-time prompt on dashboard. Blurry images: AI returns readable:false, Nava shows message and does not suggest a category.
 
 ### Mobile
 - **Android**: ✅ Built and installed. Codemagic `android-build` workflow. APK on device.
@@ -108,7 +109,7 @@ Three ways to run Nava; privacy-first, user chooses control level.
 
 ### Codebase refactor (large-file split)
 - **Dashboard.jsx** (was ~1523 → ~700 → ~290 lines): Split into `DashboardHeader` (header + country switcher + mobile menu), `DashboardItemsList` (grouped item sections with ItemCard rendering), `ItemCard`, `AddItemModal`, `ComplianceHealth`, `FocusOnThree`, `EmptyState`, `SuggestedForYou` in `components/dashboard/`. Added `lib/renewalPortals.js`, `lib/addItemExtractPrompts.js`, `components/dashboard/constants.js`.
-- **Add Item flow:** `AddItemModal` uses `AddItemCategoryPicker`, `AddItemFormFields`, and **AddItemScanFirst** (camera-first screen with "Continue on phone" QR code for desktop users). Scan-first screen extracted so add-item stays componentized.
+- **Add Item flow:** `AddItemModal` uses `AddItemCategoryPicker`, `AddItemFormFields`, **AddItemScanFirst** (camera-first + "Continue on phone" QR), and **AddItemScanConfirm** (show doc details, Track it / Edit details). Settings → **SettingsAccessibilitySection** (voice feedback). `src/lib/voice.js` for Speech Synthesis and preference storage.
 - **Category emoji maps:** Centralized in `components/dashboard/constants.js` (`EMPTY_EMOJIS`). All files import from there — no local copies.
 - **Settings.jsx** (was ~906 lines): Extracted section components under `components/settings/`: `SettingsCountrySection`, `SettingsDataBackupSection`, `SettingsAISection`, `SettingsOpenClawSection`, `SettingsRecoverySection`, `SettingsPersonalizationSection`, `SettingsWealthSection`, `SettingsDangerSection`, `SettingsAboutSection` (version + platform). Settings.jsx reduced accordingly.
 - **WelcomeGuide.jsx** (was ~809 lines): Extracted `QuizTextInput` and `QuizTextareaMic` to `WelcomeGuideQuizInput.jsx`. WelcomeGuide.jsx reduced by ~130 lines.
@@ -126,6 +127,13 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
 - If Supabase or other security advisories arrive, address promptly. Privacy is key.
 
 ### Changelog
+- 2026-03-11 (scan confirm, voice/a11y, blurry detection, WelcomeGuide fix)
+  - **Scan confirmation step:** After uploading a document (e.g. driver's licence), show "Confirm & track" with extracted name, expiry, category. One-click "Track it" or "Edit details". Driver's licence normalized to driving category when AI returns "other".
+  - **Voice feedback (accessibility):** Settings → Accessibility. Voice feedback reads scan results, confirmations, and "Added. X is now being tracked." when an item is added. Scan-first screen speaks a short hint when opened. Blurry/unreadable message is spoken when voice is on.
+  - **One-time a11y prompt:** Dashboard asks once "Use accessibility settings?" (Yes, enable voice / Not now). Device handles system a11y (VoiceOver, TalkBack); Nava options are app-specific.
+  - **Blurry/unreadable images:** AUTO_DETECT_PROMPT asks AI to return `readable: false` when image is blurry/blank/dark. Nava shows that message and does not suggest a category; user can retry or browse categories.
+  - **WelcomeGuide fix:** canGoNext was passed as boolean but step components called it as function — fixed so "Let's go" no longer crashes.
+  - **Lint:** Removed unused `filteredItems` prop from DashboardItemsList (0 errors).
 - 2026-03-10 (cleanup, refactor, "continue on mobile", dead code removal)
   - **Desktop/dock icon:** Restored **light (cream bubble)** icon set. Regenerate: `npx tauri icon public/nava-logo-light.png`. See **docs/TAURI_UPDATES.md**.
   - **Dashboard refactor:** Extracted `DashboardHeader` (header + country switcher + mobile menu) and `DashboardItemsList` (grouped item rendering) from Dashboard.jsx. Dashboard.jsx reduced from ~700 to ~290 lines.
