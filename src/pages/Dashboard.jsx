@@ -93,7 +93,7 @@ export default function Dashboard() {
     const s = parseTextForSuggestion(pendingText);
     clearPendingText();
     if (s) {
-      /* eslint-disable-next-line react-hooks/set-state-in-effect */
+       
       setSharedInitialValues(s);
       setShowAddModal(true);
       setSelectedCategory(s.category);
@@ -314,7 +314,6 @@ export default function Dashboard() {
 
         <DashboardItemsList
           items={items}
-          filteredItems={filteredItems}
           loading={loading}
           groupedItems={groupedItems}
           getStatusInfo={getStatusInfo}

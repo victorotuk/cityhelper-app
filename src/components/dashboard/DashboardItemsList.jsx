@@ -6,7 +6,7 @@ import { addToGoogleCalendar } from '../../lib/calendar';
 import { parseTicketFromNotes } from '../../lib/payTicketUtils';
 
 export default function DashboardItemsList({
-  items, filteredItems, loading, groupedItems, getStatusInfo,
+  items, loading, groupedItems, getStatusInfo,
   onDelete, onRenew, onSnooze, onCopy, onFetchItems,
   setPayInitialValues, setShowPayModal,
   activeCountry, userId,
