@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 import { getVoicePreference } from '../lib/voice';
 import { getSuggestedCountryFromTimezone, getUseLocationForCountry } from '../lib/countryFromLocation';
-import A11yPromptModal, { wasA11yPromptAsked } from '../components/modals/A11yPromptModal';
+import A11yPromptModal from '../components/modals/A11yPromptModal';
+import { wasA11yPromptAsked } from '../lib/a11yPrompt';
 import { parseTextForSuggestion } from '../lib/smartSuggestParse';
 import { parseTicketFromNotes } from '../lib/payTicketUtils';
 import { addToGoogleCalendar, exportAllToCalendar } from '../lib/calendar';
