@@ -89,11 +89,12 @@ Use null for fields not found. Be thorough.`;
         }
       }
 
-      // Call backend AI scan function
+      const groqKey = user?.id ? (localStorage.getItem(`nava_groq_key_${user.id}`) || undefined) : undefined;
       const { data, error: fnError } = await supabase.functions.invoke('ai-scan', {
         body: {
           image: base64,
-          prompt: extractPrompt || defaultPrompt
+          prompt: extractPrompt || defaultPrompt,
+          apiKey: groqKey
         }
       });
 

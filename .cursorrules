@@ -2,7 +2,7 @@
 
 ## FIRST THING: Read the docs before doing ANYTHING
 **Always check the relevant docs first.** Skipping this leads to wrong behavior (e.g. overlap bugs, scan flow going to categories instead of confirm). When starting a session or implementing a feature:
-1. **Read** `PROJECT_STATUS.md` — full context, vision, what's built, changelog, **which AI is used where** (chat = Groq, scan = OpenAI gpt-4o-mini via ai-scan).
+1. **Read** `PROJECT_STATUS.md` — full context, vision, what's built, changelog, **which AI is used where** (chat = Groq, scan = Groq Llama 4 Scout via ai-scan, same key).
 2. For UI/platform work: read `docs/DESKTOP_MOBILE_UX.md` and `src-tauri/tauri.conf.json` (e.g. `withGlobalTauri: true` is CRITICAL for desktop).
 3. For roadmap/priorities: `COMPETITOR_ANALYSIS.md`, `docs/ROADMAP.md`.
 4. For desktop build/release: `docs/TAURI_UPDATES.md`.
@@ -13,7 +13,7 @@ Then implement so behavior matches the docs (e.g. Add Item: camera-first → AI 
 - **Backend:** Supabase (Postgres, Edge Functions in Deno/TypeScript, Auth)
 - **Mobile:** Capacitor (Android/iOS)
 - **Desktop:** Tauri 2 (macOS/Windows/Linux)
-- **AI:** OpenAI (scan/vision), Groq (chat), BYOK supported
+- **AI:** Groq for chat and document scan (Llama 4 Scout vision), BYOK in Settings → AI
 
 ## Key architecture
 - **Local-first:** compliance_items stored in IndexedDB, synced encrypted to Supabase
@@ -28,7 +28,7 @@ Then implement so behavior matches the docs (e.g. Add Item: camera-first → AI 
 ## Supabase
 - Migrations go in `supabase/migrations/` (currently up to 029)
 - Run `supabase db push` when adding/changing migrations
-- Edge function secrets: `FROM_EMAIL`, `APP_URL`, `RESEND_API_KEY`, `VAPID_KEYS_JSON`, etc.
+- Edge function secrets: `FROM_EMAIL`, `APP_URL`, `RESEND_API_KEY`, `VAPID_KEYS_JSON`; optional `GROQ_API_KEY` for ai-scan if not using user's key.
 
 ## Domain & email
 - `vicomnava.com` verified with Resend. Emails from `noreply@vicomnava.com`

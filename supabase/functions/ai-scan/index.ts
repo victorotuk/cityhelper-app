@@ -40,15 +40,19 @@ serve(async (req) => {
   )
 
   try {
-    const { image, prompt } = await req.json()
+    const { image, prompt, apiKey: userApiKey } = await req.json()
 
     if (!image) {
       throw new Error('Image is required')
     }
 
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')
-    if (!OPENAI_API_KEY) {
-      throw new Error('AI service not configured')
+    // Server key handles all users; optional user key overrides (power users / distributed rate limits)
+    const serverKey = Deno.env.get('GROQ_API_KEY')
+    const groqKey = (userApiKey && typeof userApiKey === 'string' && userApiKey.trim())
+      ? userApiKey.trim()
+      : serverKey
+    if (!groqKey) {
+      throw new Error('AI scanning is not configured. Contact support.')
     }
 
     // ── 1. Get user from JWT ──────────────────────────────────
@@ -85,7 +89,7 @@ Return ONLY valid JSON, no markdown or explanation.`
       .single()
 
     if (cached) {
-      // Cache hit — no OpenAI call, no usage counted
+      // Cache hit — no Groq call, no usage counted
       console.log('Cache hit for scan')
       return new Response(
         JSON.stringify({ extracted: cached.result, raw: cached.raw_text, cached: true }),
@@ -156,35 +160,39 @@ Return ONLY valid JSON, no markdown or explanation.`
       }
     }
 
-    // ── 4. Call OpenAI ────────────────────────────────────────
+    // ── 4. Call Groq (Llama vision, free tier) ───────────────────
     let imageUrl = image
     if (!image.startsWith('data:')) {
       imageUrl = `data:image/jpeg;base64,${image}`
     }
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}`
+        'Authorization': `Bearer ${groqKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
         messages: [{
           role: 'user',
           content: [
             { type: 'text', text: extractPrompt },
-            { type: 'image_url', image_url: { url: imageUrl, detail: 'low' } }
+            { type: 'image_url', image_url: { url: imageUrl } }
           ]
         }],
         max_tokens: 1000,
-        temperature: 0.1
+        temperature: 0.1,
+        response_format: { type: 'json_object' }
       })
     })
 
     if (!response.ok) {
       const error = await response.text()
-      console.error('OpenAI vision error:', error)
+      console.error('Groq vision error:', error)
+      if (response.status === 401) {
+        throw new Error('Invalid Groq API key. Check Settings → AI or get a free key at console.groq.com.')
+      }
       throw new Error('Document scanning temporarily unavailable')
     }
 

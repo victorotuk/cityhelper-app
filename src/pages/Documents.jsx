@@ -145,9 +145,9 @@ export default function Documents() {
 - For ID/license: name, id_number, expiry_date
 Return ONLY valid JSON, no markdown or explanation.`;
 
-      // Call backend AI scan function
+      const groqKey = user?.id ? (localStorage.getItem(`nava_groq_key_${user.id}`) || undefined) : undefined;
       const { data, error: fnError } = await supabase.functions.invoke('ai-scan', {
-        body: { image: imageBase64, prompt }
+        body: { image: imageBase64, prompt, apiKey: groqKey }
       });
 
       if (fnError) throw fnError;

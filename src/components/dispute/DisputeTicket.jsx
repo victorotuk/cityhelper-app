@@ -3,12 +3,14 @@ import { X, Mail } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { APP_CONFIG } from '../../lib/config';
 import { supabase } from '../../lib/supabase';
+import { useAuthStore } from '../../stores/authStore';
 import DisputeStep1Ticket from './DisputeStep1Ticket';
 import DisputeStep2Reason from './DisputeStep2Reason';
 import DisputeStep3Contact from './DisputeStep3Contact';
 import DisputeStep4Review from './DisputeStep4Review';
 
 export default function DisputeTicket({ onClose, onAddItem }) {
+  const { user } = useAuthStore();
   const [step, setStep] = useState(1);
   const [city, setCity] = useState('');
   const [ticketNumber, setTicketNumber] = useState('');
@@ -39,12 +41,14 @@ export default function DisputeTicket({ onClose, onAddItem }) {
         reader.onloadend = () => resolve(reader.result);
         reader.readAsDataURL(file);
       });
+      const groqKey = user?.id ? (localStorage.getItem(`nava_groq_key_${user.id}`) || undefined) : undefined;
       const { data, error } = await supabase.functions.invoke('ai-scan', {
         body: {
           image: base64,
           prompt: `Extract from this parking ticket image and return ONLY JSON:
 {"ticketNumber":"","licensePlate":"","amount":"","date":"YYYY-MM-DD","city":""}
 Use null for missing fields.`,
+          apiKey: groqKey
         },
       });
       if (error) throw error;

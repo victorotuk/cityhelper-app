@@ -2,8 +2,10 @@ import { useState, useRef } from 'react';
 import { X, CreditCard, ExternalLink, Clock, Copy, Check, Camera, Upload, Loader } from 'lucide-react';
 import { APP_CONFIG } from '../../lib/config';
 import { supabase } from '../../lib/supabase';
+import { useAuthStore } from '../../stores/authStore';
 
 export default function PayTicket({ onClose, initialValues = {} }) {
+  const { user } = useAuthStore();
   const [city, setCity] = useState(initialValues.city || '');
   const [ticketNumber, setTicketNumber] = useState(initialValues.ticketNumber || '');
   const [licensePlate, setLicensePlate] = useState(initialValues.licensePlate || '');
@@ -56,13 +58,14 @@ export default function PayTicket({ onClose, initialValues = {} }) {
         reader.readAsDataURL(file);
       });
 
-      // Call backend AI scan function
+      const groqKey = user?.id ? (localStorage.getItem(`nava_groq_key_${user.id}`) || undefined) : undefined;
       const { data, error } = await supabase.functions.invoke('ai-scan', {
         body: {
           image: base64,
           prompt: `Extract from this parking ticket image and return ONLY JSON:
 {"ticketNumber":"","licensePlate":"","amount":"","date":"YYYY-MM-DD","city":""}
-Use null for missing fields.`
+Use null for missing fields.`,
+          apiKey: groqKey
         }
       });
 

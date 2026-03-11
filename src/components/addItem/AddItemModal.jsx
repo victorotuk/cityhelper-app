@@ -71,8 +71,9 @@ export default function AddItemModal({
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
+      const groqKey = userId ? (localStorage.getItem(`nava_groq_key_${userId}`) || undefined) : undefined;
       const { data, error } = await supabase.functions.invoke('ai-scan', {
-        body: { image: base64, prompt: AUTO_DETECT_PROMPT },
+        body: { image: base64, prompt: AUTO_DETECT_PROMPT, apiKey: groqKey },
       });
       if (error) {
         let errMsg = error?.message || 'Scan failed';

@@ -10,9 +10,9 @@ export default function SettingsAISection({
 }) {
   return (
     <section className="settings-section">
-      <h2><Key size={20} /> AI — Bring Your Own Key</h2>
+      <h2><Key size={20} /> AI — Advanced</h2>
       <p className="section-desc">
-        Use your own Groq API key for AI chat. Your key stays on your device and is only sent when you use AI. Leave blank to use Nava&apos;s key (if configured).
+        Nava AI works out of the box. Optionally use your own Groq key for higher rate limits or to keep requests off Nava&apos;s shared quota.
       </p>
       <div className="setting-card setting-card-padded">
         <input
