@@ -225,26 +225,33 @@ Return ONLY valid JSON, no markdown or explanation.`
 
     let response = await fetch(fetchUrl, { method: 'POST', headers, body: JSON.stringify(requestBody) })
     let backupUsed = false
+    let backupProviderName: string | null = null
 
-    // On 5xx or network error: retry once with server key (Groq) so user still gets a result
+    // On 5xx: retry with server backup so we're not dependent on one provider (Groq first, then OpenRouter)
     const isServerError = !response.ok && response.status >= 500
     const usedUserKey = resolvedKey !== serverKey
-    if ((isServerError || !response.ok) && usedUserKey && serverKey) {
-      try {
-        const groqProvider = PROVIDERS.groq
-        const groqBody = groqProvider.buildBody(groqProvider.model, extractPrompt, imageUrl)
-        const retryRes = await fetch(groqProvider.url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serverKey}` },
-          body: JSON.stringify(groqBody),
-        })
-        if (retryRes.ok) {
-          response = retryRes
-          backupUsed = true
-          console.log('AI scan: primary provider failed; served with backup (Groq)')
+    const serverGroq = Deno.env.get('GROQ_API_KEY')
+    const serverOpenRouter = Deno.env.get('OPENROUTER_API_KEY')
+    if (isServerError && usedUserKey && (serverGroq || serverOpenRouter)) {
+      for (const backup of [
+        serverGroq ? { key: serverGroq, name: 'groq', provider: PROVIDERS.groq } : null,
+        serverOpenRouter ? { key: serverOpenRouter, name: 'openrouter', provider: PROVIDERS.openrouter } : null,
+      ]) {
+        if (!backup) continue
+        try {
+          const body = backup.provider.buildBody(backup.provider.model, extractPrompt, imageUrl)
+          const h: Record<string, string> = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${backup.key}` }
+          const retryRes = await fetch(backup.provider.url, { method: 'POST', headers: h, body: JSON.stringify(body) })
+          if (retryRes.ok) {
+            response = retryRes
+            backupUsed = true
+            backupProviderName = backup.name
+            console.log('AI scan: primary failed; served with backup (' + backup.name + ')')
+            break
+          }
+        } catch (e) {
+          console.error('AI scan backup retry failed:', e)
         }
-      } catch (e) {
-        console.error('AI scan backup retry failed:', e)
       }
     }
 
@@ -264,7 +271,7 @@ Return ONLY valid JSON, no markdown or explanation.`
 
     // Extract text from provider-specific response format
     let extractedText = ''
-    const effectiveProvider = backupUsed ? 'groq' : providerName
+    const effectiveProvider = backupUsed && backupProviderName ? backupProviderName : providerName
     if (effectiveProvider === 'anthropic') {
       extractedText = data.content?.[0]?.text || ''
     } else if (effectiveProvider === 'gemini') {

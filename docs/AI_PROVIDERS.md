@@ -40,23 +40,27 @@ Nava **auto-detects** the provider from the key prefix. Users paste one key in S
 
 ## 3. Provider downtime: notify and temporary backup
 
-**Goal:** If the user’s chosen provider (e.g. Groq) is down or returns 5xx/timeout, we should:
+**Goal:** If the user’s chosen provider (e.g. Groq) is down or returns 5xx, we try a **server-side backup** so the app keeps working instead of everyone going down with that provider.
 
-1. **Try a temporary backup** so the user’s request still succeeds (e.g. retry with server-side `GROQ_API_KEY`).
-2. **Notify the user** that we used a backup so they’re not confused if behavior differs slightly.
+**Backup chain (in order):**
+
+1. **Groq** — retry with server `GROQ_API_KEY` (if set).
+2. **OpenRouter** — if Groq retry fails or isn’t set, retry with server `OPENROUTER_API_KEY` (if set).
+
+So you can **create an OpenRouter account** and set `OPENROUTER_API_KEY` in Supabase Edge Function secrets. When Groq has technical difficulties, we’ll still serve requests via OpenRouter instead of failing for all users.
 
 **Implementation (in code):**
 
-- In **ai-scan** and **ai-chat**, when we call the user’s provider and get a **5xx** or **timeout** (or network error), we retry **once** using the server’s `GROQ_API_KEY` (if set). If the retry succeeds, we return the result and include a response flag or header, e.g. `X-AI-Backup-Used: true`, so the client can show a short message: “We temporarily used a backup AI; your provider may be having issues.”
-- If the user has no key and we only have the server key, no “backup” message is needed (we’re already on the primary path).
-- If the backup also fails, we return the same error we would have (e.g. “Document scanning temporarily unavailable” or “AI error: …”).
+- In **ai-scan** and **ai-chat**, when we call the user’s provider and get a **5xx**, we retry with server Groq, then (if needed) server OpenRouter. If any retry succeeds, we return the result and set `backupUsed: true` (and the client can show “We temporarily used a backup AI; your provider may be having issues”).
+- If the user has no key and we only have server keys, we’re already on the primary path; no “backup” message.
+- If all backups fail, we return the same error (e.g. “Document scanning temporarily unavailable”).
 
-**In the UI (optional):**
+**Secrets to set (Supabase → Edge Functions → Secrets):**
 
-- When the client sees `X-AI-Backup-Used: true` (or equivalent in the JSON body), show a one-line toast or banner: “We used a backup AI provider temporarily. Your usual provider may be experiencing issues.”
-- No need to “notify” outside the app (e.g. email) unless we later add a status page or incident alerts.
+- `GROQ_API_KEY` — used when user has no key, and as first backup on 5xx.
+- `OPENROUTER_API_KEY` — used as second backup when Groq fails or isn’t set. Create a key at [openrouter.ai](https://openrouter.ai) → Keys.
 
-**Summary:** Backup = one retry with server `GROQ_API_KEY` on 5xx/timeout; notify = expose a flag so the app can show “backup was used” in-session. See Edge Function code for the exact retry and header.
+**In the UI:** When the client sees `backupUsed: true` (or `X-AI-Backup-Used: true`), show a short notice that a backup provider was used.
 
 ---
 
@@ -64,7 +68,7 @@ Nava **auto-detects** the provider from the key prefix. Users paste one key in S
 
 - **Detection and provider config:** `supabase/functions/ai-scan/index.ts` → `PROVIDERS`, `detectProvider`; `supabase/functions/ai-chat/index.ts` → `CHAT_PROVIDERS`, `detectChatProvider`.
 - **OpenRouter:** Same files; `openrouter` entry in `PROVIDERS` / `CHAT_PROVIDERS` with URL `https://openrouter.ai/api/v1/chat/completions`.
-- **Server fallback key:** Env var `GROQ_API_KEY` in Supabase Edge Function secrets. Used when the user sends no key or when we do the downtime retry.
+- **Server fallback keys:** `GROQ_API_KEY` and `OPENROUTER_API_KEY` in Supabase Edge Function secrets. Used when the user sends no key, or when we retry on 5xx (Groq first, then OpenRouter).
 - **Client:** Settings → AI is in `src/components/settings/SettingsAISection.jsx`; it lists OpenRouter and detects provider from the pasted key.
 
 ---

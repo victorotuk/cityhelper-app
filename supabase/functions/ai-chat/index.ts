@@ -315,19 +315,29 @@ async function callAI(messages: any[], tools: any[], toolChoice: string, userApi
     body: JSON.stringify(body),
   })
 
-  // On 5xx: retry once with server key so user still gets a reply
+  // On 5xx: retry with server backup so we're not dependent only on Groq (Groq first, then OpenRouter)
   const isServerError = !res.ok && res.status >= 500
-  if (isServerError && userApiKey && serverKey) {
-    const groq = CHAT_PROVIDERS.groq
-    const retryRes = await fetch(groq.url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serverKey}` },
-      body: JSON.stringify({ ...body, model: groq.model }),
-    })
-    if (retryRes.ok) {
-      const data = await retryRes.json()
-      console.log('AI chat: primary provider failed; served with backup (Groq)')
-      return { data, backupUsed: true }
+  const serverOpenRouter = Deno.env.get('OPENROUTER_API_KEY')
+  if (isServerError && userApiKey && (serverKey || serverOpenRouter)) {
+    for (const backup of [
+      serverKey ? { key: serverKey, provider: CHAT_PROVIDERS.groq } : null,
+      serverOpenRouter ? { key: serverOpenRouter, provider: CHAT_PROVIDERS.openrouter } : null,
+    ]) {
+      if (!backup) continue
+      try {
+        const retryRes = await fetch(backup.provider.url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${backup.key}` },
+          body: JSON.stringify({ ...body, model: backup.provider.model }),
+        })
+        if (retryRes.ok) {
+          const data = await retryRes.json()
+          console.log('AI chat: primary failed; served with backup (' + (backup.provider === CHAT_PROVIDERS.openrouter ? 'OpenRouter' : 'Groq') + ')')
+          return { data, backupUsed: true }
+        }
+      } catch (e) {
+        console.error('AI chat backup retry failed:', e)
+      }
     }
   }
 
