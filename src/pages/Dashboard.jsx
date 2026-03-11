@@ -10,9 +10,10 @@ import { supabase } from '../lib/supabase';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import {
   Plus, Calendar, X, FileText, Folder, Settings,
-  Download, Edit3, LayoutDashboard, Volume2
+  Download, Edit3, LayoutDashboard
 } from 'lucide-react';
-import { getVoicePreference, setVoicePreference } from '../lib/voice';
+import { getVoicePreference } from '../lib/voice';
+import A11yPromptModal, { wasA11yPromptAsked } from '../components/modals/A11yPromptModal';
 import { parseTextForSuggestion } from '../lib/smartSuggestParse';
 import { parseTicketFromNotes } from '../lib/payTicketUtils';
 import { addToGoogleCalendar, exportAllToCalendar } from '../lib/calendar';
@@ -69,7 +70,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user?.id || showWelcome) return;
-    if (localStorage.getItem(`nava_a11y_prompt_asked_${user.id}`)) return;
+    if (wasA11yPromptAsked(user.id)) return;
     const t = setTimeout(() => setShowA11yPrompt(true), 1500);
     return () => clearTimeout(t);
   }, [user?.id, showWelcome]);
@@ -413,42 +414,7 @@ export default function Dashboard() {
       {showWelcome && <WelcomeGuide userId={user.id} onComplete={(p) => { setShowWelcome(false); if (p) setPersona(p); }} />}
 
       {showA11yPrompt && (
-        <div className="modal-overlay" onClick={() => { localStorage.setItem(`nava_a11y_prompt_asked_${user.id}`, 'true'); setShowA11yPrompt(false); }}>
-          <div className="modal a11y-prompt-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="a11y-prompt-title" aria-describedby="a11y-prompt-desc">
-            <div className="modal-header">
-              <h2 id="a11y-prompt-title">Use accessibility settings?</h2>
-              <button type="button" className="btn-icon" onClick={() => { localStorage.setItem(`nava_a11y_prompt_asked_${user.id}`, 'true'); setShowA11yPrompt(false); }} aria-label="Close"><X size={20} /></button>
-            </div>
-            <div className="modal-body">
-              <p id="a11y-prompt-desc" className="a11y-prompt-desc">
-                You can have the app read out confirmations and important information so you can use Nava without looking at the screen. You can turn this on or off anytime in Settings.
-              </p>
-              <div className="a11y-prompt-actions">
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => {
-                    setVoicePreference(user.id, true);
-                    localStorage.setItem(`nava_a11y_prompt_asked_${user.id}`, 'true');
-                    setShowA11yPrompt(false);
-                  }}
-                >
-                  <Volume2 size={18} /> Yes, enable voice
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  onClick={() => {
-                    localStorage.setItem(`nava_a11y_prompt_asked_${user.id}`, 'true');
-                    setShowA11yPrompt(false);
-                  }}
-                >
-                  Not now
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <A11yPromptModal userId={user.id} onClose={() => setShowA11yPrompt(false)} />
       )}
 
       <nav className="bottom-tab-bar" aria-label="Main navigation">

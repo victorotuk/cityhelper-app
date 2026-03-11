@@ -40,10 +40,11 @@ When starting a new session or receiving a task, **always read these files first
 - App icon uses **light (cream bubble)** logo: `npx tauri icon public/nava-logo-light.png`
 - GitHub Secrets `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` enable CI signed builds
 
-## Components
-- Break code into small, reusable components. Avoid files >300 lines
-- Category emojis: use `EMPTY_EMOJIS` from `src/components/dashboard/constants.js` — do NOT create local copies
-- Feature folders: `addItem/`, `dashboard/`, `dispute/`, `documents/`, `settings/`, `welcomeGuide/`, `auth/`, `scanUpload/`, `emailSuggestions/`, `chat/`
+## Components (always follow)
+- **Break everything down into components.** Do not leave large inline JSX blocks in pages. Extract modals, multi-element UI, and repeated patterns into named components in `src/components/`.
+- Keep components small and single-purpose. Avoid files >300 lines. If a page or component grows, extract sub-components (e.g. modal content → `XxxModal.jsx`, section → `XxxSection.jsx`).
+- Category emojis: use `EMPTY_EMOJIS` from `src/components/dashboard/constants.js` — do NOT create local copies.
+- Feature folders: `addItem/`, `dashboard/`, `dispute/`, `documents/`, `settings/`, `welcomeGuide/`, `auth/`, `scanUpload/`, `emailSuggestions/`, `chat/`. Shared UI (modals, prompts) live in `components/modals/` or `components/common/`.
 
 ## CSS
 - All styles in `src/index.css` with CSS custom properties

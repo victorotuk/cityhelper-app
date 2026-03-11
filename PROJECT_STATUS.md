@@ -1,5 +1,5 @@
 ## Nava — Project Status
-Updated: 2026-03-11
+Updated: 2026-03-05
 
 **→ For AI: Read this file first when user returns.** Full context: Vision, Recent (features), Changelog (what was built), What's Left, All Prompts & Outcomes. Project: cityhelper → Nava. React + Vite, Supabase, Capacitor.
 
@@ -109,7 +109,7 @@ Three ways to run Nava; privacy-first, user chooses control level.
 
 ### Codebase refactor (large-file split)
 - **Dashboard.jsx** (was ~1523 → ~700 → ~290 lines): Split into `DashboardHeader` (header + country switcher + mobile menu), `DashboardItemsList` (grouped item sections with ItemCard rendering), `ItemCard`, `AddItemModal`, `ComplianceHealth`, `FocusOnThree`, `EmptyState`, `SuggestedForYou` in `components/dashboard/`. Added `lib/renewalPortals.js`, `lib/addItemExtractPrompts.js`, `components/dashboard/constants.js`.
-- **Add Item flow:** `AddItemModal` uses `AddItemCategoryPicker`, `AddItemFormFields`, **AddItemScanFirst** (camera-first + "Continue on phone" QR), and **AddItemScanConfirm** (show doc details, Track it / Edit details). Settings → **SettingsAccessibilitySection** (voice feedback). `src/lib/voice.js` for Speech Synthesis and preference storage.
+- **Add Item flow:** `AddItemModal` uses `AddItemCategoryPicker`, `AddItemFormFields`, **AddItemScanFirst** (camera-first + "Continue on phone" QR), and **AddItemScanConfirm** (show doc details, Track it / Edit details). Settings → **SettingsAccessibilitySection** (voice feedback). `src/lib/voice.js` for Speech Synthesis and preference storage. One-time a11y prompt extracted to **A11yPromptModal** (`components/modals/A11yPromptModal.jsx`).
 - **Category emoji maps:** Centralized in `components/dashboard/constants.js` (`EMPTY_EMOJIS`). All files import from there — no local copies.
 - **Settings.jsx** (was ~906 lines): Extracted section components under `components/settings/`: `SettingsCountrySection`, `SettingsDataBackupSection`, `SettingsAISection`, `SettingsOpenClawSection`, `SettingsRecoverySection`, `SettingsPersonalizationSection`, `SettingsWealthSection`, `SettingsDangerSection`, `SettingsAboutSection` (version + platform). Settings.jsx reduced accordingly.
 - **WelcomeGuide.jsx** (was ~809 lines): Extracted `QuizTextInput` and `QuizTextareaMic` to `WelcomeGuideQuizInput.jsx`. WelcomeGuide.jsx reduced by ~130 lines.
@@ -127,6 +127,9 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
 - If Supabase or other security advisories arrive, address promptly. Privacy is key.
 
 ### Changelog
+- 2026-03-05 (componentize a11y prompt, cursor rules)
+  - **A11y prompt as component:** One-time accessibility prompt extracted from Dashboard into `components/modals/A11yPromptModal.jsx` (with `markA11yPromptAsked` / `wasA11yPromptAsked` helpers). Dashboard uses the component; no large inline JSX.
+  - **Cursor rules — Components:** Rules now require breaking everything into components: no large inline JSX in pages, extract modals/sections into named components; shared UI in `components/modals/` or `components/common/`.
 - 2026-03-11 (scan confirm, voice/a11y, blurry detection, WelcomeGuide fix)
   - **Scan confirmation step:** After uploading a document (e.g. driver's licence), show "Confirm & track" with extracted name, expiry, category. One-click "Track it" or "Edit details". Driver's licence normalized to driving category when AI returns "other".
   - **Voice feedback (accessibility):** Settings → Accessibility. Voice feedback reads scan results, confirmations, and "Added. X is now being tracked." when an item is added. Scan-first screen speaks a short hint when opened. Blurry/unreadable message is spoken when voice is on.
