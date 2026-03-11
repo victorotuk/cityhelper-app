@@ -1,5 +1,5 @@
 ## Nava — Project Status
-Updated: 2026-03-05
+Updated: 2026-03-06
 
 **→ For AI: Read this file first when user returns.** Full context: Vision, Recent (features), Changelog (what was built), What's Left, All Prompts & Outcomes. Project: cityhelper → Nava. React + Vite, Supabase, Capacitor.
 
@@ -74,6 +74,7 @@ Three ways to run Nava; privacy-first, user chooses control level.
 - **Per-item country**: Migration 027. Items can belong to Canada or US. Dashboard filters by active country. Add/BulkEdit: country picker when 2+ countries. ai-chat add_item supports country.
 - **Location-based country (timezone):** If user hasn’t set a country, we suggest or auto-set it from device timezone (no GPS, no permission). Settings → Country: toggle “Use location to suggest country” (On by default); turn Off to choose manually for privacy. `src/lib/countryFromLocation.js`; CountryRequiredModal shows “Suggested” when we have a timezone hint.
 - **Scan confirm + voice (a11y):** After scan, show "Confirm & track" with doc details; one-click Track it or Edit details. Settings → Accessibility: voice feedback (Nava-specific; device handles VoiceOver/TalkBack). One-time prompt on dashboard. Blurry images: AI returns readable:false, Nava shows message and does not suggest a category.
+- **Add Item camera + scan errors:** On desktop, "Scan with camera" opens a live getUserMedia viewfinder (not just a file picker). On upload/scan failure or empty AI result, the modal stays on the scan screen and shows the error (no silent jump to category picker). `CountryRequiredModal` for country picker; scan flow uses `AddItemScanFirst` (camera view + capture), `AddItemScanConfirm`, and `AddItemModal` with robust error handling and `data.raw` fallback.
 
 ### Mobile
 - **Android**: ✅ Built and installed. Codemagic `android-build` workflow. APK on device.
@@ -114,7 +115,7 @@ Three ways to run Nava; privacy-first, user chooses control level.
 
 ### Codebase refactor (large-file split)
 - **Dashboard.jsx** (was ~1523 → ~700 → ~290 lines): Split into `DashboardHeader` (header + country switcher + mobile menu), `DashboardItemsList` (grouped item sections with ItemCard rendering), `ItemCard`, `AddItemModal`, `ComplianceHealth`, `FocusOnThree`, `EmptyState`, `SuggestedForYou` in `components/dashboard/`. Added `lib/renewalPortals.js`, `lib/addItemExtractPrompts.js`, `components/dashboard/constants.js`.
-- **Add Item flow:** `AddItemModal` uses `AddItemCategoryPicker`, `AddItemFormFields`, **AddItemScanFirst** (camera-first + "Continue on phone" QR), and **AddItemScanConfirm** (show doc details, Track it / Edit details). Settings → **SettingsAccessibilitySection** (voice feedback). `src/lib/voice.js` for Speech Synthesis and preference storage. One-time a11y prompt extracted to **A11yPromptModal** (`components/modals/A11yPromptModal.jsx`).
+- **Add Item flow:** `AddItemModal` uses `AddItemCategoryPicker`, `AddItemFormFields`, **AddItemScanFirst** (camera-first, live camera view on desktop via getUserMedia + "Continue on phone" QR), and **AddItemScanConfirm** (show doc details, Track it / Edit details). Country picker when no country set → **CountryRequiredModal**. Settings → **SettingsAccessibilitySection** (voice feedback). `src/lib/voice.js` for Speech Synthesis and preference storage. One-time a11y prompt → **A11yPromptModal** (`components/modals/A11yPromptModal.jsx`).
 - **Category emoji maps:** Centralized in `components/dashboard/constants.js` (`EMPTY_EMOJIS`). All files import from there — no local copies.
 - **Settings.jsx** (was ~906 lines): Extracted section components under `components/settings/`: `SettingsCountrySection`, `SettingsDataBackupSection`, `SettingsAISection`, `SettingsOpenClawSection`, `SettingsRecoverySection`, `SettingsPersonalizationSection`, `SettingsWealthSection`, `SettingsDangerSection`, `SettingsAboutSection` (version + platform). Settings.jsx reduced accordingly.
 - **WelcomeGuide.jsx** (was ~809 lines): Extracted `QuizTextInput` and `QuizTextareaMic` to `WelcomeGuideQuizInput.jsx`. WelcomeGuide.jsx reduced by ~130 lines.
@@ -132,6 +133,10 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
 - If Supabase or other security advisories arrive, address promptly. Privacy is key.
 
 ### Changelog
+- 2026-03-05 (camera viewfinder + scan error handling)
+  - **Desktop "Scan with camera":** Uses getUserMedia to show a live camera view with "Capture photo" button instead of opening a file picker. Mobile still uses native capture input.
+  - **Scan errors stay on scan screen:** On API failure or empty extraction, the modal no longer jumps to the category picker; it stays on the scan screen and shows the error message. Handles `data.error`, extracts message from FunctionsHttpError for rate limits, and tries parsing `data.raw` if `data.extracted` is empty.
+  - **CSS:** Added `.scan-camera-view`, `.scan-camera-video`, `.scan-camera-actions` for the camera view.
 - 2026-03-05 (location-based country setting)
   - **Automate or manual country:** Timezone-based suggestion (no GPS) when user has no country. If “Use location to suggest country” is On (default), we auto-set primary country from timezone on load. If Off, user chooses in the “Select your country” modal; modal still shows a “Suggested” country from timezone for one-tap. Settings → Country: On/Off toggle and short privacy note.
   - **New:** `src/lib/countryFromLocation.js` (getSuggestedCountryFromTimezone, get/setUseLocationForCountry), `CountryRequiredModal.jsx` for the country picker modal.
