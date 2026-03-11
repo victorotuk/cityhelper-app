@@ -36,11 +36,22 @@ Three ways to run Nava; privacy-first, user chooses control level.
 
 **Platforms:** Web, Mobile (Capacitor), Desktop (Tauri). All three.
 
-**LLM choice:** Currently Groq (free tier, server key). Works out of the box. Users can optionally bring their own Groq key in Settings → AI for higher rate limits. Future: support other LLMs (Ollama local, OpenAI, Anthropic). BYOK or we manage keys (paid).
+**LLM choice:** BYOK (Bring Your Own Key) is the primary model. Users add their own AI key in Settings → AI. Groq is free (no credit card). OpenAI, Claude, and Gemini also supported — Nava auto-detects the provider from the key prefix. Optional server fallback: GROQ_API_KEY in Supabase secrets for managed AI add-on ($1/mo).
 
 **AI services (which model is used where):**
-- **Chat (Nava assistant):** Groq. User’s API key in Settings → AI (Bring your own key); stored per user in `localStorage` (`nava_groq_key_<user_id>`). Used by the chat overlay, /assistant, and AI suggestions.
-- **Document parsing / scan (Add Item, dispute, etc.):** Groq **Llama 4 Scout** (vision) via Supabase Edge Function `ai-scan`. Uses the **same Groq API key** as chat: user's key from Settings → AI is sent with each scan request (free tier at console.groq.com). Optional server fallback: set **GROQ_API_KEY** in Supabase Edge Function secrets so scans work without a user key.
+- **Chat:** Groq (`llama-3.1-8b-instant`) or OpenAI (`gpt-4o-mini`) via Edge Function `ai-chat`. Provider auto-detected from user's key. Server fallback: `GROQ_API_KEY`.
+- **Document scanning:** Groq Llama 4 Scout (vision), OpenAI `gpt-4o-mini`, Claude `claude-3-5-haiku`, or Gemini `2.0-flash` via Edge Function `ai-scan`. Provider auto-detected from key. All support vision/image input.
+- **BYOK is the default.** Users bring their own key (Groq free, or any provider they already pay for). No artificial scan limits when BYOK. Server key (managed AI) is a $1/mo add-on for users who don't want to manage keys.
+- **Key storage:** `localStorage` per user (`nava_ai_key_<user_id>`, `nava_ai_provider_<user_id>`, plus backward-compat `nava_groq_key_<user_id>`).
+
+**Pricing (USD) — app fee separate from AI:**
+| Tier | Price | What |
+|------|-------|------|
+| Free | $0 | 10 items, BYOK, reminders |
+| Personal | $2.50/mo | Unlimited items, vault, sharing, voice, SMS, calendar |
+| Business | $5/mo | + team, business categories, estate tools |
+| Enterprise | $10/mo | + API (OpenClaw), custom categories, dedicated support |
+| Managed AI | +$1/mo | We handle AI key; uses server key |
 
 **Local vs Online split (Path A — Supabase + client-side E2E):**
 - **LOCAL (IndexedDB on web/mobile/desktop):** compliance_items, user_settings (country, persona). Read/write local first. Encrypted before sync. Autobackup. Web uses IndexedDB too — not just mobile.
@@ -241,6 +252,7 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
   - **Scan caching**: Duplicate scans (same image+prompt SHA-256 hash) return cached results — no Groq call, no usage counted.
   - **ScanUpload UI**: Shows "X/Y scans used this month" with warning when near limit, disables buttons when at limit.
 - 2026-01-07 — Android workflow ready, iOS on hold.
+- 2026-03-06 — Multi-provider BYOK: ai-scan supports Groq, OpenAI, Claude, Gemini (auto-detected from key). ai-chat supports Groq + OpenAI. Settings → AI is now the primary AI setup (not hidden). Pricing updated: Free (10 items, BYOK), Personal ($2.50), Business ($5), Enterprise ($10), Managed AI (+$1). No artificial scan limits when BYOK.
 - 2026-03-06 — Document scanning switched from OpenAI to Groq (Llama 4 Scout vision). Same Groq key as chat; user's key from Settings → AI sent with each scan (free tier). Optional GROQ_API_KEY in Supabase for server fallback.
 - 2026-01-05 — AI chat (Groq), AI scan (OpenAI).
 - 2026-01-04 — ScanUpload, ChatBubble.
@@ -509,6 +521,7 @@ See **CURSOR_STABILITY.md** for crash-reduction steps. `.cursorignore` updated t
   - **Scan caching**: Duplicate scans (same image+prompt SHA-256 hash) return cached results — no Groq call, no usage counted.
   - **ScanUpload UI**: Shows "X/Y scans used this month" with warning when near limit, disables buttons when at limit.
 - 2026-01-07 — Android workflow ready, iOS on hold.
+- 2026-03-06 — Multi-provider BYOK: ai-scan supports Groq, OpenAI, Claude, Gemini (auto-detected from key). ai-chat supports Groq + OpenAI. Settings → AI is now the primary AI setup (not hidden). Pricing updated: Free (10 items, BYOK), Personal ($2.50), Business ($5), Enterprise ($10), Managed AI (+$1). No artificial scan limits when BYOK.
 - 2026-03-06 — Document scanning switched from OpenAI to Groq (Llama 4 Scout vision). Same Groq key as chat; user's key from Settings → AI sent with each scan (free tier). Optional GROQ_API_KEY in Supabase for server fallback.
 - 2026-01-05 — AI chat (Groq), AI scan (OpenAI).
 - 2026-01-04 — ScanUpload, ChatBubble.

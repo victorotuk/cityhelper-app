@@ -177,7 +177,7 @@ export default function AddItemScanFirst({
             <span>Browse categories</span>
           </button>
           <p className="scan-first-meta" aria-hidden="true">
-            Powered by Llama AI
+            Powered by your AI key (Settings → AI)
           </p>
         </>
       )}

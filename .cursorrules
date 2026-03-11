@@ -13,7 +13,7 @@ Then implement so behavior matches the docs (e.g. Add Item: camera-first → AI 
 - **Backend:** Supabase (Postgres, Edge Functions in Deno/TypeScript, Auth)
 - **Mobile:** Capacitor (Android/iOS)
 - **Desktop:** Tauri 2 (macOS/Windows/Linux)
-- **AI:** Groq for chat and document scan (Llama 4 Scout vision), BYOK in Settings → AI
+- **AI:** Multi-provider BYOK (Groq free, OpenAI, Claude, Gemini). Auto-detected from key prefix. Server fallback: GROQ_API_KEY.
 
 ## Key architecture
 - **Local-first:** compliance_items stored in IndexedDB, synced encrypted to Supabase

@@ -6,11 +6,80 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Scan limits per pricing tier (per month)
-const SCAN_LIMITS: Record<string, number> = {
-  free: 10,
-  personal: 50,
-  business: 200,
+// Provider configs: endpoint, model, and how to build the request body
+const PROVIDERS: Record<string, {
+  url: string
+  model: string
+  supportsVision: boolean
+  buildBody: (model: string, prompt: string, imageUrl: string) => unknown
+}> = {
+  groq: {
+    url: 'https://api.groq.com/openai/v1/chat/completions',
+    model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+    supportsVision: true,
+    buildBody: (model, prompt, imageUrl) => ({
+      model, max_tokens: 1000, temperature: 0.1,
+      response_format: { type: 'json_object' },
+      messages: [{ role: 'user', content: [
+        { type: 'text', text: prompt },
+        { type: 'image_url', image_url: { url: imageUrl } },
+      ]}],
+    }),
+  },
+  openai: {
+    url: 'https://api.openai.com/v1/chat/completions',
+    model: 'gpt-4o-mini',
+    supportsVision: true,
+    buildBody: (model, prompt, imageUrl) => ({
+      model, max_tokens: 1000, temperature: 0.1,
+      messages: [{ role: 'user', content: [
+        { type: 'text', text: prompt },
+        { type: 'image_url', image_url: { url: imageUrl, detail: 'low' } },
+      ]}],
+    }),
+  },
+  anthropic: {
+    url: 'https://api.anthropic.com/v1/messages',
+    model: 'claude-3-5-haiku-20241022',
+    supportsVision: true,
+    buildBody: (model, prompt, imageUrl) => {
+      const base64Match = imageUrl.match(/^data:(image\/\w+);base64,(.+)/)
+      const mediaType = base64Match?.[1] || 'image/jpeg'
+      const b64data = base64Match?.[2] || imageUrl
+      return {
+        model, max_tokens: 1000, temperature: 0.1,
+        messages: [{ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64data } },
+          { type: 'text', text: prompt },
+        ]}],
+      }
+    },
+  },
+  gemini: {
+    url: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+    model: 'gemini-2.0-flash',
+    supportsVision: true,
+    buildBody: (_model, prompt, imageUrl) => {
+      const base64Match = imageUrl.match(/^data:(image\/\w+);base64,(.+)/)
+      const mimeType = base64Match?.[1] || 'image/jpeg'
+      const b64data = base64Match?.[2] || imageUrl
+      return {
+        contents: [{ parts: [
+          { inline_data: { mime_type: mimeType, data: b64data } },
+          { text: prompt + '\nReturn ONLY valid JSON, no markdown fences.' },
+        ]}],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 1000 },
+      }
+    },
+  },
+}
+
+function detectProvider(apiKey: string): string {
+  if (apiKey.startsWith('gsk_')) return 'groq'
+  if (apiKey.startsWith('sk-ant-')) return 'anthropic'
+  if (apiKey.startsWith('sk-')) return 'openai'
+  if (apiKey.startsWith('AI')) return 'gemini'
+  return 'groq'
 }
 
 /** SHA-256 hash a string, return hex digest */
@@ -33,50 +102,50 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  // Service-role Supabase client (bypasses RLS for usage tracking)
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   )
 
   try {
-    const { image, prompt, apiKey: userApiKey } = await req.json()
+    const { image, prompt, apiKey: userApiKey, provider: userProvider } = await req.json()
 
     if (!image) {
       throw new Error('Image is required')
     }
 
-    // Server key handles all users; optional user key overrides (power users / distributed rate limits)
+    // Resolve API key: user's key first, then server fallback (GROQ_API_KEY)
     const serverKey = Deno.env.get('GROQ_API_KEY')
-    const groqKey = (userApiKey && typeof userApiKey === 'string' && userApiKey.trim())
+    const resolvedKey = (userApiKey && typeof userApiKey === 'string' && userApiKey.trim())
       ? userApiKey.trim()
       : serverKey
-    if (!groqKey) {
-      throw new Error('AI scanning is not configured. Contact support.')
+    if (!resolvedKey) {
+      throw new Error('Add your AI key in Settings → AI to scan documents. Groq is free at console.groq.com.')
+    }
+
+    // Detect provider from explicit param or key prefix
+    const providerName = userProvider || detectProvider(resolvedKey)
+    const provider = PROVIDERS[providerName]
+    if (!provider) {
+      throw new Error(`Unsupported AI provider: ${providerName}`)
     }
 
     // ── 1. Get user from JWT ──────────────────────────────────
     let userId: string | null = null
-    let userEmail: string | null = null
     const authHeader = req.headers.get('authorization')
 
     if (authHeader) {
       const token = authHeader.replace('Bearer ', '')
       const { data: { user } } = await supabase.auth.getUser(token)
-      if (user) {
-        userId = user.id
-        userEmail = user.email ?? null
-      }
+      if (user) userId = user.id
     }
 
-    // Default prompt
     const extractPrompt = prompt || `Extract all relevant information from this document. 
 Return the data as a JSON object with clear field names. 
 Be thorough and include all visible text, dates, amounts, names, and reference numbers.
 Return ONLY valid JSON, no markdown or explanation.`
 
     // ── 2. Check cache ────────────────────────────────────────
-    // Hash the image (use first 50k chars for performance on large images)
     const imageForHash = image.length > 50000 ? image.substring(0, 50000) : image
     const imageHash = await sha256(imageForHash)
     const promptHash = await sha256(extractPrompt)
@@ -89,7 +158,6 @@ Return ONLY valid JSON, no markdown or explanation.`
       .single()
 
     if (cached) {
-      // Cache hit — no Groq call, no usage counted
       console.log('Cache hit for scan')
       return new Response(
         JSON.stringify({ extracted: cached.result, raw: cached.raw_text, cached: true }),
@@ -97,28 +165,9 @@ Return ONLY valid JSON, no markdown or explanation.`
       )
     }
 
-    // ── 3. Rate limiting (only for authenticated users) ──────
+    // ── 3. Usage tracking (no hard limits when BYOK) ──────────
     if (userId) {
       const month = currentMonth()
-
-      // Get user's plan tier
-      let tier = 'free'
-      const { data: sub } = await supabase
-        .from('subscriptions')
-        .select('tier, status')
-        .or(`user_id.eq.${userId},email.eq.${userEmail}`)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-
-      if (sub?.tier) {
-        tier = sub.tier
-      }
-
-      const scanLimit = SCAN_LIMITS[tier] ?? SCAN_LIMITS.free
-
-      // Get or create usage record for this month
       const { data: usage } = await supabase
         .from('scan_usage')
         .select('id, scan_count')
@@ -128,76 +177,65 @@ Return ONLY valid JSON, no markdown or explanation.`
 
       const currentCount = usage?.scan_count ?? 0
 
-      if (currentCount >= scanLimit) {
-        const upgradeMsg = tier === 'free'
-          ? 'Upgrade to Personal for 50 scans/month.'
-          : tier === 'personal'
-            ? 'Upgrade to Business for 200 scans/month.'
-            : 'Contact support for higher limits.'
-
-        return new Response(
-          JSON.stringify({
-            error: `Scan limit reached (${currentCount}/${scanLimit} this month). ${upgradeMsg}`,
-            limit_reached: true,
-            scan_count: currentCount,
-            scan_limit: scanLimit,
-            tier,
-          }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-
-      // Increment usage (upsert)
       if (usage?.id) {
-        await supabase
-          .from('scan_usage')
+        await supabase.from('scan_usage')
           .update({ scan_count: currentCount + 1, updated_at: new Date().toISOString() })
           .eq('id', usage.id)
       } else {
-        await supabase
-          .from('scan_usage')
+        await supabase.from('scan_usage')
           .insert({ user_id: userId, month, scan_count: 1 })
       }
     }
 
-    // ── 4. Call Groq (Llama vision, free tier) ───────────────────
+    // ── 4. Call AI provider ───────────────────────────────────
     let imageUrl = image
     if (!image.startsWith('data:')) {
       imageUrl = `data:image/jpeg;base64,${image}`
     }
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const requestBody = provider.buildBody(provider.model, extractPrompt, imageUrl)
+
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    let fetchUrl = provider.url
+
+    if (providerName === 'anthropic') {
+      headers['x-api-key'] = resolvedKey
+      headers['anthropic-version'] = '2023-06-01'
+    } else if (providerName === 'gemini') {
+      fetchUrl = `${provider.url}?key=${resolvedKey}`
+    } else {
+      headers['Authorization'] = `Bearer ${resolvedKey}`
+    }
+
+    const response = await fetch(fetchUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${groqKey}`
-      },
-      body: JSON.stringify({
-        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'text', text: extractPrompt },
-            { type: 'image_url', image_url: { url: imageUrl } }
-          ]
-        }],
-        max_tokens: 1000,
-        temperature: 0.1,
-        response_format: { type: 'json_object' }
-      })
+      headers,
+      body: JSON.stringify(requestBody),
     })
 
     if (!response.ok) {
-      const error = await response.text()
-      console.error('Groq vision error:', error)
-      if (response.status === 401) {
-        throw new Error('Invalid Groq API key. Check Settings → AI or get a free key at console.groq.com.')
+      const errorText = await response.text()
+      console.error(`${providerName} vision error:`, errorText)
+      if (response.status === 401 || response.status === 403) {
+        throw new Error(`Invalid ${providerName} API key. Check Settings → AI.`)
       }
-      throw new Error('Document scanning temporarily unavailable')
+      if (response.status === 429) {
+        throw new Error('Rate limit reached. Try again in a minute, or add your own AI key in Settings → AI.')
+      }
+      throw new Error('Document scanning temporarily unavailable. Try again shortly.')
     }
 
     const data = await response.json()
-    const extractedText = data.choices?.[0]?.message?.content || ''
+
+    // Extract text from provider-specific response format
+    let extractedText = ''
+    if (providerName === 'anthropic') {
+      extractedText = data.content?.[0]?.text || ''
+    } else if (providerName === 'gemini') {
+      extractedText = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+    } else {
+      extractedText = data.choices?.[0]?.message?.content || ''
+    }
 
     // Try to parse as JSON
     let extracted: unknown = extractedText

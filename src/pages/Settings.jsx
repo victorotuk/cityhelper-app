@@ -70,10 +70,7 @@ export default function Settings() {
   // Backup
   const [backupLoading, setBackupLoading] = useState(false);
 
-  // AI / BYOK — Groq API key (stored in localStorage, never sent to our servers except when calling AI)
-  const GROQ_KEY = `nava_groq_key_${user?.id || ''}`;
-  const [groqKey, setGroqKey] = useState('');
-  const [groqKeySaved, setGroqKeySaved] = useState(false);
+  // AI key is now managed by SettingsAISection internally
 
   // OpenClaw / API key
   const [apiKeyLoading, setApiKeyLoading] = useState(false);
@@ -94,8 +91,6 @@ export default function Settings() {
     if (user) {
       fetchSettings();
       preloadPushSDK();
-      const k = localStorage.getItem(`nava_groq_key_${user.id}`);
-      setGroqKeySaved(!!k);
       setShowAdvanced(localStorage.getItem(`nava_show_advanced_${user.id}`) === 'true');
     }
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -347,10 +342,15 @@ export default function Settings() {
             userId={user?.id}
           />
 
+          <SettingsAISection
+            userId={user?.id}
+            showSaved={showSaved}
+          />
+
           <section className="settings-section">
             <h2>Advanced options</h2>
             <p className="section-desc">
-              Show settings for your own AI key, connecting Nava to WhatsApp/iMessage (OpenClaw), and other developer options. Leave off if you just want to use Nava as-is.
+              Developer options for connecting Nava to WhatsApp/iMessage via OpenClaw.
             </p>
             <div className="setting-card">
               <div className="setting-header">
@@ -359,7 +359,7 @@ export default function Settings() {
                 </div>
                 <div className="setting-info">
                   <h3>{showAdvanced ? 'Advanced options on' : 'Advanced options off'}</h3>
-                  <p>{showAdvanced ? 'You see API keys and OpenClaw sections below' : 'Settings stay simple — no API or developer stuff'}</p>
+                  <p>{showAdvanced ? 'OpenClaw section is visible below' : 'Hide developer options'}</p>
                 </div>
                 <button
                   type="button"
@@ -377,26 +377,16 @@ export default function Settings() {
           </section>
 
           {showAdvanced && (
-            <>
-              <SettingsAISection
-                groqKey={groqKey}
-                setGroqKey={setGroqKey}
-                groqKeySaved={groqKeySaved}
-                setGroqKeySaved={setGroqKeySaved}
-                showSaved={showSaved}
-                storageKey={GROQ_KEY}
-              />
-              <SettingsOpenClawSection
-                apiKeyLoading={apiKeyLoading}
-                setApiKeyLoading={setApiKeyLoading}
-                newApiKey={newApiKey}
-                setNewApiKey={setNewApiKey}
-                apiKeyCopied={apiKeyCopied}
-                setApiKeyCopied={setApiKeyCopied}
-                setError={setError}
-                showSaved={showSaved}
-              />
-            </>
+            <SettingsOpenClawSection
+              apiKeyLoading={apiKeyLoading}
+              setApiKeyLoading={setApiKeyLoading}
+              newApiKey={newApiKey}
+              setNewApiKey={setNewApiKey}
+              apiKeyCopied={apiKeyCopied}
+              setApiKeyCopied={setApiKeyCopied}
+              setError={setError}
+              showSaved={showSaved}
+            />
           )}
 
           {isOAuthUser && (

@@ -287,17 +287,36 @@ const TOOLS = [
   },
 ]
 
-async function callGroq(messages: any[], tools: any[], toolChoice: string, userApiKey?: string) {
-  const key = userApiKey || Deno.env.get('GROQ_API_KEY')
-  if (!key) throw new Error('AI service not configured. Add your Groq API key in Settings → AI.')
-  const body: any = { model: 'llama-3.1-8b-instant', messages, temperature: 0.7, max_tokens: 1024 }
+// Chat providers (must support OpenAI-compatible tool calling)
+const CHAT_PROVIDERS: Record<string, { url: string; model: string }> = {
+  groq: { url: 'https://api.groq.com/openai/v1/chat/completions', model: 'llama-3.1-8b-instant' },
+  openai: { url: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o-mini' },
+}
+
+function detectChatProvider(apiKey: string): string {
+  if (apiKey.startsWith('sk-') && !apiKey.startsWith('sk-ant-')) return 'openai'
+  return 'groq'
+}
+
+async function callAI(messages: any[], tools: any[], toolChoice: string, userApiKey?: string) {
+  const serverKey = Deno.env.get('GROQ_API_KEY')
+  const key = userApiKey || serverKey
+  if (!key) throw new Error('AI not configured. Add your AI key in Settings → AI. Groq is free at console.groq.com.')
+  const providerName = userApiKey ? detectChatProvider(userApiKey) : 'groq'
+  const provider = CHAT_PROVIDERS[providerName] || CHAT_PROVIDERS.groq
+  const body: any = { model: provider.model, messages, temperature: 0.7, max_tokens: 1024 }
   if (tools?.length) { body.tools = tools; body.tool_choice = toolChoice }
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  const res = await fetch(provider.url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
     body: JSON.stringify(body),
   })
-  if (!res.ok) throw new Error(`AI error: ${await res.text()}`)
+  if (!res.ok) {
+    const errText = await res.text()
+    if (res.status === 401 || res.status === 403) throw new Error(`Invalid ${providerName} API key. Check Settings → AI.`)
+    if (res.status === 429) throw new Error('Rate limit reached. Try again shortly.')
+    throw new Error(`AI error: ${errText}`)
+  }
   return res.json()
 }
 
@@ -365,12 +384,12 @@ Prioritize wealth-building and legacy: trusts, estate planning, holding companie
 
 When user refers to an item by name, use list_items first to find item_id. Categories: ${CATEGORIES}. Be concise and friendly.`
 
-    const groqMessages: any[] = [
+    const chatMessages: any[] = [
       { role: 'system', content: systemPrompt },
       ...messages.map((m: any) => ({ role: m.role, content: m.content || '' })),
     ]
 
-    let data = await callGroq(groqMessages, TOOLS, 'auto')
+    let data = await callAI(chatMessages, TOOLS, 'auto', userApiKey)
     let msg = data.choices?.[0]?.message
     let iterations = 0
     let calendarExportIcs: string | null = null
@@ -378,7 +397,7 @@ When user refers to an item by name, use list_items first to find item_id. Categ
     while (msg?.tool_calls?.length && iterations < 5) {
       iterations++
       for (const tc of msg.tool_calls) {
-        groqMessages.push(msg)
+        chatMessages.push(msg)
         const fn = tc.function?.name
         let args: any = {}
         try { args = JSON.parse(tc.function?.arguments || '{}') } catch { }
@@ -539,9 +558,9 @@ When user refers to an item by name, use list_items first to find item_id. Categ
         } catch (e) {
           result = JSON.stringify({ error: (e as Error).message })
         }
-        groqMessages.push({ role: 'tool', tool_call_id: tc.id, content: result })
+        chatMessages.push({ role: 'tool', tool_call_id: tc.id, content: result })
       }
-      data = await callGroq(groqMessages, TOOLS, 'auto')
+      data = await callAI(chatMessages, TOOLS, 'auto', userApiKey)
       msg = data.choices?.[0]?.message
     }
 

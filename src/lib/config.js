@@ -41,26 +41,38 @@ export const APP_CONFIG = {
     // Google Maps API: set GOOGLE_MAPS_API_KEY in Supabase secrets for Snap to Roads / Directions
   },
 
-  // PRICING (CAD)
+  // PRICING (USD) — app fee only; AI is BYOK (user's own key, free with Groq)
   pricing: {
     free: {
       name: "Free",
       price: 0,
-      scanLimit: 10,
-      features: ["Deadline reminders", "5 compliance items", "Email alerts", "10 document scans/month"]
+      itemLimit: 10,
+      features: ["Track up to 10 items", "Deadline reminders", "Email alerts", "BYOK AI (bring your own key)"]
     },
     personal: {
       name: "Personal",
-      price: 8,
-      scanLimit: 50,
-      features: ["Unlimited items", "Document vault", "Tax estimator", "SMS alerts", "Calendar sync", "50 document scans/month"]
+      price: 2.50,
+      itemLimit: null,
+      features: ["Unlimited items", "Document vault", "Sharing", "Voice feedback", "SMS alerts", "Calendar sync"]
     },
     business: {
-      name: "Business", 
-      price: 25,
-      scanLimit: 200,
-      features: ["Everything in Personal", "Multiple users", "Business compliance", "Payroll calculator", "Priority support", "200 document scans/month"]
-    }
+      name: "Business",
+      price: 5,
+      itemLimit: null,
+      features: ["Everything in Personal", "Team members", "Business categories", "Estate tools", "Priority support"]
+    },
+    enterprise: {
+      name: "Enterprise",
+      price: 10,
+      itemLimit: null,
+      features: ["Everything in Business", "API access (OpenClaw)", "Custom categories", "Dedicated support"]
+    },
+    managed_ai: {
+      name: "Managed AI",
+      price: 1,
+      addon: true,
+      features: ["We handle your AI key setup", "No BYOK needed", "Uses Nava's server key"]
+    },
   },
   
   // COMPLIANCE CATEGORIES — Trusts & estate first, then the rest
