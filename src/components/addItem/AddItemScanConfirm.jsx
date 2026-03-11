@@ -1,7 +1,10 @@
+import { useEffect, useRef } from 'react';
 import { Check, Edit3 } from 'lucide-react';
 import { EMPTY_EMOJIS } from '../dashboard/constants';
+import { getVoicePreference, speak, stopSpeaking } from '../../lib/voice';
 
 export default function AddItemScanConfirm({
+  userId,
   categoryId,
   categoryName,
   name,
@@ -12,6 +15,23 @@ export default function AddItemScanConfirm({
   tracking,
 }) {
   const emoji = EMPTY_EMOJIS[categoryId] || '📌';
+  const didSpeak = useRef(false);
+
+  useEffect(() => {
+    if (!userId || didSpeak.current) return;
+    if (!getVoicePreference(userId)) return;
+    didSpeak.current = true;
+    const dateStr = dueDate
+      ? new Date(dueDate).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+      : '';
+    const msg = [
+      `We found ${name || 'your document'}.`,
+      dateStr ? `Expires ${dateStr}.` : '',
+      'You can tap Track it to start tracking, or Edit details to change anything.',
+    ].filter(Boolean).join(' ');
+    speak(msg);
+    return () => stopSpeaking();
+  }, [userId, name, dueDate]);
 
   return (
     <div className="scan-confirm-screen">
@@ -46,14 +66,15 @@ export default function AddItemScanConfirm({
           className="btn btn-primary scan-confirm-track"
           onClick={onTrackIt}
           disabled={tracking}
+          aria-label="Track this item and add it to your dashboard"
         >
           {tracking ? (
             <>
-              <span className="loading-spinner small" /> Tracking…
+              <span className="loading-spinner small" aria-hidden /> Tracking…
             </>
           ) : (
             <>
-              <Check size={18} /> Track it
+              <Check size={18} aria-hidden /> Track it
             </>
           )}
         </button>
@@ -62,8 +83,9 @@ export default function AddItemScanConfirm({
           className="btn btn-ghost"
           onClick={onEditDetails}
           disabled={tracking}
+          aria-label="Edit details before tracking"
         >
-          <Edit3 size={18} /> Edit details
+          <Edit3 size={18} aria-hidden /> Edit details
         </button>
       </div>
     </div>

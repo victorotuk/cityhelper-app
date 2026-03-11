@@ -12,6 +12,7 @@ import SuggestionBox from '../components/modals/SuggestionBox';
 import EmailSuggestions from '../components/emailSuggestions/EmailSuggestions';
 import SettingsCountrySection from '../components/settings/SettingsCountrySection';
 import SettingsAppearanceSection from '../components/settings/SettingsAppearanceSection';
+import SettingsAccessibilitySection from '../components/settings/SettingsAccessibilitySection';
 import SettingsDataBackupSection from '../components/settings/SettingsDataBackupSection';
 import SettingsAISection from '../components/settings/SettingsAISection';
 import SettingsOpenClawSection from '../components/settings/SettingsOpenClawSection';
@@ -335,6 +336,7 @@ export default function Settings() {
           />
 
           <SettingsAppearanceSection />
+          <SettingsAccessibilitySection userId={user?.id} />
 
           <SettingsDataBackupSection
             backupLoading={backupLoading}

@@ -209,6 +209,7 @@ export default function AddItemModal({
 
         {showScanConfirm ? (
           <AddItemScanConfirm
+            userId={userId}
             categoryId={selectedCategory}
             categoryName={categoryMeta?.name}
             name={name}

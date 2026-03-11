@@ -1526,6 +1526,21 @@ input, select, textarea { font-family: inherit; }
 
 .modal-body { padding: var(--space-lg); }
 
+/* Accessibility prompt (one-time ask) */
+.a11y-prompt-modal .modal-body { padding: var(--space-lg); }
+.a11y-prompt-desc {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+  margin: 0 0 var(--space-lg);
+}
+.a11y-prompt-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.a11y-prompt-actions .btn { justify-content: center; }
+
 /* Suggestion box modal */
 .suggestion-modal .modal-body { padding: var(--space-lg); }
 .suggestion-desc {

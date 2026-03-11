@@ -10,8 +10,9 @@ import { supabase } from '../lib/supabase';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import {
   Plus, Calendar, X, FileText, Folder, Settings,
-  Download, Edit3, LayoutDashboard
+  Download, Edit3, LayoutDashboard, Volume2
 } from 'lucide-react';
+import { getVoicePreference, setVoicePreference } from '../lib/voice';
 import { parseTextForSuggestion } from '../lib/smartSuggestParse';
 import { parseTicketFromNotes } from '../lib/payTicketUtils';
 import { addToGoogleCalendar, exportAllToCalendar } from '../lib/calendar';
@@ -53,6 +54,7 @@ export default function Dashboard() {
   const [showBulkEditModal, setShowBulkEditModal] = useState(false);
   const [showCalendarImport, setShowCalendarImport] = useState(false);
   const [auditItem, setAuditItem] = useState(null);
+  const [showA11yPrompt, setShowA11yPrompt] = useState(false);
   const { pendingText, clearPendingText } = useSharedSuggestStore();
   const setChatContext = useChatOverlayStore((s) => s.setContext);
   const openChatOverlay = useChatOverlayStore((s) => s.open);
@@ -64,6 +66,13 @@ export default function Dashboard() {
   useEffect(() => {
     if (activeCountry) setChatContext({ country: activeCountry });
   }, [activeCountry, setChatContext]);
+
+  useEffect(() => {
+    if (!user?.id || showWelcome) return;
+    if (localStorage.getItem(`nava_a11y_prompt_asked_${user.id}`)) return;
+    const t = setTimeout(() => setShowA11yPrompt(true), 1500);
+    return () => clearTimeout(t);
+  }, [user?.id, showWelcome]);
 
   const handleAskAI = (item) => {
     openChatOverlay({ selectedItem: item, page: '/dashboard' });
@@ -399,6 +408,45 @@ export default function Dashboard() {
       {auditItem && <AuditModal item={auditItem} onClose={() => setAuditItem(null)} />}
       {showBulkEditModal && <BulkEditModal selectedIds={Array.from(bulkSelectedIds)} itemCount={bulkSelectedIds.size} onClose={() => setShowBulkEditModal(false)} onApply={handleBulkApply} userCountries={userCountries} />}
       {showWelcome && <WelcomeGuide userId={user.id} onComplete={(p) => { setShowWelcome(false); if (p) setPersona(p); }} />}
+
+      {showA11yPrompt && (
+        <div className="modal-overlay" onClick={() => { localStorage.setItem(`nava_a11y_prompt_asked_${user.id}`, 'true'); setShowA11yPrompt(false); }}>
+          <div className="modal a11y-prompt-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="a11y-prompt-title" aria-describedby="a11y-prompt-desc">
+            <div className="modal-header">
+              <h2 id="a11y-prompt-title">Use accessibility settings?</h2>
+              <button type="button" className="btn-icon" onClick={() => { localStorage.setItem(`nava_a11y_prompt_asked_${user.id}`, 'true'); setShowA11yPrompt(false); }} aria-label="Close"><X size={20} /></button>
+            </div>
+            <div className="modal-body">
+              <p id="a11y-prompt-desc" className="a11y-prompt-desc">
+                You can have the app read out confirmations and important information so you can use Nava without looking at the screen. You can turn this on or off anytime in Settings.
+              </p>
+              <div className="a11y-prompt-actions">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    setVoicePreference(user.id, true);
+                    localStorage.setItem(`nava_a11y_prompt_asked_${user.id}`, 'true');
+                    setShowA11yPrompt(false);
+                  }}
+                >
+                  <Volume2 size={18} /> Yes, enable voice
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => {
+                    localStorage.setItem(`nava_a11y_prompt_asked_${user.id}`, 'true');
+                    setShowA11yPrompt(false);
+                  }}
+                >
+                  Not now
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <nav className="bottom-tab-bar" aria-label="Main navigation">
         <Link to="/dashboard" className="active"><LayoutDashboard /><span>Home</span></Link>
