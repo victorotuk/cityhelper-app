@@ -1526,6 +1526,25 @@ input, select, textarea { font-family: inherit; }
 
 .modal-body { padding: var(--space-lg); }
 
+/* Multi-page PDF results (Add Item) */
+.add-item-pdf-multi { padding: var(--space-md); }
+.add-item-pdf-multi .text-secondary { margin-bottom: var(--space-md); }
+.pdf-multi-list { list-style: none; margin: 0; padding: 0; }
+.pdf-multi-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--border-visible);
+}
+.pdf-multi-row:last-child { border-bottom: none; }
+.pdf-multi-label { font-weight: 600; min-width: 4rem; }
+.pdf-multi-name { flex: 1; min-width: 0; }
+.pdf-multi-date, .pdf-multi-cat { font-size: 0.9em; color: var(--text-secondary); }
+.add-item-pdf-multi .flex.gap-2 { display: flex; gap: var(--space-sm); flex-wrap: wrap; }
+.add-item-pdf-multi .mt-2 { margin-top: var(--space-md); }
+
 /* Accessibility prompt (one-time ask) */
 .a11y-prompt-modal .modal-body { padding: var(--space-lg); }
 .a11y-prompt-desc {

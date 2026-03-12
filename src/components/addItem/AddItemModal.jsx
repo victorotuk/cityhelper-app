@@ -8,6 +8,7 @@ import AddItemFormFields from './AddItemFormFields';
 import AddItemScanFirst from './AddItemScanFirst';
 import AddItemScanConfirm from './AddItemScanConfirm';
 import { getVoicePreference, speak } from '../../lib/voice';
+import { pdfFirstPageToImageUrl, pdfAllPagesToImageUrls } from '../../lib/pdfToImage';
 
 export default function AddItemModal({
   onClose,
@@ -37,6 +38,8 @@ export default function AddItemModal({
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState('');
   const [tracking, setTracking] = useState(false);
+  /** Multi-page PDF: array of { name, category, dueDate, notes } per page */
+  const [pdfMultiItems, setPdfMultiItems] = useState([]);
   const cameraRef = useRef(null);
   const fileRef = useRef(null);
 
@@ -61,17 +64,116 @@ export default function AddItemModal({
       .then(({ data }) => setDocuments(data || []));
   }, [selectedCategory, userId]);
 
+  const categoryAliases = { driver_license: 'driving', drivers_license: 'driving', driving: 'driving', licence: 'driving', license: 'driving', drivers_licence: 'driving', driver_licence: 'driving' };
+
+  function normalizeExtraction(ext) {
+    if (!ext || typeof ext !== 'object') return null
+    const nameLower = (ext.name || '').toLowerCase()
+    const notesLower = (ext.notes || '').toLowerCase()
+    const looksLikeDriverLicense = /driver|licen[c]?e|permit|photo\s*card|id\s*card|g1|g2|ontario\s*(photo|licen|id)/i.test(nameLower) || notesLower.includes('driver') || notesLower.includes('licen')
+    const rawCat = (ext.category || '').toString().toLowerCase().replace(/\s+/g, '_').replace(/'/g, '')
+    let category = ext.category && APP_CONFIG.categories.find(c => c.id === ext.category) ? ext.category : (categoryAliases[rawCat] || null)
+    if (!category && looksLikeDriverLicense) category = 'driving'
+    if (!category && (ext.name || ext.expiryDate || ext.dueDate)) category = 'other'
+    const notesParts = []
+    if (ext.number) notesParts.push(`Number: ${ext.number}`)
+    if (ext.amount) notesParts.push(`Amount: ${ext.amount}`)
+    if (ext.notes) notesParts.push(ext.notes)
+    const notes = notesParts.length ? notesParts.join('\n') : (ext.notes || '')
+    return {
+      name: ext.name || 'Document',
+      category: category || 'other',
+      dueDate: ext.expiryDate || ext.dueDate || '',
+      notes,
+    }
+  }
+
   const handleAutoDetect = async (file) => {
     setScanning(true);
     setScanError('');
+    setPdfMultiItems([]);
     try {
+      const groqKey = userId ? (localStorage.getItem(`nava_groq_key_${userId}`) || localStorage.getItem(`nava_ai_key_${userId}`)) || undefined : undefined;
+
+      if (file.type === 'application/pdf') {
+        const { count, imageUrls } = await pdfAllPagesToImageUrls(file);
+        if (count === 1) {
+          const { data, error } = await supabase.functions.invoke('ai-scan', {
+            body: { image: imageUrls[0], prompt: AUTO_DETECT_PROMPT, apiKey: groqKey },
+          });
+          if (error) {
+            let errMsg = error?.message || 'Scan failed';
+            try { errMsg = (await error?.context?.json?.())?.error || errMsg; } catch { /* use default */ }
+            throw new Error(errMsg);
+          }
+          if (data?.error) throw new Error(data.error);
+          if (data?.limit_reached) {
+            setScanError(`Scan limit reached. Choose a category manually.`);
+            setScanning(false);
+            setShowCategories(true);
+            return;
+          }
+          let ext = data?.extracted || {};
+          if (typeof ext === 'string') {
+            try { const m = ext.match(/\{[\s\S]*\}/); if (m) ext = JSON.parse(m[0]); } catch { /* keep */ }
+          }
+          if ((!ext || typeof ext !== 'object' || !Object.keys(ext).length) && data?.raw) {
+            try { const m = String(data.raw).match(/\{[\s\S]*\}/); if (m) ext = JSON.parse(m[0]) || ext; } catch { /* keep */ }
+          }
+          if (ext?.readable === false) {
+            setScanError(ext.message || 'This page is unclear. Try another file or choose a category manually.');
+            setScanning(false);
+            return;
+          }
+          const item = normalizeExtraction(ext);
+          if (item) {
+            setSelectedCategory(item.category);
+            setName(item.name);
+            setDueDate(item.dueDate);
+            setNotes(item.notes);
+            setShowScanConfirm(true);
+          } else {
+            setScanError('We couldn\'t read that page. Try another file or choose "Browse categories".');
+          }
+          setScanning(false);
+          return;
+        }
+        // Multi-page PDF: scan each page and collect items
+        const items = [];
+        for (let i = 0; i < imageUrls.length; i++) {
+          const { data, error } = await supabase.functions.invoke('ai-scan', {
+            body: { image: imageUrls[i], prompt: AUTO_DETECT_PROMPT, apiKey: groqKey },
+          });
+          if (error || data?.error) {
+            items.push({ name: `Page ${i + 1}`, category: 'other', dueDate: '', notes: 'Could not read this page.' });
+            continue;
+          }
+          if (data?.limit_reached) {
+            setScanError(`Scan limit reached after page ${i + 1}. Track what we found or choose a category manually.`);
+            break;
+          }
+          let ext = data?.extracted || {};
+          if (typeof ext === 'string') {
+            try { const m = ext.match(/\{[\s\S]*\}/); if (m) ext = JSON.parse(m[0]); } catch { /* keep */ }
+          }
+          if ((!ext || typeof ext !== 'object' || !Object.keys(ext).length) && data?.raw) {
+            try { const m = String(data.raw).match(/\{[\s\S]*\}/); if (m) ext = JSON.parse(m[0]) || ext; } catch { /* keep */ }
+          }
+          const item = normalizeExtraction(ext);
+          items.push(item || { name: `Page ${i + 1}`, category: 'other', dueDate: '', notes: '' });
+        }
+        setPdfMultiItems(items);
+        setScanning(false);
+        return;
+      }
+
+      // Image (not PDF)
       const base64 = await new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result);
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
-      const groqKey = userId ? (localStorage.getItem(`nava_groq_key_${userId}`) || undefined) : undefined;
       const { data, error } = await supabase.functions.invoke('ai-scan', {
         body: { image: base64, prompt: AUTO_DETECT_PROMPT, apiKey: groqKey },
       });
@@ -107,30 +209,12 @@ export default function AddItemModal({
         setScanning(false);
         return;
       }
-      const nameLower = (ext.name || '').toLowerCase();
-      const notesLower = (ext.notes || '').toLowerCase();
-      const looksLikeDriverLicense = /driver|licen[c]?e|permit|photo\s*card|id\s*card|g1|g2|ontario\s*(photo|licen|id)/i.test(nameLower) || notesLower.includes('driver') || notesLower.includes('licen');
-      // Normalize AI category: map common variations to our category id (e.g. "driver's license" -> driving)
-      const rawCat = (ext.category || '').toString().toLowerCase().replace(/\s+/g, '_').replace(/'/g, '');
-      const categoryAliases = { driver_license: 'driving', drivers_license: 'driving', driving: 'driving', licence: 'driving', license: 'driving', drivers_licence: 'driving', driver_licence: 'driving' };
-      let category = ext.category && APP_CONFIG.categories.find(c => c.id === ext.category) ? ext.category : (categoryAliases[rawCat] || null);
-      if (!category && looksLikeDriverLicense) category = 'driving';
-      if (!category && (ext.name || ext.expiryDate || ext.dueDate)) category = 'other';
-      if (category) setSelectedCategory(category);
-      if (ext.name) setName(ext.name);
-      if (ext.expiryDate) setDueDate(ext.expiryDate);
-      else if (ext.dueDate) setDueDate(ext.dueDate);
-      const notesParts = [];
-      if (ext.number) notesParts.push(`Number: ${ext.number}`);
-      if (ext.amount) notesParts.push(`Amount: ${ext.amount}`);
-      if (ext.notes) notesParts.push(ext.notes);
-      if (notesParts.length) setNotes(notesParts.join('\n'));
-      // Show confirm whenever we have usable extraction (name or date); only fall back when we got nothing
-      const hasUsableExtraction = ext && typeof ext === 'object' && (ext.name || ext.expiryDate || ext.dueDate);
-      if (hasUsableExtraction && category) {
-        setShowScanConfirm(true);
-      } else if (hasUsableExtraction) {
-        setSelectedCategory('other');
+      const item = normalizeExtraction(ext);
+      if (item) {
+        setSelectedCategory(item.category);
+        setName(item.name);
+        setDueDate(item.dueDate);
+        setNotes(item.notes);
         setShowScanConfirm(true);
       } else {
         setScanError('We couldn\'t read that image. Try another photo or choose "Browse categories" to pick manually.');
@@ -229,20 +313,86 @@ export default function AddItemModal({
     if (s.category) setSelectedCategory(s.category);
   };
 
-  const showScanFirst = !selectedCategory && !showCategories && !showScanConfirm;
+  const showPdfMulti = pdfMultiItems.length > 0;
+  const showScanFirst = !selectedCategory && !showCategories && !showScanConfirm && !showPdfMulti;
   const categoryMeta = selectedCategory ? APP_CONFIG.categories.find(c => c.id === selectedCategory) : null;
+
+  const handleTrackPdfPage = (index) => {
+    const item = pdfMultiItems[index];
+    if (!item) return;
+    onAdd({
+      name: item.name,
+      category: item.category,
+      due_date: item.dueDate || null,
+      notes: item.notes || null,
+      pay_url: null,
+      pay_phone: null,
+      recurrence_interval: null,
+      document_id: documentId || null,
+      alert_emails: null,
+      country: itemCountry || activeCountry || null,
+    });
+    setPdfMultiItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleTrackAllPdfPages = async () => {
+    setTracking(true);
+    try {
+      for (const item of pdfMultiItems) {
+        await Promise.resolve(onAdd({
+          name: item.name,
+          category: item.category,
+          due_date: item.dueDate || null,
+          notes: item.notes || null,
+          pay_url: null,
+          pay_phone: null,
+          recurrence_interval: null,
+          document_id: documentId || null,
+          alert_emails: null,
+          country: itemCountry || activeCountry || null,
+        }));
+      }
+      setPdfMultiItems([]);
+      onClose();
+    } catch (err) {
+      console.error('[AddItem] Track all failed:', err);
+    } finally {
+      setTracking(false);
+    }
+  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>
-            {showScanConfirm ? 'Confirm & track' : selectedCategory && !showScanConfirm ? 'Add Item' : showScanFirst ? 'Track something' : 'What are you tracking?'}
+            {showPdfMulti ? 'Items from PDF' : showScanConfirm ? 'Confirm & track' : selectedCategory && !showScanConfirm ? 'Add Item' : showScanFirst ? 'Track something' : 'What are you tracking?'}
           </h2>
           <button type="button" className="btn-icon" onClick={onClose}><X size={20} /></button>
         </div>
 
-        {showScanConfirm ? (
+        {showPdfMulti ? (
+          <div className="add-item-pdf-multi">
+            <p className="text-secondary">We found {pdfMultiItems.length} item{pdfMultiItems.length !== 1 ? 's' : ''} from your PDF.</p>
+            <ul className="pdf-multi-list">
+              {pdfMultiItems.map((item, index) => (
+                <li key={index} className="pdf-multi-row">
+                  <span className="pdf-multi-label">Page {index + 1}:</span>
+                  <span className="pdf-multi-name">{item.name}</span>
+                  {item.dueDate ? <span className="pdf-multi-date">{item.dueDate}</span> : null}
+                  <span className="pdf-multi-cat">{APP_CONFIG.categories.find(c => c.id === item.category)?.name || item.category}</span>
+                  <button type="button" className="btn btn-sm btn-secondary" onClick={() => handleTrackPdfPage(index)}>Track</button>
+                </li>
+              ))}
+            </ul>
+            <div className="flex gap-2 mt-2">
+              <button type="button" className="btn btn-primary" onClick={handleTrackAllPdfPages} disabled={tracking}>
+                {tracking ? 'Adding…' : 'Track all'}
+              </button>
+              <button type="button" className="btn btn-secondary" onClick={() => setPdfMultiItems([])}>Scan something else</button>
+            </div>
+          </div>
+        ) : showScanConfirm ? (
           <AddItemScanConfirm
             userId={userId}
             categoryId={selectedCategory}
