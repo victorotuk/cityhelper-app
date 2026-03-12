@@ -230,12 +230,12 @@ Return ONLY valid JSON, no markdown or explanation.`
     // On 5xx: retry with server backup so we're not dependent on one provider (Groq first, then OpenRouter)
     const isServerError = !response.ok && response.status >= 500
     const usedUserKey = resolvedKey !== serverKey
-    const serverGroq = Deno.env.get('GROQ_API_KEY')
-    const serverOpenRouter = Deno.env.get('OPENROUTER_API_KEY')
-    if (isServerError && usedUserKey && (serverGroq || serverOpenRouter)) {
+    const backupGroq = Deno.env.get('GROQ_API_KEY')
+    const backupOpenRouter = Deno.env.get('OPENROUTER_API_KEY')
+    if (isServerError && usedUserKey && (backupGroq || backupOpenRouter)) {
       for (const backup of [
-        serverGroq ? { key: serverGroq, name: 'groq', provider: PROVIDERS.groq } : null,
-        serverOpenRouter ? { key: serverOpenRouter, name: 'openrouter', provider: PROVIDERS.openrouter } : null,
+        backupGroq ? { key: backupGroq, name: 'groq', provider: PROVIDERS.groq } : null,
+        backupOpenRouter ? { key: backupOpenRouter, name: 'openrouter', provider: PROVIDERS.openrouter } : null,
       ]) {
         if (!backup) continue
         try {
@@ -264,7 +264,9 @@ Return ONLY valid JSON, no markdown or explanation.`
       if (response.status === 429) {
         throw new Error('Rate limit reached. Try again in a minute, or add your own AI key in Settings → AI.')
       }
-      throw new Error('Document scanning temporarily unavailable. Try again shortly.')
+      // Include provider status so client/logs show real cause (e.g. 401 vs 5xx)
+      const safeDetail = errorText.replace(/\b(gsk_|sk-[a-z0-9-]+)[a-zA-Z0-9]+/g, '$1***').slice(0, 120)
+      throw new Error(`Document scanning temporarily unavailable. (AI provider ${response.status}: ${safeDetail || 'unknown'}). Try again shortly.`)
     }
 
     const data = await response.json()
